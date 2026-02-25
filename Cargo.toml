@@ -1,0 +1,72 @@
+[package]
+name = "demodatagen"
+version = "0.1.0"
+edition = "2021"
+description = "A CLI tool for generating realistic demo files in various formats"
+license = "MIT"
+repository = "https://github.com/youruser/demodatagen"
+readme = "README.md"
+keywords = ["demo", "generator", "cli", "test-data"]
+categories = ["command-line-utilities", "development-tools::testing"]
+
+[[bin]]
+name = "demodatagen"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+quick-xml = { version = "0.31", features = ["serialize"] }
+csv = "1"
+
+# Random
+rand = "0.8"
+rand_chacha = "0.3"
+
+# Parallelism
+rayon = "1"
+
+# Image generation
+image = "0.25"
+
+# Audio (WAV writing)
+hound = "3"
+
+# ZIP
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Progress bars
+indicatif = { version = "0.17", features = ["rayon"] }
+
+# Fake data
+fake = { version = "2", features = ["derive"] }
+
+# Self-update
+self_update = { version = "0.39", features = ["archive-tar", "archive-zip", "compression-flate2"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+proptest = "1"
+
+[features]
+default = ["update"]
+update = []
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
