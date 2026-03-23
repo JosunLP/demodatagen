@@ -60,8 +60,7 @@ pub fn check_for_update() -> AppResult<bool> {
 ///
 /// # Errors
 /// Returns an error if the update process fails.
-#[allow(dead_code)]
-pub fn perform_update() -> AppResult<()> {
+pub(crate) fn perform_update() -> AppResult<()> {
     info!("Attempting self-update...");
 
     match self_update::backends::github::Update::configure()

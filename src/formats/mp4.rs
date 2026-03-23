@@ -165,10 +165,10 @@ fn build_moov(
     write_u32(&mut mvhd, 0x00010000); // rate (1.0 fixed point)
     write_u16(&mut mvhd, 0x0100); // volume (1.0 fixed point)
     mvhd.extend_from_slice(&[0u8; 10]); // reserved
-                                        // Matrix (identity, 36 bytes)
     let identity_matrix: [u8; 36] = [
-        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
+        // Matrix (identity, 36 bytes)
+        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
     ];
     mvhd.extend_from_slice(&identity_matrix);
     mvhd.extend_from_slice(&[0u8; 24]); // pre-defined

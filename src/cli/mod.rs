@@ -50,12 +50,12 @@ pub struct Cli {
     #[arg(long, default_value_t = false, global = true)]
     pub check_update: bool,
 
-    /// The file format to generate.
+    /// The command to run.
     #[command(subcommand)]
     pub command: FormatCommand,
 }
 
-/// Subcommands for each supported file format.
+/// Subcommands for supported file formats and maintenance operations.
 #[derive(Subcommand, Debug)]
 pub enum FormatCommand {
     /// Generate JSON files with structured fake data.
@@ -266,6 +266,9 @@ pub enum FormatCommand {
         #[arg(long, default_value_t = 6)]
         compression_level: u32,
     },
+
+    /// Update the installed `demodatagen` binary to the latest GitHub release.
+    Update,
 }
 
 #[cfg(test)]
@@ -331,5 +334,11 @@ mod tests {
         assert!(!cli.overwrite);
         assert!(!cli.quiet);
         assert!(!cli.verbose);
+    }
+
+    #[test]
+    fn test_cli_parse_update() {
+        let cli = Cli::parse_from(["demodatagen", "update"]);
+        assert!(matches!(cli.command, FormatCommand::Update));
     }
 }

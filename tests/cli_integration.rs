@@ -8,9 +8,11 @@ use std::fs;
 use tempfile::TempDir;
 
 /// Helper: build a [`Command`] pointing at our binary crate.
-#[allow(deprecated)]
 fn cmd() -> Command {
-    Command::cargo_bin("demodatagen").expect("binary should be built")
+    #[allow(deprecated)]
+    {
+        Command::cargo_bin("demodatagen").expect("binary should be built")
+    }
 }
 
 // ── Happy-path tests ────────────────────────────────────────────────

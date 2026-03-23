@@ -187,7 +187,6 @@ pub trait Generator: Send + Sync {
     fn format_name(&self) -> &str;
 
     /// Returns the file extension (without leading dot).
-    #[allow(dead_code)]
     fn file_extension(&self) -> &str;
 
     /// Generates the file content as a byte vector.

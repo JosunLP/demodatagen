@@ -32,6 +32,16 @@ fn main() {
         .format_timestamp(None)
         .init();
 
+    if matches!(&cli.command, FormatCommand::Update) {
+        match update::perform_update() {
+            Ok(()) => process::exit(0),
+            Err(e) => {
+                error!("Update failed: {e}");
+                process::exit(1);
+            }
+        }
+    }
+
     // Handle update check
     if cli.check_update {
         match update::check_for_update() {
@@ -53,7 +63,7 @@ fn main() {
     }
 
     // Resolve format options and generator from the subcommand
-    let (format_options, extension) = match &cli.command {
+    let (format_options, format_key) = match &cli.command {
         FormatCommand::Json {
             rows,
             schema,
@@ -210,13 +220,14 @@ fn main() {
             },
             "zip",
         ),
+        FormatCommand::Update => unreachable!("update command handled before generation"),
     };
 
     // Get the generator for this format
-    let generator = match formats::get_generator(extension) {
+    let generator = match formats::get_generator(format_key) {
         Some(gen) => gen,
         None => {
-            error!("Unknown format: {extension}");
+            error!("Unknown format: {format_key}");
             process::exit(1);
         }
     };
@@ -226,7 +237,7 @@ fn main() {
         output_dir: cli.output_dir,
         count: cli.count,
         name_pattern: cli.name_pattern,
-        extension: extension.to_string(),
+        extension: generator.file_extension().to_string(),
         overwrite: cli.overwrite,
         seed: cli.seed,
         quiet: cli.quiet,

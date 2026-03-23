@@ -7,7 +7,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, error, info};
 use rayon::prelude::*;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 /// Configuration for a batch generation run.
 #[derive(Debug, Clone)]
@@ -34,20 +34,19 @@ pub struct BatchConfig {
 ///
 /// Prevents path traversal attacks via malicious name patterns.
 fn validate_path(output_dir: &Path, filename: &str) -> AppResult<PathBuf> {
-    let path = output_dir.join(filename);
-    let canonical_dir = output_dir
-        .canonicalize()
-        .unwrap_or_else(|_| output_dir.to_path_buf());
-    let canonical_path = path.parent().map_or(canonical_dir.clone(), |p| {
-        p.canonicalize().unwrap_or_else(|_| p.to_path_buf())
-    });
-
-    if !canonical_path.starts_with(&canonical_dir) {
+    let relative_path = Path::new(filename);
+    if relative_path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
         return Err(AppError::Generation(GenerationError::PathTraversal {
-            path: path.clone(),
+            path: output_dir.join(relative_path),
         }));
     }
-    Ok(path)
+
+    Ok(output_dir.join(relative_path))
 }
 
 /// Runs a batch generation using the provided generator and configuration.
@@ -181,12 +180,20 @@ mod tests {
         let dir = PathBuf::from("/tmp/output");
         let _ = fs::create_dir_all(&dir);
         let result = validate_path(&dir, "../../etc/passwd");
-        // Should catch path traversal
-        assert!(
-            result.is_err() || {
-                let path = result.unwrap();
-                !path.starts_with("/tmp/output")
-            }
-        );
+        assert!(matches!(
+            result,
+            Err(AppError::Generation(GenerationError::PathTraversal { .. }))
+        ));
+    }
+
+    #[test]
+    fn test_validate_path_traversal_with_nonexistent_parent() {
+        let dir = std::env::temp_dir().join("demodatagen_validate_path");
+        let _ = fs::create_dir_all(&dir);
+        let result = validate_path(&dir, "../missing-parent/test.txt");
+        assert!(matches!(
+            result,
+            Err(AppError::Generation(GenerationError::PathTraversal { .. }))
+        ));
     }
 }

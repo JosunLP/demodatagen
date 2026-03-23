@@ -39,14 +39,10 @@ pub fn build_pe_stub<R: Rng>(rng: &mut R, target_size: usize, is_dll: bool) -> V
     data.extend_from_slice(&[0x00, 0x00]); // e_cs
     data.extend_from_slice(&[0x40, 0x00]); // e_lfarlc
     data.extend_from_slice(&[0x00, 0x00]); // e_ovno
-                                           // e_res (8 bytes)
-    data.extend_from_slice(&[0x00; 8]);
-    // e_oemid, e_oeminfo
-    data.extend_from_slice(&[0x00; 4]);
-    // e_res2 (20 bytes)
-    data.extend_from_slice(&[0x00; 20]);
-    // e_lfanew: offset to PE header (at 0x80)
-    data.extend_from_slice(&[0x80, 0x00, 0x00, 0x00]);
+    data.extend_from_slice(&[0x00; 8]); // e_res (8 bytes)
+    data.extend_from_slice(&[0x00; 4]); // e_oemid, e_oeminfo
+    data.extend_from_slice(&[0x00; 20]); // e_res2 (20 bytes)
+    data.extend_from_slice(&[0x80, 0x00, 0x00, 0x00]); // e_lfanew: offset to PE header (at 0x80)
 
     // DOS stub program (prints message and exits)
     let dos_stub = b"\x0E\x1F\xBA\x0E\x00\xB4\x09\xCD\x21\xB8\x01\x4C\xCD\x21\
