@@ -3,7 +3,6 @@
 /// Supports structured data (JSON, XML, CSV), text (TXT, Markdown),
 /// images (PNG, JPG, WebP, GIF), audio (MP3), video (MP4, WebM),
 /// binary stubs (EXE, DLL), and archives (ZIP).
-
 mod cli;
 mod core;
 mod data;

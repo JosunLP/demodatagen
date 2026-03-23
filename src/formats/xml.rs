@@ -2,7 +2,6 @@
 ///
 /// Produces valid XML files with a root element containing child records,
 /// each with fields defined by the user-specified schema.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};

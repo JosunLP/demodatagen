@@ -2,12 +2,12 @@
 ///
 /// All errors are defined using `thiserror` for ergonomic error handling
 /// with automatic `Display` and `Error` trait implementations.
-
 use std::path::PathBuf;
 use thiserror::Error;
 
 /// Top-level error type for the application.
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum AppError {
     /// Error during file generation.
     #[error("Generation error: {0}")]
@@ -32,6 +32,7 @@ pub enum AppError {
 
 /// Error type for file generation operations.
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum GenerationError {
     /// Invalid configuration provided for the generator.
     #[error("Invalid configuration: {0}")]

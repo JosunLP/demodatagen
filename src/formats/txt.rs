@@ -1,7 +1,6 @@
 /// Plain text file generator.
 ///
 /// Produces `.txt` files with lorem ipsum paragraphs.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::lorem;
 use crate::error::{GenResult, GenerationError};

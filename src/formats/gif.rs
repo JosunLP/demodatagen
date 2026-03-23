@@ -2,12 +2,11 @@
 ///
 /// Produces valid GIF files, optionally animated with multiple frames.
 /// Uses the `image` crate's GIF encoder for proper GIF89a output.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use crate::formats::png::generate_image_buffer;
 use image::codecs::gif::{GifEncoder, Repeat};
-use image::{Frame, Delay};
+use image::{Delay, Frame};
 use std::io::Cursor;
 
 /// Generator for GIF image files.

@@ -2,7 +2,6 @@
 ///
 /// Produces valid WebP images. Since the `image` crate supports WebP encoding,
 /// we use it to write lossless WebP files.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use crate::formats::png::generate_image_buffer;

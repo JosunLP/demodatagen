@@ -1,7 +1,6 @@
 /// Batch processing orchestrator for generating multiple files in parallel.
 ///
 /// Uses `rayon` for parallel execution and `indicatif` for progress reporting.
-
 use crate::core::generator::{create_rng, resolve_filename, Generator, GeneratorConfig};
 use crate::error::{AppError, AppResult, GenerationError};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -183,9 +182,11 @@ mod tests {
         let _ = fs::create_dir_all(&dir);
         let result = validate_path(&dir, "../../etc/passwd");
         // Should catch path traversal
-        assert!(result.is_err() || {
-            let path = result.unwrap();
-            !path.starts_with("/tmp/output")
-        });
+        assert!(
+            result.is_err() || {
+                let path = result.unwrap();
+                !path.starts_with("/tmp/output")
+            }
+        );
     }
 }

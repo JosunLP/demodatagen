@@ -2,6 +2,5 @@
 ///
 /// These modules are format-agnostic building blocks used by the format-specific
 /// generators to produce realistic-looking demo content.
-
 pub mod faker;
 pub mod lorem;

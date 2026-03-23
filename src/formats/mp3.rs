@@ -6,7 +6,6 @@
 ///
 /// Each MP3 frame consists of a 4-byte header followed by audio data.
 /// We use MPEG1 Layer III at 128kbps for compatibility.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig, ToneType};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
@@ -18,6 +17,7 @@ pub struct Mp3Generator;
 /// MPEG1 Layer III frame size at 128kbps, 44100Hz.
 /// Frame size = 144 * bitrate / sample_rate + padding
 /// = 144 * 128000 / 44100 = 417 bytes (rounded down, no padding)
+#[allow(dead_code)]
 const FRAME_SIZE_128KBPS_44100: usize = 417;
 
 /// Builds an MPEG1 Layer III frame header.
@@ -133,7 +133,7 @@ impl Generator for Mp3Generator {
         // Calculate number of frames needed
         // Each MPEG1 Layer III frame encodes 1152 samples
         let samples_per_frame = 1152usize;
-        let frame_count = (samples.len() + samples_per_frame - 1) / samples_per_frame;
+        let frame_count = samples.len().div_ceil(samples_per_frame);
 
         let header = build_mp3_frame_header(sr_index, bitrate_index);
 

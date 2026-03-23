@@ -3,7 +3,6 @@
 /// Produces a valid WebM (Matroska subset) container with a minimal
 /// VP8 video track. The EBML structure is built manually to ensure
 /// proper format compliance.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
@@ -126,13 +125,13 @@ impl Generator for WebmGenerator {
 
         // EBML Header
         let mut ebml_header = Vec::new();
-        write_uint_element(&mut ebml_header, 0x4286, 1);  // EBMLVersion
-        write_uint_element(&mut ebml_header, 0x42F7, 1);  // EBMLReadVersion
-        write_uint_element(&mut ebml_header, 0x42F2, 4);  // EBMLMaxIDLength
-        write_uint_element(&mut ebml_header, 0x42F3, 8);  // EBMLMaxSizeLength
-        write_string_element(&mut ebml_header, 0x4282, "webm");  // DocType
-        write_uint_element(&mut ebml_header, 0x4287, 4);  // DocTypeVersion
-        write_uint_element(&mut ebml_header, 0x4285, 2);  // DocTypeReadVersion
+        write_uint_element(&mut ebml_header, 0x4286, 1); // EBMLVersion
+        write_uint_element(&mut ebml_header, 0x42F7, 1); // EBMLReadVersion
+        write_uint_element(&mut ebml_header, 0x42F2, 4); // EBMLMaxIDLength
+        write_uint_element(&mut ebml_header, 0x42F3, 8); // EBMLMaxSizeLength
+        write_string_element(&mut ebml_header, 0x4282, "webm"); // DocType
+        write_uint_element(&mut ebml_header, 0x4287, 4); // DocTypeVersion
+        write_uint_element(&mut ebml_header, 0x4285, 2); // DocTypeReadVersion
         write_master_element(&mut output, 0x1A45DFA3, &ebml_header);
 
         // Segment
@@ -149,18 +148,22 @@ impl Generator for WebmGenerator {
         // Tracks
         let mut tracks = Vec::new();
         let mut track_entry = Vec::new();
-        write_uint_element(&mut track_entry, 0xD7, 1);     // TrackNumber
-        write_uint_element(&mut track_entry, 0x73C5, 1);   // TrackUID
-        write_uint_element(&mut track_entry, 0x83, 1);     // TrackType (video)
+        write_uint_element(&mut track_entry, 0xD7, 1); // TrackNumber
+        write_uint_element(&mut track_entry, 0x73C5, 1); // TrackUID
+        write_uint_element(&mut track_entry, 0x83, 1); // TrackType (video)
         write_string_element(&mut track_entry, 0x86, "V_VP8"); // CodecID
 
         // Video settings
         let mut video = Vec::new();
-        write_uint_element(&mut video, 0xB0, width as u64);   // PixelWidth
-        write_uint_element(&mut video, 0xBA, height as u64);  // PixelHeight
+        write_uint_element(&mut video, 0xB0, width as u64); // PixelWidth
+        write_uint_element(&mut video, 0xBA, height as u64); // PixelHeight
         write_master_element(&mut track_entry, 0xE0, &video);
 
-        write_uint_element(&mut track_entry, 0x23E383, (frame_duration_ms * 1000000.0) as u64); // DefaultDuration
+        write_uint_element(
+            &mut track_entry,
+            0x23E383,
+            (frame_duration_ms * 1000000.0) as u64,
+        ); // DefaultDuration
 
         write_master_element(&mut tracks, 0xAE, &track_entry);
         write_master_element(&mut segment_data, 0x1654AE6B, &tracks);
@@ -182,7 +185,7 @@ impl Generator for WebmGenerator {
             // Bit 3: show_frame
             // Bits 4-23: first_partition_size
             let partition_size: u32 = 0;
-            let frame_tag = (partition_size << 5) | 0x10 | 0x00; // show_frame=1, version=0, keyframe=0
+            let frame_tag = (partition_size << 5) | 0x10; // show_frame=1, version=0, keyframe=0
             frame_data.push((frame_tag & 0xFF) as u8);
             frame_data.push(((frame_tag >> 8) & 0xFF) as u8);
             frame_data.push(((frame_tag >> 16) & 0xFF) as u8);

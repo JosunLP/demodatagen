@@ -6,7 +6,6 @@
 ///
 /// The generated file is recognized by media players as a valid MP4,
 /// though the video content is simple colored frames.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
@@ -142,6 +141,7 @@ impl Generator for Mp4Generator {
 }
 
 /// Builds the `moov` box containing movie metadata and track info.
+#[allow(clippy::too_many_arguments)]
 fn build_moov(
     display_w: u16,
     display_h: u16,
@@ -165,11 +165,10 @@ fn build_moov(
     write_u32(&mut mvhd, 0x00010000); // rate (1.0 fixed point)
     write_u16(&mut mvhd, 0x0100); // volume (1.0 fixed point)
     mvhd.extend_from_slice(&[0u8; 10]); // reserved
-    // Matrix (identity, 36 bytes)
+                                        // Matrix (identity, 36 bytes)
     let identity_matrix: [u8; 36] = [
-        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
     ];
     mvhd.extend_from_slice(&identity_matrix);
     mvhd.extend_from_slice(&[0u8; 24]); // pre-defined
@@ -178,9 +177,16 @@ fn build_moov(
 
     // trak box
     let trak = build_trak(
-        display_w, display_h, coded_w, coded_h,
-        timescale, duration_ms, frame_duration_ts,
-        total_frames, sample_sizes, data_offset,
+        display_w,
+        display_h,
+        coded_w,
+        coded_h,
+        timescale,
+        duration_ms,
+        frame_duration_ts,
+        total_frames,
+        sample_sizes,
+        data_offset,
     );
     moov_data.extend_from_slice(&trak);
 
@@ -188,6 +194,7 @@ fn build_moov(
 }
 
 /// Builds a `trak` box for the video track.
+#[allow(clippy::too_many_arguments)]
 fn build_trak(
     display_w: u16,
     display_h: u16,
@@ -214,11 +221,10 @@ fn build_trak(
     write_u16(&mut tkhd, 0); // alternate group
     write_u16(&mut tkhd, 0); // volume (0 for video)
     write_u16(&mut tkhd, 0); // reserved
-    // Matrix (identity)
+                             // Matrix (identity)
     let identity_matrix: [u8; 36] = [
-        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
     ];
     tkhd.extend_from_slice(&identity_matrix);
     write_u16(&mut tkhd, display_w);
@@ -229,8 +235,14 @@ fn build_trak(
 
     // mdia box
     let mdia = build_mdia(
-        coded_w, coded_h, timescale, duration_ms,
-        frame_duration_ts, total_frames, sample_sizes, data_offset,
+        coded_w,
+        coded_h,
+        timescale,
+        duration_ms,
+        frame_duration_ts,
+        total_frames,
+        sample_sizes,
+        data_offset,
     );
     trak_data.extend_from_slice(&mdia);
 
@@ -238,6 +250,7 @@ fn build_trak(
 }
 
 /// Builds the `mdia` box containing media information.
+#[allow(clippy::too_many_arguments)]
 fn build_mdia(
     coded_w: u16,
     coded_h: u16,
@@ -270,8 +283,13 @@ fn build_mdia(
 
     // minf box
     let minf = build_minf(
-        coded_w, coded_h, timescale, frame_duration_ts,
-        total_frames, sample_sizes, data_offset,
+        coded_w,
+        coded_h,
+        timescale,
+        frame_duration_ts,
+        total_frames,
+        sample_sizes,
+        data_offset,
     );
     mdia_data.extend_from_slice(&minf);
 
@@ -302,7 +320,14 @@ fn build_minf(
     minf_data.extend_from_slice(&dinf);
 
     // stbl box
-    let stbl = build_stbl(coded_w, coded_h, frame_duration_ts, total_frames, sample_sizes, data_offset);
+    let stbl = build_stbl(
+        coded_w,
+        coded_h,
+        frame_duration_ts,
+        total_frames,
+        sample_sizes,
+        data_offset,
+    );
     minf_data.extend_from_slice(&stbl);
 
     build_box(b"minf", &minf_data)
@@ -322,7 +347,7 @@ fn build_stbl(
     // stsd (sample description)
     let mut stsd = Vec::new();
     write_u32(&mut stsd, 1); // entry count
-    // Visual sample entry (using 'raw ' codec for uncompressed)
+                             // Visual sample entry (using 'raw ' codec for uncompressed)
     let mut visual_entry = Vec::new();
     visual_entry.extend_from_slice(&[0u8; 6]); // reserved
     write_u16(&mut visual_entry, 1); // data reference index

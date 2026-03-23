@@ -2,7 +2,6 @@
 ///
 /// Defines the top-level CLI structure with global options and format-specific
 /// subcommands, each carrying their own parameters.
-
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -276,7 +275,12 @@ mod tests {
     #[test]
     fn test_cli_parse_json() {
         let cli = Cli::parse_from([
-            "demodatagen", "json", "--rows", "100", "--schema", "name:string",
+            "demodatagen",
+            "json",
+            "--rows",
+            "100",
+            "--schema",
+            "name:string",
         ]);
         match cli.command {
             FormatCommand::Json { rows, schema, .. } => {
@@ -289,9 +293,7 @@ mod tests {
 
     #[test]
     fn test_cli_parse_png() {
-        let cli = Cli::parse_from([
-            "demodatagen", "png", "--width", "1920", "--height", "1080",
-        ]);
+        let cli = Cli::parse_from(["demodatagen", "png", "--width", "1920", "--height", "1080"]);
         match cli.command {
             FormatCommand::Png { width, height, .. } => {
                 assert_eq!(width, 1920);
@@ -304,8 +306,15 @@ mod tests {
     #[test]
     fn test_cli_global_options() {
         let cli = Cli::parse_from([
-            "demodatagen", "--output-dir", "/tmp/test", "--count", "10",
-            "--seed", "42", "--overwrite", "txt",
+            "demodatagen",
+            "--output-dir",
+            "/tmp/test",
+            "--count",
+            "10",
+            "--seed",
+            "42",
+            "--overwrite",
+            "txt",
         ]);
         assert_eq!(cli.output_dir, PathBuf::from("/tmp/test"));
         assert_eq!(cli.count, 10);

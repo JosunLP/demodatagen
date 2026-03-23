@@ -2,7 +2,6 @@
 ///
 /// Checks for new versions of `demodatagen` on GitHub and optionally
 /// downloads and installs updates.
-
 use crate::error::AppResult;
 use log::{info, warn};
 
@@ -61,6 +60,7 @@ pub fn check_for_update() -> AppResult<bool> {
 ///
 /// # Errors
 /// Returns an error if the update process fails.
+#[allow(dead_code)]
 pub fn perform_update() -> AppResult<()> {
     info!("Attempting self-update...");
 
