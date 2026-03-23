@@ -8,14 +8,49 @@ mod core;
 mod data;
 mod error;
 mod formats;
+#[cfg(feature = "update")]
 mod update;
 
 use crate::cli::{Cli, FormatCommand};
 use crate::core::batch::{run_batch, BatchConfig};
 use crate::core::generator::{FormatOptions, ImagePattern, ToneType};
+use crate::error::AppResult;
 use clap::Parser;
 use log::{error, info};
 use std::process;
+
+/// Error shown when update support is disabled at compile time.
+#[cfg(not(feature = "update"))]
+const UPDATE_DISABLED_MESSAGE: &str =
+    "Self-update support is disabled in this build. Rebuild with --features update.";
+
+/// Checks for updates when the feature is enabled.
+#[cfg(feature = "update")]
+fn check_for_update() -> AppResult<bool> {
+    update::check_for_update()
+}
+
+/// Reports that update support is unavailable in this build.
+#[cfg(not(feature = "update"))]
+fn check_for_update() -> AppResult<bool> {
+    Err(crate::error::AppError::Update(
+        UPDATE_DISABLED_MESSAGE.to_string(),
+    ))
+}
+
+/// Performs a self-update when the feature is enabled.
+#[cfg(feature = "update")]
+fn perform_update() -> AppResult<()> {
+    update::perform_update()
+}
+
+/// Reports that self-update is unavailable in this build.
+#[cfg(not(feature = "update"))]
+fn perform_update() -> AppResult<()> {
+    Err(crate::error::AppError::Update(
+        UPDATE_DISABLED_MESSAGE.to_string(),
+    ))
+}
 
 fn main() {
     let cli = Cli::parse();
@@ -32,19 +67,9 @@ fn main() {
         .format_timestamp(None)
         .init();
 
-    if matches!(&cli.command, FormatCommand::Update) {
-        match update::perform_update() {
-            Ok(()) => process::exit(0),
-            Err(e) => {
-                error!("Update failed: {e}");
-                process::exit(1);
-            }
-        }
-    }
-
     // Handle update check
     if cli.check_update {
-        match update::check_for_update() {
+        match check_for_update() {
             Ok(true) => process::exit(0),
             Ok(false) => {
                 println!("No updates available.");
@@ -57,9 +82,20 @@ fn main() {
         }
     }
 
+    if matches!(&cli.command, FormatCommand::Update) {
+        match perform_update() {
+            Ok(()) => process::exit(0),
+            Err(e) => {
+                error!("Update failed: {e}");
+                process::exit(1);
+            }
+        }
+    }
+
+    #[cfg(feature = "update")]
     if !cli.skip_update {
         // Non-blocking update check (just log, don't fail)
-        let _ = update::check_for_update();
+        let _ = check_for_update();
     }
 
     // Resolve format options and generator from the subcommand
