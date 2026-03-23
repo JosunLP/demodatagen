@@ -12,17 +12,21 @@ use std::path::PathBuf;
 /// This struct carries the common parameters that every generator may need,
 /// plus format-specific parameters via the `format_options` field.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct GeneratorConfig {
     /// Output directory for generated files.
+    #[allow(dead_code)]
     pub output_dir: PathBuf,
     /// Base name pattern for files (e.g., `"user_{n}"`).
+    #[allow(dead_code)]
     pub name_pattern: String,
     /// File extension (without dot).
+    #[allow(dead_code)]
     pub extension: String,
     /// Current file index in batch (0-based).
+    #[allow(dead_code)]
     pub index: usize,
     /// Whether to overwrite existing files.
+    #[allow(dead_code)]
     pub overwrite: bool,
     /// Seeded RNG for deterministic generation.
     pub rng: ChaCha8Rng,

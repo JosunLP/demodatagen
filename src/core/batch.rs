@@ -177,8 +177,8 @@ mod tests {
 
     #[test]
     fn test_validate_path_traversal() {
-        let dir = PathBuf::from("/tmp/output");
-        let _ = fs::create_dir_all(&dir);
+        let dir = std::env::temp_dir().join("demodatagen_validate_path_traversal");
+        fs::create_dir_all(&dir).expect("failed to create test output directory");
         let result = validate_path(&dir, "../../etc/passwd");
         assert!(matches!(
             result,
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn test_validate_path_traversal_with_nonexistent_parent() {
         let dir = std::env::temp_dir().join("demodatagen_validate_path");
-        let _ = fs::create_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("failed to create test output directory");
         let result = validate_path(&dir, "../missing-parent/test.txt");
         assert!(matches!(
             result,

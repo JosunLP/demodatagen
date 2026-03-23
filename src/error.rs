@@ -7,7 +7,6 @@ use thiserror::Error;
 
 /// Top-level error type for the application.
 #[derive(Error, Debug)]
-#[allow(dead_code)]
 pub enum AppError {
     /// Error during file generation.
     #[error("Generation error: {0}")]
@@ -18,6 +17,7 @@ pub enum AppError {
     Io(#[from] std::io::Error),
 
     /// Error during CLI argument parsing.
+    #[allow(dead_code)]
     #[error("CLI error: {0}")]
     Cli(String),
 
@@ -32,15 +32,10 @@ pub enum AppError {
 
 /// Error type for file generation operations.
 #[derive(Error, Debug)]
-#[allow(dead_code)]
 pub enum GenerationError {
     /// Invalid configuration provided for the generator.
     #[error("Invalid configuration: {0}")]
     InvalidConfig(String),
-
-    /// Error encoding the output format.
-    #[error("Encoding error: {0}")]
-    Encoding(String),
 
     /// The output path already exists and `--overwrite` was not specified.
     #[error("File already exists: {path:?}. Use --overwrite to replace.")]
@@ -59,6 +54,7 @@ pub enum GenerationError {
     Image(String),
 
     /// Audio encoding error.
+    #[allow(dead_code)]
     #[error("Audio error: {0}")]
     Audio(String),
 

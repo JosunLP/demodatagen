@@ -14,12 +14,6 @@ use std::f32::consts::PI;
 /// Generator for MP3 audio files.
 pub struct Mp3Generator;
 
-/// MPEG1 Layer III frame size at 128kbps, 44100Hz.
-/// Frame size = 144 * bitrate / sample_rate + padding
-/// = 144 * 128000 / 44100 = 417 bytes (rounded down, no padding)
-#[allow(dead_code)]
-const FRAME_SIZE_128KBPS_44100: usize = 417;
-
 /// Builds an MPEG1 Layer III frame header.
 ///
 /// Format: 0xFFFB9004 for MPEG1, Layer3, 128kbps, 44100Hz, stereo
