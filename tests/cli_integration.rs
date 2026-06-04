@@ -2,7 +2,6 @@
 ///
 /// These tests exercise the binary end-to-end by spawning it as a child
 /// process and asserting on exit codes, stdout/stderr and generated files.
-
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
@@ -10,7 +9,10 @@ use tempfile::TempDir;
 
 /// Helper: build a [`Command`] pointing at our binary crate.
 fn cmd() -> Command {
-    Command::cargo_bin("demodatagen").expect("binary should be built")
+    #[allow(deprecated)]
+    {
+        Command::cargo_bin("demodatagen").expect("binary should be built")
+    }
 }
 
 // ── Happy-path tests ────────────────────────────────────────────────
@@ -548,7 +550,10 @@ fn test_seed_produces_deterministic_output() {
         fs::read_to_string(files[0].path()).unwrap()
     };
 
-    assert_eq!(content1, content2, "Same seed should produce identical output");
+    assert_eq!(
+        content1, content2,
+        "Same seed should produce identical output"
+    );
 }
 
 // ── Error handling tests ────────────────────────────────────────────

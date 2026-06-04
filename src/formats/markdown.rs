@@ -2,7 +2,6 @@
 ///
 /// Produces `.md` files with headings, paragraphs, bullet lists,
 /// and code blocks.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::lorem;
 use crate::error::{GenResult, GenerationError};

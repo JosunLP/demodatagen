@@ -2,7 +2,6 @@
 ///
 /// Produces valid JSON files containing arrays of objects with fields
 /// defined by the user-specified schema.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};
@@ -54,7 +53,7 @@ impl Generator for JsonGenerator {
                         .unwrap_or(Value::String(val)),
                     "float" | "decimal" => val
                         .parse::<f64>()
-                        .map(|f| Value::from(f))
+                        .map(Value::from)
                         .unwrap_or(Value::String(val)),
                     "bool" | "boolean" => val
                         .parse::<bool>()

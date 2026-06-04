@@ -2,7 +2,6 @@
 ///
 /// Produces valid CSV files with a header row and data rows,
 /// using fields defined by the user-specified schema.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};

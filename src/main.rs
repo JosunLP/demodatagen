@@ -3,20 +3,54 @@
 /// Supports structured data (JSON, XML, CSV), text (TXT, Markdown),
 /// images (PNG, JPG, WebP, GIF), audio (MP3), video (MP4, WebM),
 /// binary stubs (EXE, DLL), and archives (ZIP).
-
 mod cli;
 mod core;
 mod data;
 mod error;
 mod formats;
+#[cfg(feature = "update")]
 mod update;
 
 use crate::cli::{Cli, FormatCommand};
 use crate::core::batch::{run_batch, BatchConfig};
 use crate::core::generator::{FormatOptions, ImagePattern, ToneType};
+use crate::error::AppResult;
 use clap::Parser;
 use log::{error, info};
 use std::process;
+
+/// Error shown when update support is disabled at compile time.
+#[cfg(not(feature = "update"))]
+const UPDATE_DISABLED_MESSAGE: &str =
+    "Self-update support is disabled in this build. Rebuild with --features update.";
+
+/// Checks for updates when the feature is enabled.
+#[cfg(feature = "update")]
+fn check_for_update() -> AppResult<bool> {
+    update::check_for_update()
+}
+
+/// Reports that update support is unavailable in this build.
+#[cfg(not(feature = "update"))]
+fn check_for_update() -> AppResult<bool> {
+    Err(crate::error::AppError::Update(
+        UPDATE_DISABLED_MESSAGE.to_string(),
+    ))
+}
+
+/// Performs a self-update when the feature is enabled.
+#[cfg(feature = "update")]
+fn perform_update() -> AppResult<()> {
+    update::perform_update()
+}
+
+/// Reports that self-update is unavailable in this build.
+#[cfg(not(feature = "update"))]
+fn perform_update() -> AppResult<()> {
+    Err(crate::error::AppError::Update(
+        UPDATE_DISABLED_MESSAGE.to_string(),
+    ))
+}
 
 fn main() {
     let cli = Cli::parse();
@@ -35,7 +69,7 @@ fn main() {
 
     // Handle update check
     if cli.check_update {
-        match update::check_for_update() {
+        match check_for_update() {
             Ok(true) => process::exit(0),
             Ok(false) => {
                 println!("No updates available.");
@@ -48,13 +82,24 @@ fn main() {
         }
     }
 
+    if matches!(&cli.command, FormatCommand::Update) {
+        match perform_update() {
+            Ok(()) => process::exit(0),
+            Err(e) => {
+                error!("Update failed: {e}");
+                process::exit(1);
+            }
+        }
+    }
+
+    #[cfg(feature = "update")]
     if !cli.skip_update {
         // Non-blocking update check (just log, don't fail)
-        let _ = update::check_for_update();
+        let _ = check_for_update();
     }
 
     // Resolve format options and generator from the subcommand
-    let (format_options, extension) = match &cli.command {
+    let (format_options, format_key) = match &cli.command {
         FormatCommand::Json {
             rows,
             schema,
@@ -211,13 +256,14 @@ fn main() {
             },
             "zip",
         ),
+        FormatCommand::Update => unreachable!("update command handled before generation"),
     };
 
     // Get the generator for this format
-    let generator = match formats::get_generator(extension) {
+    let generator = match formats::get_generator(format_key) {
         Some(gen) => gen,
         None => {
-            error!("Unknown format: {extension}");
+            error!("Unknown format: {format_key}");
             process::exit(1);
         }
     };
@@ -227,7 +273,7 @@ fn main() {
         output_dir: cli.output_dir,
         count: cli.count,
         name_pattern: cli.name_pattern,
-        extension: extension.to_string(),
+        extension: generator.file_extension().to_string(),
         overwrite: cli.overwrite,
         seed: cli.seed,
         quiet: cli.quiet,

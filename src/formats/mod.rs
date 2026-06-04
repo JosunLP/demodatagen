@@ -3,7 +3,6 @@
 /// Each sub-module implements the `Generator` trait for a specific output format.
 /// The `get_generator` function acts as a registry, returning the appropriate
 /// generator for a given format name.
-
 pub mod csv;
 pub mod dll;
 pub mod exe;
@@ -53,9 +52,8 @@ mod tests {
     #[test]
     fn test_all_formats_registered() {
         let formats = [
-            "json", "xml", "csv", "markdown", "md", "txt", "text",
-            "png", "jpg", "jpeg", "webp", "gif", "mp3", "mp4", "webm",
-            "exe", "dll", "zip",
+            "json", "xml", "csv", "markdown", "md", "txt", "text", "png", "jpg", "jpeg", "webp",
+            "gif", "mp3", "mp4", "webm", "exe", "dll", "zip",
         ];
         for fmt in formats {
             assert!(

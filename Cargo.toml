@@ -2,6 +2,7 @@
 name = "demodatagen"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.86"
 description = "A CLI tool for generating realistic demo files in various formats"
 license = "MIT"
 repository = "https://github.com/youruser/demodatagen"
@@ -54,7 +55,7 @@ indicatif = { version = "0.17", features = ["rayon"] }
 fake = { version = "2", features = ["derive"] }
 
 # Self-update
-self_update = { version = "0.39", features = ["archive-tar", "archive-zip", "compression-flate2"] }
+self_update = { version = "0.39", optional = true, features = ["archive-tar", "archive-zip", "compression-flate2"] }
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -64,7 +65,7 @@ proptest = "1"
 
 [features]
 default = ["update"]
-update = []
+update = ["dep:self_update"]
 
 [profile.release]
 lto = true

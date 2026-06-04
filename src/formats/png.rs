@@ -2,10 +2,9 @@
 ///
 /// Produces valid PNG images with various patterns (noise, gradient,
 /// shapes, checkerboard) using the `image` crate.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig, ImagePattern};
 use crate::error::{GenResult, GenerationError};
-use image::{ImageBuffer, Rgba, ImageFormat};
+use image::{ImageBuffer, ImageFormat, Rgba};
 use rand::Rng;
 use std::io::Cursor;
 
@@ -24,12 +23,7 @@ pub fn generate_image_buffer<R: Rng>(
     match pattern {
         ImagePattern::Noise => {
             for pixel in img.pixels_mut() {
-                *pixel = Rgba([
-                    rng.gen(),
-                    rng.gen(),
-                    rng.gen(),
-                    255,
-                ]);
+                *pixel = Rgba([rng.gen(), rng.gen(), rng.gen(), 255]);
             }
         }
         ImagePattern::Gradient => {

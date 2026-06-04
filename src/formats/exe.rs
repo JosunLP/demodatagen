@@ -4,7 +4,6 @@
 /// The generated file is recognized by Windows as an executable, though it
 /// contains no meaningful code (just a minimal DOS stub that prints
 /// "This program cannot be run in DOS mode").
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
@@ -40,14 +39,10 @@ pub fn build_pe_stub<R: Rng>(rng: &mut R, target_size: usize, is_dll: bool) -> V
     data.extend_from_slice(&[0x00, 0x00]); // e_cs
     data.extend_from_slice(&[0x40, 0x00]); // e_lfarlc
     data.extend_from_slice(&[0x00, 0x00]); // e_ovno
-    // e_res (8 bytes)
-    data.extend_from_slice(&[0x00; 8]);
-    // e_oemid, e_oeminfo
-    data.extend_from_slice(&[0x00; 4]);
-    // e_res2 (20 bytes)
-    data.extend_from_slice(&[0x00; 20]);
-    // e_lfanew: offset to PE header (at 0x80)
-    data.extend_from_slice(&[0x80, 0x00, 0x00, 0x00]);
+    data.extend_from_slice(&[0x00; 8]); // e_res (8 bytes)
+    data.extend_from_slice(&[0x00; 4]); // e_oemid, e_oeminfo
+    data.extend_from_slice(&[0x00; 20]); // e_res2 (20 bytes)
+    data.extend_from_slice(&[0x80, 0x00, 0x00, 0x00]); // e_lfanew: offset to PE header (at 0x80)
 
     // DOS stub program (prints message and exits)
     let dos_stub = b"\x0E\x1F\xBA\x0E\x00\xB4\x09\xCD\x21\xB8\x01\x4C\xCD\x21\
@@ -65,7 +60,7 @@ This program cannot be run in DOS mode.\r\r\n$";
     // === COFF Header (20 bytes) ===
     data.extend_from_slice(&[0x4C, 0x01]); // Machine: IMAGE_FILE_MACHINE_I386
     data.extend_from_slice(&[0x01, 0x00]); // NumberOfSections: 1
-    // TimeDateStamp (random)
+                                           // TimeDateStamp (random)
     let timestamp: u32 = rng.gen();
     data.extend_from_slice(&timestamp.to_le_bytes());
     data.extend_from_slice(&[0x00; 4]); // PointerToSymbolTable
@@ -82,7 +77,7 @@ This program cannot be run in DOS mode.\r\r\n$";
     // === Optional Header (PE32, 224 bytes) ===
     data.extend_from_slice(&[0x0B, 0x01]); // Magic: PE32
     data.push(14); // MajorLinkerVersion
-    data.push(0);  // MinorLinkerVersion
+    data.push(0); // MinorLinkerVersion
     data.extend_from_slice(&[0x00, 0x02, 0x00, 0x00]); // SizeOfCode
     data.extend_from_slice(&[0x00; 4]); // SizeOfInitializedData
     data.extend_from_slice(&[0x00; 4]); // SizeOfUninitializedData

@@ -2,7 +2,6 @@
 ///
 /// Produces valid ZIP archives containing multiple generated files.
 /// The contained files are generated using the appropriate format generator.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::{faker, lorem};
 use crate::error::{GenResult, GenerationError};
@@ -52,8 +51,7 @@ impl Generator for ZipGenerator {
             CompressionMethod::Deflated
         };
 
-        let options = FileOptions::default()
-            .compression_method(compression);
+        let options = FileOptions::default().compression_method(compression);
 
         for i in 0..file_count {
             let filename = format!("file_{i}.{contained_format}");
@@ -110,7 +108,9 @@ fn generate_contained_file<R: Rng>(rng: &mut R, format: &str) -> GenResult<Vec<u
                 for (name, ftype) in &schema {
                     let val = faker::value_for_type(rng, ftype);
                     let json_val = match ftype.as_str() {
-                        "int" => val.parse::<i64>().map(serde_json::Value::from)
+                        "int" => val
+                            .parse::<i64>()
+                            .map(serde_json::Value::from)
                             .unwrap_or(serde_json::Value::String(val)),
                         _ => serde_json::Value::String(val),
                     };

@@ -1,7 +1,6 @@
 /// JPEG image file generator.
 ///
 /// Produces valid JPEG images using the `image` crate with various patterns.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use crate::formats::png::generate_image_buffer;

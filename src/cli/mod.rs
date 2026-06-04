@@ -2,7 +2,6 @@
 ///
 /// Defines the top-level CLI structure with global options and format-specific
 /// subcommands, each carrying their own parameters.
-
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -51,12 +50,12 @@ pub struct Cli {
     #[arg(long, default_value_t = false, global = true)]
     pub check_update: bool,
 
-    /// The file format to generate.
+    /// The command to run.
     #[command(subcommand)]
     pub command: FormatCommand,
 }
 
-/// Subcommands for each supported file format.
+/// Subcommands for supported file formats and maintenance operations.
 #[derive(Subcommand, Debug)]
 pub enum FormatCommand {
     /// Generate JSON files with structured fake data.
@@ -267,6 +266,9 @@ pub enum FormatCommand {
         #[arg(long, default_value_t = 6)]
         compression_level: u32,
     },
+
+    /// Update the installed `demodatagen` binary to the latest GitHub release.
+    Update,
 }
 
 #[cfg(test)]
@@ -276,7 +278,12 @@ mod tests {
     #[test]
     fn test_cli_parse_json() {
         let cli = Cli::parse_from([
-            "demodatagen", "json", "--rows", "100", "--schema", "name:string",
+            "demodatagen",
+            "json",
+            "--rows",
+            "100",
+            "--schema",
+            "name:string",
         ]);
         match cli.command {
             FormatCommand::Json { rows, schema, .. } => {
@@ -289,9 +296,7 @@ mod tests {
 
     #[test]
     fn test_cli_parse_png() {
-        let cli = Cli::parse_from([
-            "demodatagen", "png", "--width", "1920", "--height", "1080",
-        ]);
+        let cli = Cli::parse_from(["demodatagen", "png", "--width", "1920", "--height", "1080"]);
         match cli.command {
             FormatCommand::Png { width, height, .. } => {
                 assert_eq!(width, 1920);
@@ -304,8 +309,15 @@ mod tests {
     #[test]
     fn test_cli_global_options() {
         let cli = Cli::parse_from([
-            "demodatagen", "--output-dir", "/tmp/test", "--count", "10",
-            "--seed", "42", "--overwrite", "txt",
+            "demodatagen",
+            "--output-dir",
+            "/tmp/test",
+            "--count",
+            "10",
+            "--seed",
+            "42",
+            "--overwrite",
+            "txt",
         ]);
         assert_eq!(cli.output_dir, PathBuf::from("/tmp/test"));
         assert_eq!(cli.count, 10);
@@ -322,5 +334,11 @@ mod tests {
         assert!(!cli.overwrite);
         assert!(!cli.quiet);
         assert!(!cli.verbose);
+    }
+
+    #[test]
+    fn test_cli_parse_update() {
+        let cli = Cli::parse_from(["demodatagen", "update"]);
+        assert!(matches!(cli.command, FormatCommand::Update));
     }
 }

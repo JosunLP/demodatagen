@@ -2,7 +2,6 @@
 ///
 /// All errors are defined using `thiserror` for ergonomic error handling
 /// with automatic `Display` and `Error` trait implementations.
-
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -18,6 +17,7 @@ pub enum AppError {
     Io(#[from] std::io::Error),
 
     /// Error during CLI argument parsing.
+    #[allow(dead_code)]
     #[error("CLI error: {0}")]
     Cli(String),
 
@@ -37,10 +37,6 @@ pub enum GenerationError {
     #[error("Invalid configuration: {0}")]
     InvalidConfig(String),
 
-    /// Error encoding the output format.
-    #[error("Encoding error: {0}")]
-    Encoding(String),
-
     /// The output path already exists and `--overwrite` was not specified.
     #[error("File already exists: {path:?}. Use --overwrite to replace.")]
     FileExists { path: PathBuf },
@@ -58,6 +54,7 @@ pub enum GenerationError {
     Image(String),
 
     /// Audio encoding error.
+    #[allow(dead_code)]
     #[error("Audio error: {0}")]
     Audio(String),
 

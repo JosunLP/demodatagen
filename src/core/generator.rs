@@ -2,7 +2,6 @@
 ///
 /// Every format-specific generator implements the `Generator` trait,
 /// ensuring a uniform interface for file generation across all formats.
-
 use crate::error::GenResult;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -15,14 +14,19 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 pub struct GeneratorConfig {
     /// Output directory for generated files.
+    #[allow(dead_code)]
     pub output_dir: PathBuf,
     /// Base name pattern for files (e.g., `"user_{n}"`).
+    #[allow(dead_code)]
     pub name_pattern: String,
     /// File extension (without dot).
+    #[allow(dead_code)]
     pub extension: String,
     /// Current file index in batch (0-based).
+    #[allow(dead_code)]
     pub index: usize,
     /// Whether to overwrite existing files.
+    #[allow(dead_code)]
     pub overwrite: bool,
     /// Seeded RNG for deterministic generation.
     pub rng: ChaCha8Rng,
@@ -137,7 +141,9 @@ impl std::str::FromStr for ImagePattern {
             "gradient" => Ok(ImagePattern::Gradient),
             "shapes" => Ok(ImagePattern::Shapes),
             "checkerboard" => Ok(ImagePattern::Checkerboard),
-            _ => Err(format!("Unknown image pattern: '{s}'. Valid: noise, gradient, shapes, checkerboard")),
+            _ => Err(format!(
+                "Unknown image pattern: '{s}'. Valid: noise, gradient, shapes, checkerboard"
+            )),
         }
     }
 }
@@ -170,7 +176,9 @@ impl std::str::FromStr for ToneType {
             "sine" => Ok(ToneType::Sine),
             "noise" => Ok(ToneType::Noise),
             "sweep" => Ok(ToneType::Sweep),
-            _ => Err(format!("Unknown tone type: '{s}'. Valid: sine, noise, sweep")),
+            _ => Err(format!(
+                "Unknown tone type: '{s}'. Valid: sine, noise, sweep"
+            )),
         }
     }
 }
@@ -240,8 +248,14 @@ mod tests {
 
     #[test]
     fn test_image_pattern_from_str() {
-        assert_eq!("noise".parse::<ImagePattern>().unwrap(), ImagePattern::Noise);
-        assert_eq!("Gradient".parse::<ImagePattern>().unwrap(), ImagePattern::Gradient);
+        assert_eq!(
+            "noise".parse::<ImagePattern>().unwrap(),
+            ImagePattern::Noise
+        );
+        assert_eq!(
+            "Gradient".parse::<ImagePattern>().unwrap(),
+            ImagePattern::Gradient
+        );
         assert!("invalid".parse::<ImagePattern>().is_err());
     }
 

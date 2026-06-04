@@ -2,7 +2,6 @@
 ///
 /// Produces a valid Portable Executable file with the DLL characteristic flag set.
 /// Reuses the PE building logic from the EXE generator.
-
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use crate::formats::exe::build_pe_stub;

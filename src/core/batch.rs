@@ -1,14 +1,13 @@
 /// Batch processing orchestrator for generating multiple files in parallel.
 ///
 /// Uses `rayon` for parallel execution and `indicatif` for progress reporting.
-
 use crate::core::generator::{create_rng, resolve_filename, Generator, GeneratorConfig};
 use crate::error::{AppError, AppResult, GenerationError};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, error, info};
 use rayon::prelude::*;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 /// Configuration for a batch generation run.
 #[derive(Debug, Clone)]
@@ -35,20 +34,47 @@ pub struct BatchConfig {
 ///
 /// Prevents path traversal attacks via malicious name patterns.
 fn validate_path(output_dir: &Path, filename: &str) -> AppResult<PathBuf> {
-    let path = output_dir.join(filename);
-    let canonical_dir = output_dir
-        .canonicalize()
-        .unwrap_or_else(|_| output_dir.to_path_buf());
-    let canonical_path = path.parent().map_or(canonical_dir.clone(), |p| {
-        p.canonicalize().unwrap_or_else(|_| p.to_path_buf())
-    });
-
-    if !canonical_path.starts_with(&canonical_dir) {
+    let relative_path = Path::new(filename);
+    if relative_path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
         return Err(AppError::Generation(GenerationError::PathTraversal {
-            path: path.clone(),
+            path: output_dir.join(relative_path),
         }));
     }
-    Ok(path)
+
+    let joined = output_dir.join(relative_path);
+
+    // Additional protection against escaping `output_dir` via symlinks inside it.
+    // This mirrors the previous behavior that canonicalized the nearest existing
+    // parent and ensured it stayed within the (canonicalized) output directory.
+    if let Ok(output_canon) = fs::canonicalize(output_dir) {
+        // Find the nearest existing ancestor of the target path (if any).
+        let mut current = joined.as_path();
+        let mut existing_parent: Option<PathBuf> = None;
+        while let Some(parent) = current.parent() {
+            if parent.exists() {
+                existing_parent = Some(parent.to_path_buf());
+                break;
+            }
+            current = parent;
+        }
+
+        if let Some(parent) = existing_parent {
+            if let Ok(parent_canon) = fs::canonicalize(&parent) {
+                if !parent_canon.starts_with(&output_canon) {
+                    return Err(AppError::Generation(GenerationError::PathTraversal {
+                        path: joined,
+                    }));
+                }
+            }
+        }
+    }
+
+    Ok(joined)
 }
 
 /// Runs a batch generation using the provided generator and configuration.
@@ -179,13 +205,23 @@ mod tests {
 
     #[test]
     fn test_validate_path_traversal() {
-        let dir = PathBuf::from("/tmp/output");
-        let _ = fs::create_dir_all(&dir);
+        let dir = std::env::temp_dir().join("demodatagen_validate_path_traversal");
+        fs::create_dir_all(&dir).expect("failed to create test output directory");
         let result = validate_path(&dir, "../../etc/passwd");
-        // Should catch path traversal
-        assert!(result.is_err() || {
-            let path = result.unwrap();
-            !path.starts_with("/tmp/output")
-        });
+        assert!(matches!(
+            result,
+            Err(AppError::Generation(GenerationError::PathTraversal { .. }))
+        ));
+    }
+
+    #[test]
+    fn test_validate_path_traversal_with_nonexistent_parent() {
+        let dir = std::env::temp_dir().join("demodatagen_validate_path");
+        fs::create_dir_all(&dir).expect("failed to create test output directory");
+        let result = validate_path(&dir, "../missing-parent/test.txt");
+        assert!(matches!(
+            result,
+            Err(AppError::Generation(GenerationError::PathTraversal { .. }))
+        ));
     }
 }
