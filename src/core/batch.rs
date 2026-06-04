@@ -46,7 +46,35 @@ fn validate_path(output_dir: &Path, filename: &str) -> AppResult<PathBuf> {
         }));
     }
 
-    Ok(output_dir.join(relative_path))
+    let joined = output_dir.join(relative_path);
+
+    // Additional protection against escaping `output_dir` via symlinks inside it.
+    // This mirrors the previous behavior that canonicalized the nearest existing
+    // parent and ensured it stayed within the (canonicalized) output directory.
+    if let Ok(output_canon) = fs::canonicalize(output_dir) {
+        // Find the nearest existing ancestor of the target path (if any).
+        let mut current = joined.as_path();
+        let mut existing_parent: Option<PathBuf> = None;
+        while let Some(parent) = current.parent() {
+            if parent.exists() {
+                existing_parent = Some(parent.to_path_buf());
+                break;
+            }
+            current = parent;
+        }
+
+        if let Some(parent) = existing_parent {
+            if let Ok(parent_canon) = fs::canonicalize(&parent) {
+                if !parent_canon.starts_with(&output_canon) {
+                    return Err(AppError::Generation(GenerationError::PathTraversal {
+                        path: joined,
+                    }));
+                }
+            }
+        }
+    }
+
+    Ok(joined)
 }
 
 /// Runs a batch generation using the provided generator and configuration.
