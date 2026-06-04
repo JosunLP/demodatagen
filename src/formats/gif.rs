@@ -83,6 +83,7 @@ mod tests {
             index: 0,
             overwrite: false,
             rng: ChaCha8Rng::seed_from_u64(42),
+            locale: crate::data::Locale::EnUs,
             format_options: FormatOptions::Image {
                 width,
                 height,

@@ -2,69 +2,76 @@
 
 ## Project Overview
 
-`demodatagen` is a Rust CLI tool that generates realistic demo files in 16+ formats (JSON, XML, CSV, PNG, MP3, MP4, ZIP, etc.). It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
+`demodatagen` is a Rust **CLI and library** that generates realistic demo files in 33 formats (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, PDF, XLSX, PNG, WAV, MP4, ZIP, TAR, …). It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
 
 ## Architecture
 
-The codebase follows a **trait-based plugin architecture** with four layers:
+The codebase builds as both a library (`src/lib.rs`) and a thin binary (`src/main.rs`, which just calls `demodatagen::app::run()`). It follows a **trait-based plugin architecture**:
 
-1. **`src/cli/`** — CLI argument parsing via `clap` derive macros. `FormatCommand` enum maps each format to its subcommand and parameters.
-2. **`src/core/`** — Orchestration layer:
-   - `generator.rs` — The `Generator` trait (implement `format_name()`, `file_extension()`, `generate() -> GenResult<Vec<u8>>`), `FormatOptions` enum, `GeneratorConfig`, and RNG helpers.
+1. **`src/cli/`** — CLI argument parsing via `clap` derive macros. `FormatCommand` enum maps each format to its subcommand and parameters. Also hosts `print_format_list()` (the `list` command) and `print_completions()` (shell completions via `clap_complete`).
+2. **`src/app.rs`** — Orchestration: parses CLI → resolves a `FormatOptions` + format key → runs the batch (or streams to stdout with `--stdout`).
+3. **`src/core/`**:
+   - `generator.rs` — The `Generator` trait (`format_name()`, `file_extension()`, `generate() -> GenResult<Vec<u8>>`), the `FormatOptions` enum, `GeneratorConfig` (carries `rng` + `locale`), RNG helpers, and `test_support` constructors for tests.
    - `batch.rs` — Parallel batch execution via `rayon` with `indicatif` progress bars. Includes path-traversal validation.
-3. **`src/data/`** — Format-agnostic data building blocks:
-   - `faker.rs` — Procedural fake data (names, emails, UUIDs, etc.) using static `const` pools + `rand::Rng`. Schema parsing via `parse_schema("name:string,age:int")`.
-   - `lorem.rs` — Lorem ipsum text generation (words, sentences, paragraphs).
-4. **`src/formats/`** — One module per format, each implementing `Generator`. Registry in `mod.rs::get_generator()` maps format strings to boxed generators.
+4. **`src/data/`** — Format-agnostic building blocks:
+   - `schema.rs` — **The typed schema engine.** `Schema::parse()` → `Vec<FieldSpec>`; `generate_records()` → `Vec<Record>` of typed `FieldValue`s. Supports ranges `int(1..9)`, `enum(...)`, `const(...)`, `sequence(n)`, `array(t,n)`, and nullable `type?p`.
+   - `faker.rs` — ~50 procedural fake-data generators, locale-aware.
+   - `locale.rs` — `Locale` enum (`EnUs`, `DeDe`) + static data pools.
+   - `lorem.rs` — Lorem ipsum text generation.
+5. **`src/formats/`** — One module per format, each implementing `Generator`. Registry in `mod.rs::get_generator()` maps format keys to boxed generators.
 
-**Data flow:** `main.rs` parses CLI → builds `FormatOptions` + `BatchConfig` → calls `run_batch()` → rayon parallel iter → per-file `Generator::generate()` returns `Vec<u8>` → written to disk.
+**Data flow:** `main.rs` → `app::run()` parses CLI → `resolve_format()` builds `FormatOptions` + key → `get_generator()` → `run_batch()` → rayon parallel iter → per-file `Generator::generate()` returns `Vec<u8>` → written to disk.
 
 ## Adding a New Format
 
-1. Create `src/formats/<name>.rs` with a struct implementing `Generator` (return raw bytes from `generate()`).
-2. Register it in `src/formats/mod.rs`: add `pub mod <name>;` and a match arm in `get_generator()`.
+1. Create `src/formats/<name>.rs` with a struct implementing `Generator`. Structured formats use `Schema::parse()` + `generate_records()`; reuse `FieldValue::to_json()` / `to_flat_string()` / `to_sql_literal()`.
+2. Register it in `src/formats/mod.rs`: add `pub mod <name>;` and a match arm in `get_generator()` (plus the format key in the `test_all_formats_registered` test).
 3. Add a variant to `FormatCommand` in `src/cli/mod.rs` with `clap` attributes.
-4. Add a match arm in `main.rs` to map the subcommand to `FormatOptions` + extension string.
-5. Add integration tests in `tests/cli_integration.rs`.
+4. Add a match arm in `src/app.rs::resolve_format()` mapping the subcommand to `FormatOptions` + format key. Reuse an existing `FormatOptions` variant where possible.
+5. If the format needs a new shape of parameters, add a `FormatOptions` variant in `generator.rs` and a matching `test_support` constructor.
+6. Add a `#[cfg(test)] mod tests` (use `crate::core::generator::test_support`) and an integration test in `tests/new_formats.rs`.
+7. Add the format to the `list` catalogue in `cli/mod.rs::print_format_list()`.
 
-Follow existing patterns — e.g., [src/formats/json.rs](src/formats/json.rs) for structured data or [src/formats/png.rs](src/formats/png.rs) for binary formats.
+Follow existing patterns — e.g., [src/formats/json.rs](src/formats/json.rs) for structured data, [src/formats/png.rs](src/formats/png.rs) for images, or [src/formats/pdf.rs](src/formats/pdf.rs) for a hand-written binary format.
 
 ## Build & Test Commands
 
 ```bash
-cargo build                    # Debug build
-cargo build --release          # Optimized build (LTO enabled, stripped)
-cargo test                     # All unit + integration tests
-cargo test --test cli_integration  # Integration tests only (spawns binary)
-cargo clippy                   # Lint (should pass clean)
+cargo build                        # Debug build
+cargo build --release              # Optimized build (LTO, stripped)
+cargo test                         # All unit + integration + property tests
+cargo test --test new_formats      # New-format integration tests only
+cargo clippy --all-targets         # Lint (must pass clean; CI uses -D warnings)
+cargo fmt                          # Format (CI enforces --check)
 ```
-
-The release profile uses `lto = true`, `codegen-units = 1`, and `strip = true`.
 
 ## Error Handling
 
-- Use `thiserror` types defined in `src/error.rs`: `AppError` (top-level) wraps `GenerationError` (format-specific).
+- Use `thiserror` types in `src/error.rs`: `AppError` (top-level) wraps `GenerationError` (format-specific). `AppError::Cli` covers argument/locale errors.
 - Type aliases: `AppResult<T>` and `GenResult<T>` — generators return `GenResult<Vec<u8>>`.
-- Map format-specific errors to appropriate `GenerationError` variants (e.g., `Image(String)`, `Audio(String)`, `Serialization(String)`).
+- Map schema-parse failures with `.map_err(GenerationError::InvalidConfig)`. Map format-specific errors to `Image`, `Audio`, `Archive`, or `Serialization` variants.
 
 ## Conventions
 
-- **RNG:** All randomness goes through `&mut impl Rng` passed via `GeneratorConfig.rng` (seeded `ChaCha8Rng`). Never use `thread_rng()` in generators.
-- **Schema types:** Supported faker types in `data/faker.rs::value_for_type()`: `string`, `name`, `int`/`integer`, `float`/`decimal`, `bool`/`boolean`, `email`, `date`, `datetime`, `phone`, `address`, `company`, `url`, `uuid`, `ipv4`/`ip`.
+- **RNG:** All randomness goes through `&mut impl Rng` (or `config.rng`, a seeded `ChaCha8Rng`). Never use `thread_rng()`. Guard `gen_range` against empty/reversed ranges.
+- **Locale:** Locale-sensitive faker functions take a `Locale` (from `config.locale`); locale-agnostic data (UUIDs, IPs, colors) ignores it.
+- **Schema:** Prefer the typed engine over ad-hoc string generation so every format emits correctly-typed values. Unknown types degrade to a generic word (never panic).
 - **FormatOptions:** Always pattern-match the expected variant in `generate()` and return `GenerationError::InvalidConfig` for mismatches.
-- **Tests:** Unit tests live in `#[cfg(test)] mod tests` at the bottom of each file. Integration tests in `tests/cli_integration.rs` use `assert_cmd` + `tempfile` to exercise the binary end-to-end.
-- **Doc comments:** Every public item has a `///` doc comment. Module-level docs use `//!`-style or `///` at the top of the file.
-- **Feature flags:** The `update` feature (default-enabled) gates self-update functionality.
+- **Tests:** Unit tests in `#[cfg(test)] mod tests` using `test_support` constructors; property tests with `proptest`; integration tests in `tests/` use `assert_cmd` + `tempfile`. Validate real files by magic bytes / round-trip parsing.
+- **Doc comments:** Every public item has a `///` doc comment; modules use `//!`.
+- **Feature flags:** The `update` feature (default-enabled) gates self-update.
 
 ## Key Dependencies
 
 | Crate | Purpose |
 |-------|---------|
-| `clap` (derive) | CLI parsing |
+| `clap` + `clap_complete` | CLI parsing & shell completions |
 | `rayon` | Parallel batch generation |
 | `rand` + `rand_chacha` | Deterministic RNG |
-| `image` | PNG/JPG/WebP/GIF generation |
-| `hound` | WAV audio writing (MP3 pipeline) |
-| `serde_json`, `quick-xml`, `csv` | Structured data serialization |
+| `image` | PNG/JPG/WebP/BMP/TIFF/ICO/GIF generation |
+| `hound` | Real WAV audio writing |
+| `serde_json`, `serde_yaml_ng`, `toml`, `quick-xml`, `csv` | Structured data |
+| `rust_xlsxwriter` | XLSX (Excel) workbooks |
+| `zip`, `tar`, `flate2` | Archives & compression |
 | `thiserror` + `anyhow` | Error handling |
 | `self_update` | GitHub Releases self-update |

@@ -223,27 +223,7 @@ impl Generator for WebmGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::FormatOptions;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
-    use std::path::PathBuf;
-
-    fn make_config(duration: f32, width: u32, height: u32, fps: u32) -> GeneratorConfig {
-        GeneratorConfig {
-            output_dir: PathBuf::from("/tmp"),
-            name_pattern: "test_{n}".to_string(),
-            extension: "webm".to_string(),
-            index: 0,
-            overwrite: false,
-            rng: ChaCha8Rng::seed_from_u64(42),
-            format_options: FormatOptions::Video {
-                duration,
-                width,
-                height,
-                fps,
-            },
-        }
-    }
+    use crate::core::generator::test_support::video_config as make_config;
 
     #[test]
     fn test_webm_valid_ebml_header() {

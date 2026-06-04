@@ -40,7 +40,7 @@ fn build_mp3_frame_header(sample_rate_index: u8, bitrate_index: u8) -> [u8; 4] {
 }
 
 /// Generates raw PCM sine wave samples.
-fn generate_sine_samples(sample_rate: u32, duration: f32, frequency: f32) -> Vec<i16> {
+pub(crate) fn generate_sine_samples(sample_rate: u32, duration: f32, frequency: f32) -> Vec<i16> {
     let sample_count = (sample_rate as f32 * duration) as usize;
     (0..sample_count)
         .map(|i| {
@@ -52,7 +52,11 @@ fn generate_sine_samples(sample_rate: u32, duration: f32, frequency: f32) -> Vec
 }
 
 /// Generates random noise samples.
-fn generate_noise_samples<R: Rng>(rng: &mut R, sample_rate: u32, duration: f32) -> Vec<i16> {
+pub(crate) fn generate_noise_samples<R: Rng>(
+    rng: &mut R,
+    sample_rate: u32,
+    duration: f32,
+) -> Vec<i16> {
     let sample_count = (sample_rate as f32 * duration) as usize;
     (0..sample_count)
         .map(|_| rng.gen_range(-8000i16..8000i16))
@@ -60,7 +64,7 @@ fn generate_noise_samples<R: Rng>(rng: &mut R, sample_rate: u32, duration: f32) 
 }
 
 /// Generates a frequency sweep (chirp) from 200Hz to 4000Hz.
-fn generate_sweep_samples(sample_rate: u32, duration: f32) -> Vec<i16> {
+pub(crate) fn generate_sweep_samples(sample_rate: u32, duration: f32) -> Vec<i16> {
     let sample_count = (sample_rate as f32 * duration) as usize;
     let f0: f32 = 200.0;
     let f1: f32 = 4000.0;
@@ -194,6 +198,7 @@ mod tests {
             index: 0,
             overwrite: false,
             rng: ChaCha8Rng::seed_from_u64(42),
+            locale: crate::data::Locale::EnUs,
             format_options: FormatOptions::Audio {
                 duration,
                 sample_rate: 44100,

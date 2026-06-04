@@ -26,6 +26,8 @@ pub struct BatchConfig {
     pub seed: Option<u64>,
     /// Whether to show progress bar.
     pub quiet: bool,
+    /// Locale for region-specific fake data.
+    pub locale: crate::data::Locale,
     /// Format-specific options (cloned per file).
     pub format_options: crate::core::generator::FormatOptions,
 }
@@ -137,6 +139,7 @@ pub fn run_batch(generator: &dyn Generator, config: &BatchConfig) -> AppResult<V
                 index: i,
                 overwrite: config.overwrite,
                 rng,
+                locale: config.locale,
                 format_options: config.format_options.clone(),
             };
 

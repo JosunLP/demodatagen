@@ -1,430 +1,291 @@
-/// Procedural fake data generator.
-///
-/// Generates realistic-looking names, emails, addresses, phone numbers,
-/// dates, and other data types without relying on AI. All data is produced
-/// deterministically given the same RNG state.
+//! Procedural fake-data generators.
+//!
+//! Generates realistic-looking names, emails, addresses, phone numbers, dates,
+//! identifiers, and dozens of other data types without any AI or network
+//! access. Every generator is deterministic given the same RNG state, and
+//! locale-sensitive generators consult [`Locale`] for region-appropriate pools.
+//!
+//! The higher-level schema engine in [`crate::data::schema`] builds on these
+//! primitives to produce typed records.
+use crate::data::Locale;
 use rand::Rng;
 
-/// Pool of common first names.
-const FIRST_NAMES: &[&str] = &[
-    "James",
-    "Mary",
-    "Robert",
-    "Patricia",
-    "John",
-    "Jennifer",
-    "Michael",
-    "Linda",
-    "David",
-    "Elizabeth",
-    "William",
-    "Barbara",
-    "Richard",
-    "Susan",
-    "Joseph",
-    "Jessica",
-    "Thomas",
-    "Sarah",
-    "Christopher",
-    "Karen",
-    "Charles",
-    "Lisa",
-    "Daniel",
-    "Nancy",
-    "Matthew",
-    "Betty",
-    "Anthony",
-    "Margaret",
-    "Mark",
-    "Sandra",
-    "Donald",
-    "Ashley",
-    "Steven",
-    "Dorothy",
-    "Paul",
-    "Kimberly",
-    "Andrew",
-    "Emily",
-    "Joshua",
-    "Donna",
-    "Kenneth",
-    "Michelle",
-    "Kevin",
-    "Carol",
-    "Brian",
-    "Amanda",
-    "George",
-    "Melissa",
-    "Timothy",
-    "Deborah",
-    "Ronald",
-    "Stephanie",
-    "Edward",
-    "Rebecca",
-    "Jason",
-    "Sharon",
-    "Jeffrey",
-    "Laura",
-    "Ryan",
-    "Cynthia",
-    "Jacob",
-    "Kathleen",
-    "Gary",
-    "Amy",
-    "Nicholas",
-    "Angela",
-    "Eric",
-    "Shirley",
-    "Jonathan",
-    "Anna",
-    "Stephen",
-    "Brenda",
-    "Larry",
-    "Pamela",
-    "Justin",
-    "Emma",
-    "Scott",
-    "Nicole",
-    "Brandon",
-    "Helen",
-    "Benjamin",
-    "Samantha",
-    "Samuel",
-    "Katherine",
-    "Raymond",
-    "Christine",
-    "Gregory",
-    "Debra",
-    "Frank",
-    "Rachel",
-    "Alexander",
-    "Carolyn",
-    "Patrick",
-    "Janet",
-    "Jack",
-    "Catherine",
-];
+// ---------------------------------------------------------------------------
+// Locale-aware people & places
+// ---------------------------------------------------------------------------
 
-/// Pool of common last names.
-const LAST_NAMES: &[&str] = &[
-    "Smith",
-    "Johnson",
-    "Williams",
-    "Brown",
-    "Jones",
-    "Garcia",
-    "Miller",
-    "Davis",
-    "Rodriguez",
-    "Martinez",
-    "Hernandez",
-    "Lopez",
-    "Gonzalez",
-    "Wilson",
-    "Anderson",
-    "Thomas",
-    "Taylor",
-    "Moore",
-    "Jackson",
-    "Martin",
-    "Lee",
-    "Perez",
-    "Thompson",
-    "White",
-    "Harris",
-    "Sanchez",
-    "Clark",
-    "Ramirez",
-    "Lewis",
-    "Robinson",
-    "Walker",
-    "Young",
-    "Allen",
-    "King",
-    "Wright",
-    "Scott",
-    "Torres",
-    "Nguyen",
-    "Hill",
-    "Flores",
-    "Green",
-    "Adams",
-    "Nelson",
-    "Baker",
-    "Hall",
-    "Rivera",
-    "Campbell",
-    "Mitchell",
-    "Carter",
-    "Roberts",
-    "Gomez",
-    "Phillips",
-    "Evans",
-    "Turner",
-    "Diaz",
-    "Parker",
-    "Cruz",
-    "Edwards",
-    "Collins",
-    "Reyes",
-    "Stewart",
-    "Morris",
-    "Morales",
-    "Murphy",
-    "Cook",
-    "Rogers",
-    "Gutierrez",
-    "Ortiz",
-    "Morgan",
-    "Cooper",
-    "Peterson",
-    "Bailey",
-    "Reed",
-    "Kelly",
-    "Howard",
-    "Ramos",
-    "Kim",
-    "Cox",
-    "Ward",
-    "Richardson",
-    "Watson",
-    "Brooks",
-    "Chavez",
-    "Wood",
-    "James",
-    "Bennett",
-    "Gray",
-    "Mendoza",
-    "Ruiz",
-    "Hughes",
-    "Price",
-    "Alvarez",
-    "Castillo",
-    "Sanders",
-    "Patel",
-];
-
-/// Pool of email domains.
-const EMAIL_DOMAINS: &[&str] = &[
-    "gmail.com",
-    "yahoo.com",
-    "outlook.com",
-    "hotmail.com",
-    "protonmail.com",
-    "icloud.com",
-    "mail.com",
-    "aol.com",
-    "zoho.com",
-    "fastmail.com",
-    "example.com",
-    "company.org",
-    "business.net",
-    "enterprise.io",
-    "startup.co",
-];
-
-/// Pool of street names.
-const STREET_NAMES: &[&str] = &[
-    "Main St",
-    "Oak Ave",
-    "Maple Dr",
-    "Cedar Ln",
-    "Pine Rd",
-    "Elm St",
-    "Washington Blvd",
-    "Park Ave",
-    "Lake Dr",
-    "Hill Rd",
-    "River Rd",
-    "Forest Ave",
-    "Sunset Blvd",
-    "Broadway",
-    "Church St",
-    "Spring St",
-    "Highland Ave",
-    "Valley Rd",
-    "Meadow Ln",
-    "Willow Dr",
-];
-
-/// Pool of city names.
-const CITIES: &[&str] = &[
-    "New York",
-    "Los Angeles",
-    "Chicago",
-    "Houston",
-    "Phoenix",
-    "Philadelphia",
-    "San Antonio",
-    "San Diego",
-    "Dallas",
-    "San Jose",
-    "Austin",
-    "Jacksonville",
-    "Fort Worth",
-    "Columbus",
-    "Indianapolis",
-    "Charlotte",
-    "Seattle",
-    "Denver",
-    "Washington",
-    "Nashville",
-    "Portland",
-    "Memphis",
-    "Louisville",
-    "Baltimore",
-    "Milwaukee",
-];
-
-/// Pool of US state abbreviations.
-const STATES: &[&str] = &[
-    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS",
-    "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY",
-    "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
-    "WI", "WY",
-];
-
-/// Pool of company name parts.
-const COMPANY_PREFIXES: &[&str] = &[
-    "Acme", "Global", "Apex", "Prime", "Nova", "Quantum", "Stellar", "Vertex", "Nexus", "Synergy",
-    "Pinnacle", "Vanguard", "Catalyst", "Fusion", "Horizon", "Atlas", "Genesis", "Titan", "Summit",
-    "Core", "Infinity", "Omega", "Alpha",
-];
-
-/// Pool of company suffixes.
-const COMPANY_SUFFIXES: &[&str] = &[
-    "Inc",
-    "LLC",
-    "Corp",
-    "Ltd",
-    "Group",
-    "Solutions",
-    "Technologies",
-    "Systems",
-    "Industries",
-    "Enterprises",
-    "Services",
-    "Partners",
-    "Associates",
-    "Consulting",
-    "International",
-    "Holdings",
-    "Dynamics",
-    "Labs",
-    "Digital",
-    "Analytics",
-];
-
-/// Pool of TLDs for URLs.
-const TLDS: &[&str] = &[
-    ".com", ".org", ".net", ".io", ".co", ".dev", ".app", ".tech",
-];
-
-/// Generates a random first name.
-pub fn first_name<R: Rng>(rng: &mut R) -> &'static str {
-    FIRST_NAMES[rng.gen_range(0..FIRST_NAMES.len())]
+/// Picks a random (copied) element from a non-empty slice.
+fn pick<R: Rng, T: Copy>(rng: &mut R, items: &[T]) -> T {
+    items[rng.gen_range(0..items.len())]
 }
 
-/// Generates a random last name.
-pub fn last_name<R: Rng>(rng: &mut R) -> &'static str {
-    LAST_NAMES[rng.gen_range(0..LAST_NAMES.len())]
+/// Generates a random first name for the locale.
+pub fn first_name<R: Rng>(rng: &mut R, locale: Locale) -> &'static str {
+    pick(rng, locale.data().first_names)
 }
 
-/// Generates a full name (first + last).
-pub fn full_name<R: Rng>(rng: &mut R) -> String {
-    format!("{} {}", first_name(rng), last_name(rng))
+/// Generates a random last name for the locale.
+pub fn last_name<R: Rng>(rng: &mut R, locale: Locale) -> &'static str {
+    pick(rng, locale.data().last_names)
 }
 
-/// Generates a realistic email address.
-pub fn email<R: Rng>(rng: &mut R) -> String {
-    let first = first_name(rng).to_lowercase();
-    let last = last_name(rng).to_lowercase();
-    let domain = EMAIL_DOMAINS[rng.gen_range(0..EMAIL_DOMAINS.len())];
-    let separator = if rng.gen_bool(0.5) { "." } else { "_" };
-    let suffix: u32 = rng.gen_range(1..999);
+/// Generates a full name (first + last) for the locale.
+pub fn full_name<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    format!("{} {}", first_name(rng, locale), last_name(rng, locale))
+}
 
-    if rng.gen_bool(0.6) {
-        format!("{first}{separator}{last}@{domain}")
-    } else {
-        format!("{first}{separator}{last}{suffix}@{domain}")
+/// Generates a gender label.
+pub fn gender<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, &["male", "female", "non-binary", "other"])
+}
+
+/// Generates a login username from name parts.
+pub fn username<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let first = ascii_slug(first_name(rng, locale));
+    let last = ascii_slug(last_name(rng, locale));
+    match rng.gen_range(0..4) {
+        0 => format!("{first}.{last}"),
+        1 => format!("{first}{last}{}", rng.gen_range(1..99u32)),
+        2 => format!("{}{last}", first.chars().next().unwrap_or('x')),
+        _ => format!("{first}_{last}"),
     }
 }
 
-/// Generates an integer in the given range.
-pub fn integer<R: Rng>(rng: &mut R, min: i64, max: i64) -> i64 {
-    rng.gen_range(min..=max)
+/// Generates a realistic email address for the locale.
+pub fn email<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let first = ascii_slug(first_name(rng, locale));
+    let last = ascii_slug(last_name(rng, locale));
+    let domain = pick(rng, EMAIL_DOMAINS);
+    let separator = if rng.gen_bool(0.5) { "." } else { "_" };
+    if rng.gen_bool(0.6) {
+        format!("{first}{separator}{last}@{domain}")
+    } else {
+        format!(
+            "{first}{separator}{last}{}@{domain}",
+            rng.gen_range(1..999u32)
+        )
+    }
 }
 
-/// Generates a floating point number in the given range with 2 decimal places.
-pub fn float<R: Rng>(rng: &mut R, min: f64, max: f64) -> f64 {
-    let val: f64 = rng.gen_range(min..max);
-    (val * 100.0).round() / 100.0
+/// Generates a random password-like string.
+pub fn password<R: Rng>(rng: &mut R) -> String {
+    const CHARS: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
+    let len = rng.gen_range(10..=16);
+    (0..len).map(|_| pick(rng, CHARS) as char).collect()
 }
 
-/// Generates a boolean value.
-pub fn boolean<R: Rng>(rng: &mut R) -> bool {
-    rng.gen_bool(0.5)
+/// Generates a phone number with the locale's dialing prefix.
+pub fn phone<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let prefix = locale.data().phone_prefix;
+    let area: u32 = rng.gen_range(100..999);
+    let mid: u32 = rng.gen_range(100..999);
+    let line: u32 = rng.gen_range(1000..9999);
+    format!("{prefix} {area} {mid} {line}")
 }
 
-/// Generates a random date string in YYYY-MM-DD format.
-pub fn date<R: Rng>(rng: &mut R) -> String {
-    let year = rng.gen_range(1970..=2025);
-    let month = rng.gen_range(1..=12u32);
-    let max_day = match month {
-        2 => {
-            if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) {
-                29
-            } else {
-                28
+/// Generates a street address line (number + street name).
+pub fn street<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let number: u32 = rng.gen_range(1..9999);
+    let street = pick(rng, locale.data().streets);
+    // German convention puts the house number after the street name.
+    if locale == Locale::DeDe {
+        format!("{street} {number}")
+    } else {
+        format!("{number} {street}")
+    }
+}
+
+/// Returns a random city for the locale.
+pub fn city<R: Rng>(rng: &mut R, locale: Locale) -> &'static str {
+    pick(rng, locale.data().cities)
+}
+
+/// Returns a random state / region for the locale.
+pub fn state<R: Rng>(rng: &mut R, locale: Locale) -> &'static str {
+    pick(rng, locale.data().states)
+}
+
+/// Returns the locale's country name.
+pub fn country(locale: Locale) -> &'static str {
+    locale.data().country
+}
+
+/// Returns the locale's ISO country code.
+pub fn country_code(locale: Locale) -> &'static str {
+    locale.data().country_code
+}
+
+/// Generates a postal code appropriate for the locale (5 digits).
+pub fn zipcode<R: Rng>(rng: &mut R, _locale: Locale) -> String {
+    format!("{:05}", rng.gen_range(1000..99999u32))
+}
+
+/// Generates a full street address: street, city, region, postcode, country.
+pub fn address<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let s = street(rng, locale);
+    let city = city(rng, locale);
+    let zip = zipcode(rng, locale);
+    let state = state(rng, locale);
+    if locale == Locale::DeDe {
+        format!("{s}, {zip} {city}, {state}")
+    } else {
+        format!("{s}, {city}, {state} {zip}")
+    }
+}
+
+/// Generates a company name for the locale.
+pub fn company<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let d = locale.data();
+    format!(
+        "{} {}",
+        pick(rng, d.company_prefixes),
+        pick(rng, d.company_suffixes)
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Business & commerce
+// ---------------------------------------------------------------------------
+
+/// Returns a random job title.
+pub fn job_title<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, JOB_TITLES)
+}
+
+/// Returns a random department name.
+pub fn department<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, DEPARTMENTS)
+}
+
+/// Generates a product name.
+pub fn product<R: Rng>(rng: &mut R) -> String {
+    format!(
+        "{} {}",
+        pick(rng, PRODUCT_ADJECTIVES),
+        pick(rng, PRODUCT_NOUNS)
+    )
+}
+
+/// Generates a stock-keeping unit code.
+pub fn sku<R: Rng>(rng: &mut R) -> String {
+    let letters: String = (0..3)
+        .map(|_| (b'A' + rng.gen_range(0..26u8)) as char)
+        .collect();
+    format!("{letters}-{:05}", rng.gen_range(0..99999u32))
+}
+
+/// Generates a price within `[min, max]`, rounded to 2 decimals.
+pub fn price<R: Rng>(rng: &mut R, min: f64, max: f64) -> f64 {
+    float(rng, min, max)
+}
+
+/// Returns a three-letter ISO 4217 currency code.
+pub fn currency_code<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "SEK", "NOK",
+        ],
+    )
+}
+
+/// Generates an IBAN-like string (not check-digit valid, demo only).
+pub fn iban<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let cc = locale.data().country_code;
+    let check: u32 = rng.gen_range(10..99);
+    let bban: String = (0..18)
+        .map(|_| (b'0' + rng.gen_range(0..10u8)) as char)
+        .collect();
+    format!("{cc}{check}{bban}")
+}
+
+/// Generates a credit-card-like number (Luhn-valid 16 digits).
+pub fn credit_card<R: Rng>(rng: &mut R) -> String {
+    let mut digits: Vec<u8> = (0..15).map(|_| rng.gen_range(0..10u8)).collect();
+    // Compute Luhn check digit.
+    let mut sum = 0u32;
+    for (i, d) in digits.iter().rev().enumerate() {
+        let mut v = *d as u32;
+        if i % 2 == 0 {
+            v *= 2;
+            if v > 9 {
+                v -= 9;
             }
         }
-        4 | 6 | 9 | 11 => 30,
-        _ => 31,
+        sum += v;
+    }
+    let check = (10 - (sum % 10)) % 10;
+    digits.push(check as u8);
+    digits
+        .chunks(4)
+        .map(|c| c.iter().map(|d| (b'0' + d) as char).collect::<String>())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Generates an ISBN-13 string (demo, valid prefix/format).
+pub fn isbn<R: Rng>(rng: &mut R) -> String {
+    let body: String = (0..9)
+        .map(|_| (b'0' + rng.gen_range(0..10u8)) as char)
+        .collect();
+    format!("978-{}-{}-{}", &body[0..1], &body[1..5], &body[5..9])
+}
+
+// ---------------------------------------------------------------------------
+// Internet & identifiers
+// ---------------------------------------------------------------------------
+
+/// Generates a registrable domain name.
+pub fn domain<R: Rng>(rng: &mut R) -> String {
+    let name = ascii_slug(pick(rng, EN_COMPANY_WORDS));
+    format!("{name}{}", pick(rng, TLDS))
+}
+
+/// Generates a URL.
+pub fn url<R: Rng>(rng: &mut R, _locale: Locale) -> String {
+    let protocol = if rng.gen_bool(0.85) { "https" } else { "http" };
+    let path = if rng.gen_bool(0.5) {
+        format!("/{}", slug(rng))
+    } else {
+        String::new()
     };
-    let day = rng.gen_range(1..=max_day);
-    format!("{year:04}-{month:02}-{day:02}")
+    format!("{protocol}://www.{}{path}", domain(rng))
 }
 
-/// Generates a random datetime string in ISO 8601 format.
-pub fn datetime<R: Rng>(rng: &mut R) -> String {
-    let d = date(rng);
-    let hour = rng.gen_range(0..24u32);
-    let minute = rng.gen_range(0..60u32);
-    let second = rng.gen_range(0..60u32);
-    format!("{d}T{hour:02}:{minute:02}:{second:02}Z")
+/// Generates a hyphenated lowercase slug of 2-4 words.
+pub fn slug<R: Rng>(rng: &mut R) -> String {
+    let n = rng.gen_range(2..=4);
+    (0..n)
+        .map(|_| crate::data::lorem::word(rng))
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
-/// Generates a random phone number.
-pub fn phone<R: Rng>(rng: &mut R) -> String {
-    let area: u32 = rng.gen_range(200..999);
-    let prefix: u32 = rng.gen_range(200..999);
-    let line: u32 = rng.gen_range(1000..9999);
-    format!("({area}) {prefix}-{line}")
+/// Generates a random IPv4 address.
+pub fn ipv4<R: Rng>(rng: &mut R) -> String {
+    format!(
+        "{}.{}.{}.{}",
+        rng.gen_range(1..255u8),
+        rng.gen_range(0..255u8),
+        rng.gen_range(0..255u8),
+        rng.gen_range(1..255u8)
+    )
 }
 
-/// Generates a random street address.
-pub fn address<R: Rng>(rng: &mut R) -> String {
-    let number: u32 = rng.gen_range(1..9999);
-    let street = STREET_NAMES[rng.gen_range(0..STREET_NAMES.len())];
-    let city = CITIES[rng.gen_range(0..CITIES.len())];
-    let state = STATES[rng.gen_range(0..STATES.len())];
-    let zip: u32 = rng.gen_range(10000..99999);
-    format!("{number} {street}, {city}, {state} {zip}")
+/// Generates a random IPv6 address.
+pub fn ipv6<R: Rng>(rng: &mut R) -> String {
+    (0..8)
+        .map(|_| format!("{:04x}", rng.gen_range(0..=0xffffu16)))
+        .collect::<Vec<_>>()
+        .join(":")
 }
 
-/// Generates a random company name.
-pub fn company<R: Rng>(rng: &mut R) -> String {
-    let prefix = COMPANY_PREFIXES[rng.gen_range(0..COMPANY_PREFIXES.len())];
-    let suffix = COMPANY_SUFFIXES[rng.gen_range(0..COMPANY_SUFFIXES.len())];
-    format!("{prefix} {suffix}")
-}
-
-/// Generates a random URL.
-pub fn url<R: Rng>(rng: &mut R) -> String {
-    let company_name = COMPANY_PREFIXES[rng.gen_range(0..COMPANY_PREFIXES.len())].to_lowercase();
-    let tld = TLDS[rng.gen_range(0..TLDS.len())];
-    let protocol = if rng.gen_bool(0.8) { "https" } else { "http" };
-    format!("{protocol}://www.{company_name}{tld}")
+/// Generates a random MAC address.
+pub fn mac_address<R: Rng>(rng: &mut R) -> String {
+    (0..6)
+        .map(|_| format!("{:02x}", rng.gen_range(0..=0xffu8)))
+        .collect::<Vec<_>>()
+        .join(":")
 }
 
 /// Generates a random UUID v4 string.
@@ -442,57 +303,345 @@ pub fn uuid<R: Rng>(rng: &mut R) -> String {
     )
 }
 
-/// Generates a random IPv4 address.
-pub fn ipv4<R: Rng>(rng: &mut R) -> String {
-    format!(
-        "{}.{}.{}.{}",
-        rng.gen_range(1..255u8),
-        rng.gen_range(0..255u8),
-        rng.gen_range(0..255u8),
-        rng.gen_range(1..255u8)
+/// Returns a random user-agent string.
+pub fn user_agent<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, USER_AGENTS)
+}
+
+// ---------------------------------------------------------------------------
+// Misc descriptive
+// ---------------------------------------------------------------------------
+
+/// Returns a random color name.
+pub fn color_name<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, COLORS)
+}
+
+/// Generates a random `#RRGGBB` hex color.
+pub fn hex_color<R: Rng>(rng: &mut R) -> String {
+    format!("#{:06X}", rng.gen_range(0..=0xFFFFFFu32))
+}
+
+/// Returns a random IETF language tag.
+pub fn language<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &["en", "de", "fr", "es", "it", "pt", "nl", "pl", "ja", "zh"],
     )
 }
 
-/// Generates a random string value for a given schema field type.
-///
-/// Supported types: `string`, `int`, `float`, `bool`, `email`, `date`,
-/// `datetime`, `phone`, `address`, `company`, `url`, `uuid`, `ipv4`, `name`.
-pub fn value_for_type<R: Rng>(rng: &mut R, field_type: &str) -> String {
-    match field_type {
-        "string" | "name" => full_name(rng),
-        "int" | "integer" => integer(rng, 0, 10000).to_string(),
-        "float" | "decimal" => float(rng, 0.0, 10000.0).to_string(),
-        "bool" | "boolean" => boolean(rng).to_string(),
-        "email" => email(rng),
-        "date" => date(rng),
-        "datetime" => datetime(rng),
-        "phone" => phone(rng),
-        "address" => address(rng),
-        "company" => company(rng),
-        "url" => url(rng),
-        "uuid" => uuid(rng),
-        "ipv4" | "ip" => ipv4(rng),
-        _ => format!("unknown_type_{}", rng.gen_range(0..1000u32)),
+/// Returns a random IANA timezone name.
+pub fn timezone<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "UTC",
+            "Europe/Berlin",
+            "Europe/London",
+            "America/New_York",
+            "America/Los_Angeles",
+            "Asia/Tokyo",
+            "Australia/Sydney",
+        ],
+    )
+}
+
+/// Returns a single emoji.
+pub fn emoji<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "😀", "🎉", "🚀", "🔥", "💡", "📦", "✅", "⚡", "🌟", "🐳", "🦀", "📊",
+        ],
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Numeric & temporal
+// ---------------------------------------------------------------------------
+
+/// Generates an integer in the inclusive range `[min, max]`.
+pub fn integer<R: Rng>(rng: &mut R, min: i64, max: i64) -> i64 {
+    if min >= max {
+        return min;
+    }
+    rng.gen_range(min..=max)
+}
+
+/// Generates a float in `[min, max)` rounded to 2 decimals.
+pub fn float<R: Rng>(rng: &mut R, min: f64, max: f64) -> f64 {
+    if min >= max {
+        return (min * 100.0).round() / 100.0;
+    }
+    let val: f64 = rng.gen_range(min..max);
+    (val * 100.0).round() / 100.0
+}
+
+/// Generates a latitude in `[-90, 90]`.
+pub fn latitude<R: Rng>(rng: &mut R) -> f64 {
+    let v: f64 = rng.gen_range(-90.0..=90.0);
+    (v * 1e6).round() / 1e6
+}
+
+/// Generates a longitude in `[-180, 180]`.
+pub fn longitude<R: Rng>(rng: &mut R) -> f64 {
+    let v: f64 = rng.gen_range(-180.0..=180.0);
+    (v * 1e6).round() / 1e6
+}
+
+/// Generates a boolean value.
+pub fn boolean<R: Rng>(rng: &mut R) -> bool {
+    rng.gen_bool(0.5)
+}
+
+/// Generates a random date string in `YYYY-MM-DD` format (years 1970-2025).
+pub fn date<R: Rng>(rng: &mut R) -> String {
+    let year = rng.gen_range(1970..=2025);
+    let month = rng.gen_range(1..=12u32);
+    let max_day = days_in_month(year, month);
+    let day = rng.gen_range(1..=max_day);
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
+/// Number of days in a given month, accounting for leap years.
+fn days_in_month(year: i64, month: u32) -> u32 {
+    match month {
+        2 if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
     }
 }
 
-/// Parses a schema string like `"name:string,age:int,email:email"` into
-/// field name / type pairs.
-///
-/// Returns a vector of `(field_name, field_type)` tuples.
-pub fn parse_schema(schema: &str) -> Vec<(String, String)> {
-    schema
-        .split(',')
-        .filter_map(|field| {
-            let parts: Vec<&str> = field.trim().splitn(2, ':').collect();
-            if parts.len() == 2 {
-                Some((parts[0].trim().to_string(), parts[1].trim().to_string()))
-            } else {
-                None
-            }
-        })
-        .collect()
+/// Generates a time string in `HH:MM:SS` format.
+pub fn time<R: Rng>(rng: &mut R) -> String {
+    format!(
+        "{:02}:{:02}:{:02}",
+        rng.gen_range(0..24u32),
+        rng.gen_range(0..60u32),
+        rng.gen_range(0..60u32)
+    )
 }
+
+/// Generates an ISO 8601 datetime string with a trailing `Z`.
+pub fn datetime<R: Rng>(rng: &mut R) -> String {
+    format!("{}T{}Z", date(rng), time(rng))
+}
+
+/// Generates a plausible Unix timestamp (seconds).
+pub fn unix_timestamp<R: Rng>(rng: &mut R) -> i64 {
+    rng.gen_range(0..1_900_000_000i64)
+}
+
+/// Returns a random weekday name.
+pub fn weekday<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ],
+    )
+}
+
+/// Returns a random month name.
+pub fn month<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Converts a name to a lowercase ASCII slug, transliterating common German
+/// umlauts so emails/usernames stay ASCII-safe.
+fn ascii_slug(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        match ch {
+            'ä' | 'Ä' => out.push_str("ae"),
+            'ö' | 'Ö' => out.push_str("oe"),
+            'ü' | 'Ü' => out.push_str("ue"),
+            'ß' => out.push_str("ss"),
+            c if c.is_ascii_alphanumeric() => out.push(c.to_ascii_lowercase()),
+            _ => {}
+        }
+    }
+    if out.is_empty() {
+        out.push('x');
+    }
+    out
+}
+
+// ---------------------------------------------------------------------------
+// Static pools (locale-agnostic)
+// ---------------------------------------------------------------------------
+
+const EMAIL_DOMAINS: &[&str] = &[
+    "gmail.com",
+    "yahoo.com",
+    "outlook.com",
+    "hotmail.com",
+    "protonmail.com",
+    "icloud.com",
+    "mail.com",
+    "aol.com",
+    "zoho.com",
+    "fastmail.com",
+    "example.com",
+    "company.org",
+];
+
+const TLDS: &[&str] = &[
+    ".com", ".org", ".net", ".io", ".co", ".dev", ".app", ".tech", ".de",
+];
+
+const EN_COMPANY_WORDS: &[&str] = &[
+    "acme",
+    "globex",
+    "initech",
+    "umbrella",
+    "stark",
+    "wayne",
+    "wonka",
+    "hooli",
+    "pied",
+    "soylent",
+    "vandelay",
+    "nakatomi",
+    "cyberdyne",
+    "tyrell",
+    "aperture",
+    "blackmesa",
+    "octan",
+    "gringotts",
+];
+
+const JOB_TITLES: &[&str] = &[
+    "Software Engineer",
+    "Product Manager",
+    "Data Scientist",
+    "UX Designer",
+    "DevOps Engineer",
+    "QA Analyst",
+    "Sales Representative",
+    "Marketing Manager",
+    "HR Specialist",
+    "Accountant",
+    "Project Manager",
+    "Systems Administrator",
+    "Business Analyst",
+    "Technical Writer",
+    "Support Engineer",
+    "CTO",
+    "CEO",
+    "Office Manager",
+    "Recruiter",
+    "Consultant",
+];
+
+const DEPARTMENTS: &[&str] = &[
+    "Engineering",
+    "Sales",
+    "Marketing",
+    "Finance",
+    "Human Resources",
+    "Operations",
+    "Support",
+    "Legal",
+    "Research",
+    "Product",
+    "Design",
+    "IT",
+    "Procurement",
+    "Logistics",
+];
+
+const PRODUCT_ADJECTIVES: &[&str] = &[
+    "Ergonomic",
+    "Sleek",
+    "Rustic",
+    "Handcrafted",
+    "Refined",
+    "Intelligent",
+    "Gorgeous",
+    "Compact",
+    "Premium",
+    "Lightweight",
+    "Durable",
+    "Modular",
+    "Wireless",
+    "Eco",
+    "Smart",
+];
+
+const PRODUCT_NOUNS: &[&str] = &[
+    "Chair",
+    "Keyboard",
+    "Lamp",
+    "Bottle",
+    "Backpack",
+    "Headphones",
+    "Monitor",
+    "Mouse",
+    "Desk",
+    "Speaker",
+    "Charger",
+    "Notebook",
+    "Camera",
+    "Watch",
+    "Bicycle",
+];
+
+const COLORS: &[&str] = &[
+    "Red",
+    "Orange",
+    "Yellow",
+    "Green",
+    "Blue",
+    "Indigo",
+    "Violet",
+    "Black",
+    "White",
+    "Gray",
+    "Cyan",
+    "Magenta",
+    "Teal",
+    "Maroon",
+    "Navy",
+    "Olive",
+    "Coral",
+    "Turquoise",
+];
+
+const USER_AGENTS: &[&str] = &[
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+    "curl/8.4.0",
+];
 
 #[cfg(test)]
 mod tests {
@@ -500,99 +649,140 @@ mod tests {
     use rand::SeedableRng;
     use rand_chacha::ChaCha8Rng;
 
-    fn test_rng() -> ChaCha8Rng {
+    fn rng() -> ChaCha8Rng {
         ChaCha8Rng::seed_from_u64(42)
     }
 
     #[test]
-    fn test_first_name_deterministic() {
-        let mut rng = test_rng();
-        let name1 = first_name(&mut rng);
-        let mut rng2 = test_rng();
-        let name2 = first_name(&mut rng2);
-        assert_eq!(name1, name2);
-    }
-
-    #[test]
     fn test_full_name_contains_space() {
-        let mut rng = test_rng();
-        let name = full_name(&mut rng);
-        assert!(name.contains(' '));
+        assert!(full_name(&mut rng(), Locale::EnUs).contains(' '));
     }
 
     #[test]
-    fn test_email_contains_at() {
-        let mut rng = test_rng();
-        let e = email(&mut rng);
-        assert!(e.contains('@'));
-        assert!(e.contains('.'));
+    fn test_locale_affects_names() {
+        // The German pool should eventually produce a name with an umlaut or
+        // a clearly German surname; check that the two locales differ across a
+        // sample (statistically near-certain for distinct pools).
+        let mut a = ChaCha8Rng::seed_from_u64(1);
+        let mut b = ChaCha8Rng::seed_from_u64(1);
+        let en: Vec<_> = (0..20).map(|_| full_name(&mut a, Locale::EnUs)).collect();
+        let de: Vec<_> = (0..20).map(|_| full_name(&mut b, Locale::DeDe)).collect();
+        assert_ne!(en, de);
     }
 
     #[test]
-    fn test_date_format() {
-        let mut rng = test_rng();
-        let d = date(&mut rng);
-        assert_eq!(d.len(), 10);
-        assert_eq!(&d[4..5], "-");
-        assert_eq!(&d[7..8], "-");
+    fn test_email_is_ascii_for_german_locale() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let e = email(&mut r, Locale::DeDe);
+            assert!(e.is_ascii(), "email not ASCII: {e}");
+            assert!(e.contains('@'));
+        }
     }
 
     #[test]
-    fn test_phone_format() {
-        let mut rng = test_rng();
-        let p = phone(&mut rng);
-        assert!(p.starts_with('('));
-        assert!(p.contains(')'));
-        assert!(p.contains('-'));
-    }
-
-    #[test]
-    fn test_parse_schema() {
-        let schema = "name:string,age:int,email:email,active:bool";
-        let fields = parse_schema(schema);
-        assert_eq!(fields.len(), 4);
-        assert_eq!(fields[0], ("name".to_string(), "string".to_string()));
-        assert_eq!(fields[1], ("age".to_string(), "int".to_string()));
-        assert_eq!(fields[2], ("email".to_string(), "email".to_string()));
-        assert_eq!(fields[3], ("active".to_string(), "bool".to_string()));
-    }
-
-    #[test]
-    fn test_parse_schema_with_spaces() {
-        let schema = " name : string , age : int ";
-        let fields = parse_schema(schema);
-        assert_eq!(fields.len(), 2);
-        assert_eq!(fields[0].0, "name");
-        assert_eq!(fields[0].1, "string");
-    }
-
-    #[test]
-    fn test_value_for_type_all_types() {
-        let mut rng = test_rng();
-        // Verify all known types produce non-empty strings
-        let types = [
-            "string", "int", "float", "bool", "email", "date", "datetime", "phone", "address",
-            "company", "url", "uuid", "ipv4", "name",
-        ];
-        for t in types {
-            let val = value_for_type(&mut rng, t);
-            assert!(!val.is_empty(), "Type '{t}' produced empty value");
+    fn test_credit_card_passes_luhn() {
+        let mut r = rng();
+        for _ in 0..20 {
+            let cc = credit_card(&mut r);
+            let digits: Vec<u32> = cc
+                .chars()
+                .filter(|c| c.is_ascii_digit())
+                .map(|c| c.to_digit(10).unwrap())
+                .collect();
+            assert_eq!(digits.len(), 16);
+            let mut sum = 0u32;
+            for (i, d) in digits.iter().rev().enumerate() {
+                let mut v = *d;
+                if i % 2 == 1 {
+                    v *= 2;
+                    if v > 9 {
+                        v -= 9;
+                    }
+                }
+                sum += v;
+            }
+            assert_eq!(sum % 10, 0, "Luhn check failed for {cc}");
         }
     }
 
     #[test]
     fn test_uuid_format() {
-        let mut rng = test_rng();
-        let u = uuid(&mut rng);
+        let u = uuid(&mut rng());
         let parts: Vec<&str> = u.split('-').collect();
         assert_eq!(parts.len(), 5);
+        assert_eq!(parts[2].chars().next(), Some('4'));
     }
 
     #[test]
-    fn test_ipv4_format() {
-        let mut rng = test_rng();
-        let ip = ipv4(&mut rng);
-        let octets: Vec<&str> = ip.split('.').collect();
-        assert_eq!(octets.len(), 4);
+    fn test_ipv6_format() {
+        let ip = ipv6(&mut rng());
+        assert_eq!(ip.split(':').count(), 8);
+    }
+
+    #[test]
+    fn test_mac_format() {
+        let m = mac_address(&mut rng());
+        assert_eq!(m.split(':').count(), 6);
+    }
+
+    #[test]
+    fn test_hex_color_format() {
+        let c = hex_color(&mut rng());
+        assert_eq!(c.len(), 7);
+        assert!(c.starts_with('#'));
+    }
+
+    #[test]
+    fn test_date_valid_ranges() {
+        let mut r = rng();
+        for _ in 0..200 {
+            let d = date(&mut r);
+            assert_eq!(d.len(), 10);
+            let m: u32 = d[5..7].parse().unwrap();
+            let day: u32 = d[8..10].parse().unwrap();
+            assert!((1..=12).contains(&m));
+            assert!((1..=31).contains(&day));
+        }
+    }
+
+    #[test]
+    fn test_integer_range_respected() {
+        let mut r = rng();
+        for _ in 0..100 {
+            let v = integer(&mut r, 10, 20);
+            assert!((10..=20).contains(&v));
+        }
+    }
+
+    #[test]
+    fn test_integer_degenerate_range() {
+        assert_eq!(integer(&mut rng(), 5, 5), 5);
+        assert_eq!(integer(&mut rng(), 9, 3), 9);
+    }
+
+    #[test]
+    fn test_latitude_longitude_bounds() {
+        let mut r = rng();
+        for _ in 0..100 {
+            assert!((-90.0..=90.0).contains(&latitude(&mut r)));
+            assert!((-180.0..=180.0).contains(&longitude(&mut r)));
+        }
+    }
+
+    #[test]
+    fn test_ascii_slug_transliterates() {
+        assert_eq!(ascii_slug("Müller"), "mueller");
+        assert_eq!(ascii_slug("Weiß"), "weiss");
+        assert_eq!(ascii_slug("Öztürk"), "oeztuerk");
+    }
+
+    #[test]
+    fn test_deterministic() {
+        assert_eq!(
+            full_name(&mut rng(), Locale::EnUs),
+            full_name(&mut rng(), Locale::EnUs)
+        );
+        assert_eq!(uuid(&mut rng()), uuid(&mut rng()));
     }
 }

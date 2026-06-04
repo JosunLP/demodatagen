@@ -167,22 +167,7 @@ impl Generator for ExeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::FormatOptions;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
-    use std::path::PathBuf;
-
-    fn make_config(size: usize) -> GeneratorConfig {
-        GeneratorConfig {
-            output_dir: PathBuf::from("/tmp"),
-            name_pattern: "test_{n}".to_string(),
-            extension: "exe".to_string(),
-            index: 0,
-            overwrite: false,
-            rng: ChaCha8Rng::seed_from_u64(42),
-            format_options: FormatOptions::Binary { size },
-        }
-    }
+    use crate::core::generator::test_support::binary_config as make_config;
 
     #[test]
     fn test_exe_mz_header() {

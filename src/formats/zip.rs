@@ -1,9 +1,9 @@
-/// ZIP archive file generator.
-///
-/// Produces valid ZIP archives containing multiple generated files.
-/// The contained files are generated using the appropriate format generator.
+//! ZIP archive file generator.
+//!
+//! Produces valid ZIP archives containing multiple generated files. The
+//! [`generate_contained_file`] helper is shared with the TAR generator.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
-use crate::data::{faker, lorem};
+use crate::data::{lorem, Locale, Schema};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
 use std::io::{Cursor, Write};
@@ -50,13 +50,12 @@ impl Generator for ZipGenerator {
         } else {
             CompressionMethod::Deflated
         };
-
         let options = FileOptions::default().compression_method(compression);
 
         for i in 0..file_count {
             let filename = format!("file_{i}.{contained_format}");
-            let content = generate_contained_file(&mut config.rng, &contained_format)?;
-
+            let content =
+                generate_contained_file(&mut config.rng, config.locale, &contained_format)?;
             zip_writer
                 .start_file(&filename, options)
                 .map_err(|e| GenerationError::Archive(e.to_string()))?;
@@ -68,126 +67,92 @@ impl Generator for ZipGenerator {
         let cursor = zip_writer
             .finish()
             .map_err(|e| GenerationError::Archive(e.to_string()))?;
-
         Ok(cursor.into_inner())
     }
 }
 
-/// Generates content for a file to be included in a ZIP archive.
+/// Schema used for the structured files placed inside archives.
+const CONTAINED_SCHEMA: &str = "id:sequence,name:name,email:email,date:date";
+
+/// Generates content for a file to be included in an archive (ZIP or TAR).
 ///
-/// Supports basic formats: txt, csv, json, xml, md.
-fn generate_contained_file<R: Rng>(rng: &mut R, format: &str) -> GenResult<Vec<u8>> {
+/// Supports `txt`, `csv`, `json`, `xml`, and `md`; anything else falls back to
+/// plain text.
+pub fn generate_contained_file<R: Rng>(
+    rng: &mut R,
+    locale: Locale,
+    format: &str,
+) -> GenResult<Vec<u8>> {
     match format {
-        "txt" | "text" => {
-            let text = lorem::plain_text(rng, 3);
-            Ok(text.into_bytes())
-        }
         "csv" => {
-            let schema = faker::parse_schema("id:int,name:string,email:email,date:date");
-            let mut output = String::new();
-            // Header
-            let headers: Vec<&str> = schema.iter().map(|(n, _)| n.as_str()).collect();
-            output.push_str(&headers.join(","));
-            output.push('\n');
-            // Rows
-            for _ in 0..10 {
-                let values: Vec<String> = schema
-                    .iter()
-                    .map(|(_, t)| faker::value_for_type(rng, t))
-                    .collect();
-                output.push_str(&values.join(","));
-                output.push('\n');
+            let schema = Schema::parse(CONTAINED_SCHEMA).map_err(GenerationError::InvalidConfig)?;
+            let mut out = String::new();
+            out.push_str(&schema.field_names().join(","));
+            out.push('\n');
+            for record in schema.generate_records(rng, locale, 10) {
+                let row: Vec<String> = record.iter().map(|(_, v)| v.to_flat_string()).collect();
+                out.push_str(&row.join(","));
+                out.push('\n');
             }
-            Ok(output.into_bytes())
+            Ok(out.into_bytes())
         }
         "json" => {
-            let schema = faker::parse_schema("id:int,name:string,email:email");
-            let mut records = Vec::new();
-            for _ in 0..10 {
-                let mut obj = serde_json::Map::new();
-                for (name, ftype) in &schema {
-                    let val = faker::value_for_type(rng, ftype);
-                    let json_val = match ftype.as_str() {
-                        "int" => val
-                            .parse::<i64>()
-                            .map(serde_json::Value::from)
-                            .unwrap_or(serde_json::Value::String(val)),
-                        _ => serde_json::Value::String(val),
-                    };
-                    obj.insert(name.clone(), json_val);
-                }
-                records.push(serde_json::Value::Object(obj));
-            }
-            serde_json::to_vec_pretty(&records)
+            let schema = Schema::parse(CONTAINED_SCHEMA).map_err(GenerationError::InvalidConfig)?;
+            let array: Vec<serde_json::Value> = schema
+                .generate_records(rng, locale, 10)
+                .iter()
+                .map(|record| {
+                    let mut obj = serde_json::Map::new();
+                    for (name, value) in record {
+                        obj.insert(name.clone(), value.to_json());
+                    }
+                    serde_json::Value::Object(obj)
+                })
+                .collect();
+            serde_json::to_vec_pretty(&array)
                 .map_err(|e| GenerationError::Serialization(e.to_string()))
         }
         "xml" => {
+            let schema = Schema::parse(CONTAINED_SCHEMA).map_err(GenerationError::InvalidConfig)?;
             let mut xml = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<records>\n");
-            for _ in 0..10 {
+            for record in schema.generate_records(rng, locale, 10) {
                 xml.push_str("  <record>\n");
-                xml.push_str(&format!("    <name>{}</name>\n", faker::full_name(rng)));
-                xml.push_str(&format!("    <email>{}</email>\n", faker::email(rng)));
+                for (name, value) in &record {
+                    xml.push_str(&format!(
+                        "    <{name}>{}</{name}>\n",
+                        value.to_flat_string()
+                    ));
+                }
                 xml.push_str("  </record>\n");
             }
             xml.push_str("</records>\n");
             Ok(xml.into_bytes())
         }
-        "md" | "markdown" => {
-            let doc = lorem::markdown_document(rng, 3, 5);
-            Ok(doc.into_bytes())
-        }
-        _ => {
-            // Default: generate some text content
-            let text = lorem::plain_text(rng, 2);
-            Ok(text.into_bytes())
-        }
+        "md" | "markdown" => Ok(lorem::markdown_document(rng, 3, 5).into_bytes()),
+        "txt" | "text" => Ok(lorem::plain_text(rng, 3).into_bytes()),
+        _ => Ok(lorem::plain_text(rng, 2).into_bytes()),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::FormatOptions;
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha8Rng;
+    use crate::core::generator::test_support::zip_config;
     use std::io::Read;
-    use std::path::PathBuf;
-
-    fn make_config(files: usize, format: &str, level: u32) -> GeneratorConfig {
-        GeneratorConfig {
-            output_dir: PathBuf::from("/tmp"),
-            name_pattern: "test_{n}".to_string(),
-            extension: "zip".to_string(),
-            index: 0,
-            overwrite: false,
-            rng: ChaCha8Rng::seed_from_u64(42),
-            format_options: FormatOptions::Zip {
-                file_count: files,
-                contained_format: format.to_string(),
-                compression_level: level,
-            },
-        }
-    }
 
     #[test]
     fn test_zip_valid_header() {
-        let gen = ZipGenerator;
-        let mut config = make_config(3, "txt", 6);
-        let result = gen.generate(&mut config).unwrap();
-        // ZIP magic bytes: PK\x03\x04
+        let mut config = zip_config(3, "txt", 6);
+        let result = ZipGenerator.generate(&mut config).unwrap();
         assert_eq!(&result[0..4], &[0x50, 0x4B, 0x03, 0x04]);
     }
 
     #[test]
     fn test_zip_contains_files() {
-        let gen = ZipGenerator;
-        let mut config = make_config(5, "txt", 6);
-        let result = gen.generate(&mut config).unwrap();
-
-        let reader = Cursor::new(result);
-        let mut archive = zip::ZipArchive::new(reader).unwrap();
+        let mut config = zip_config(5, "txt", 6);
+        let result = ZipGenerator.generate(&mut config).unwrap();
+        let mut archive = zip::ZipArchive::new(Cursor::new(result)).unwrap();
         assert_eq!(archive.len(), 5);
-
         for i in 0..5 {
             let mut file = archive.by_index(i).unwrap();
             let mut content = Vec::new();
@@ -198,12 +163,9 @@ mod tests {
 
     #[test]
     fn test_zip_csv_content() {
-        let gen = ZipGenerator;
-        let mut config = make_config(1, "csv", 6);
-        let result = gen.generate(&mut config).unwrap();
-
-        let reader = Cursor::new(result);
-        let mut archive = zip::ZipArchive::new(reader).unwrap();
+        let mut config = zip_config(1, "csv", 6);
+        let result = ZipGenerator.generate(&mut config).unwrap();
+        let mut archive = zip::ZipArchive::new(Cursor::new(result)).unwrap();
         let mut file = archive.by_index(0).unwrap();
         assert!(file.name().ends_with(".csv"));
         let mut content = String::new();
@@ -213,12 +175,9 @@ mod tests {
 
     #[test]
     fn test_zip_json_content() {
-        let gen = ZipGenerator;
-        let mut config = make_config(1, "json", 6);
-        let result = gen.generate(&mut config).unwrap();
-
-        let reader = Cursor::new(result);
-        let mut archive = zip::ZipArchive::new(reader).unwrap();
+        let mut config = zip_config(1, "json", 6);
+        let result = ZipGenerator.generate(&mut config).unwrap();
+        let mut archive = zip::ZipArchive::new(Cursor::new(result)).unwrap();
         let mut file = archive.by_index(0).unwrap();
         let mut content = String::new();
         file.read_to_string(&mut content).unwrap();
@@ -228,16 +187,13 @@ mod tests {
 
     #[test]
     fn test_zip_zero_files_error() {
-        let gen = ZipGenerator;
-        let mut config = make_config(0, "txt", 6);
-        assert!(gen.generate(&mut config).is_err());
+        let mut config = zip_config(0, "txt", 6);
+        assert!(ZipGenerator.generate(&mut config).is_err());
     }
 
     #[test]
     fn test_zip_stored_compression() {
-        let gen = ZipGenerator;
-        let mut config = make_config(2, "txt", 0);
-        let result = gen.generate(&mut config);
-        assert!(result.is_ok());
+        let mut config = zip_config(2, "txt", 0);
+        assert!(ZipGenerator.generate(&mut config).is_ok());
     }
 }

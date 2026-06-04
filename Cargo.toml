@@ -1,9 +1,9 @@
 [package]
 name = "demodatagen"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.86"
-description = "A CLI tool for generating realistic demo files in various formats"
+description = "A fast, offline CLI and library for generating realistic demo files in 33 formats"
 license = "MIT"
 repository = "https://github.com/youruser/demodatagen"
 readme = "README.md"
@@ -17,10 +17,13 @@ path = "src/main.rs"
 [dependencies]
 # CLI
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4.6"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml_ng = "0.10"
+toml = "1.1"
 quick-xml = { version = "0.31", features = ["serialize"] }
 csv = "1"
 
@@ -37,8 +40,13 @@ image = "0.25"
 # Audio (WAV writing)
 hound = "3"
 
-# ZIP
+# Archives & compression
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
+tar = "0.4"
+flate2 = "1.1"
+
+# Documents
+rust_xlsxwriter = "0.95"
 
 # Error handling
 thiserror = "1"
@@ -50,9 +58,6 @@ log = "0.4"
 
 # Progress bars
 indicatif = { version = "0.17", features = ["rayon"] }
-
-# Fake data
-fake = { version = "2", features = ["derive"] }
 
 # Self-update
 self_update = { version = "0.39", optional = true, features = ["archive-tar", "archive-zip", "compression-flate2"] }

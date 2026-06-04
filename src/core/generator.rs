@@ -2,6 +2,7 @@
 ///
 /// Every format-specific generator implements the `Generator` trait,
 /// ensuring a uniform interface for file generation across all formats.
+use crate::data::Locale;
 use crate::error::GenResult;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -30,6 +31,8 @@ pub struct GeneratorConfig {
     pub overwrite: bool,
     /// Seeded RNG for deterministic generation.
     pub rng: ChaCha8Rng,
+    /// Locale for region-specific fake data.
+    pub locale: Locale,
     /// Format-specific options.
     pub format_options: FormatOptions,
 }
@@ -39,7 +42,7 @@ pub struct GeneratorConfig {
 /// Each variant carries parameters relevant to a particular output format.
 #[derive(Debug, Clone)]
 pub enum FormatOptions {
-    /// Options for structured data formats (JSON, XML, CSV).
+    /// Options for object-stream structured formats (JSON, JSONL, YAML, TOML).
     StructuredData {
         /// Number of data rows to generate.
         rows: usize,
@@ -47,6 +50,62 @@ pub enum FormatOptions {
         schema: String,
         /// Whether to pretty-print the output.
         pretty: bool,
+    },
+    /// Options for XML, with configurable element names.
+    Xml {
+        /// Number of data rows to generate.
+        rows: usize,
+        /// Schema definition.
+        schema: String,
+        /// Whether to pretty-print (indent) the output.
+        pretty: bool,
+        /// Name of the root element.
+        root: String,
+        /// Name of each record element.
+        row_tag: String,
+    },
+    /// Options for delimiter-separated formats (CSV, TSV).
+    Delimited {
+        /// Number of data rows to generate.
+        rows: usize,
+        /// Schema definition.
+        schema: String,
+        /// Field delimiter byte (e.g. `b','` or `b'\t'`).
+        delimiter: u8,
+    },
+    /// Options for SQL `INSERT` scripts and spreadsheet (XLSX) output.
+    Sql {
+        /// Number of data rows to generate.
+        rows: usize,
+        /// Schema definition.
+        schema: String,
+        /// Table / sheet name.
+        table: String,
+    },
+    /// Options for synthetic log files.
+    Log {
+        /// Number of log lines to generate.
+        lines: usize,
+        /// Log style: `apache`, `syslog`, or `json`.
+        style: String,
+    },
+    /// Options for key/value config formats (INI, .env).
+    KeyValue {
+        /// Number of sections (INI only).
+        sections: usize,
+        /// Number of keys per section.
+        keys: usize,
+        /// Whether to render dotenv (`KEY=value`) instead of INI.
+        env_style: bool,
+    },
+    /// Options for SVG vector images.
+    Svg {
+        /// Canvas width.
+        width: u32,
+        /// Canvas height.
+        height: u32,
+        /// Number of random shapes to draw.
+        shapes: usize,
     },
     /// Options for plain text files.
     Text {
@@ -216,6 +275,148 @@ pub fn create_rng(seed: Option<u64>, index: usize) -> ChaCha8Rng {
     match seed {
         Some(s) => ChaCha8Rng::seed_from_u64(s.wrapping_add(index as u64)),
         None => ChaCha8Rng::from_entropy(),
+    }
+}
+
+/// Test-only constructors for [`GeneratorConfig`], shared across format tests.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use super::*;
+
+    /// Builds a deterministic config (seed 42, `en_us`, index 0) wrapping the
+    /// given format options.
+    pub fn config(format_options: FormatOptions) -> GeneratorConfig {
+        GeneratorConfig {
+            output_dir: PathBuf::from("/tmp"),
+            name_pattern: "test_{n}".to_string(),
+            extension: "out".to_string(),
+            index: 0,
+            overwrite: false,
+            rng: ChaCha8Rng::seed_from_u64(42),
+            locale: Locale::EnUs,
+            format_options,
+        }
+    }
+
+    pub fn structured_config(rows: usize, schema: &str, pretty: bool) -> GeneratorConfig {
+        config(FormatOptions::StructuredData {
+            rows,
+            schema: schema.to_string(),
+            pretty,
+        })
+    }
+
+    pub fn xml_config(
+        rows: usize,
+        schema: &str,
+        pretty: bool,
+        root: &str,
+        row_tag: &str,
+    ) -> GeneratorConfig {
+        config(FormatOptions::Xml {
+            rows,
+            schema: schema.to_string(),
+            pretty,
+            root: root.to_string(),
+            row_tag: row_tag.to_string(),
+        })
+    }
+
+    pub fn delimited_config(rows: usize, schema: &str, delimiter: u8) -> GeneratorConfig {
+        config(FormatOptions::Delimited {
+            rows,
+            schema: schema.to_string(),
+            delimiter,
+        })
+    }
+
+    pub fn sql_config(rows: usize, schema: &str, table: &str) -> GeneratorConfig {
+        config(FormatOptions::Sql {
+            rows,
+            schema: schema.to_string(),
+            table: table.to_string(),
+        })
+    }
+
+    pub fn text_config(paragraphs: usize, words: usize) -> GeneratorConfig {
+        config(FormatOptions::Text { paragraphs, words })
+    }
+
+    pub fn markdown_config(paragraphs: usize, headings: usize) -> GeneratorConfig {
+        config(FormatOptions::Markdown {
+            paragraphs,
+            headings,
+        })
+    }
+
+    pub fn log_config(lines: usize, style: &str) -> GeneratorConfig {
+        config(FormatOptions::Log {
+            lines,
+            style: style.to_string(),
+        })
+    }
+
+    pub fn keyvalue_config(sections: usize, keys: usize, env_style: bool) -> GeneratorConfig {
+        config(FormatOptions::KeyValue {
+            sections,
+            keys,
+            env_style,
+        })
+    }
+
+    pub fn svg_config(width: u32, height: u32, shapes: usize) -> GeneratorConfig {
+        config(FormatOptions::Svg {
+            width,
+            height,
+            shapes,
+        })
+    }
+
+    pub fn image_config(
+        width: u32,
+        height: u32,
+        pattern: ImagePattern,
+        frames: u32,
+    ) -> GeneratorConfig {
+        config(FormatOptions::Image {
+            width,
+            height,
+            pattern,
+            frames,
+        })
+    }
+
+    pub fn audio_config(duration: f32, sample_rate: u32, tone: ToneType) -> GeneratorConfig {
+        config(FormatOptions::Audio {
+            duration,
+            sample_rate,
+            tone,
+        })
+    }
+
+    pub fn video_config(duration: f32, width: u32, height: u32, fps: u32) -> GeneratorConfig {
+        config(FormatOptions::Video {
+            duration,
+            width,
+            height,
+            fps,
+        })
+    }
+
+    pub fn binary_config(size: usize) -> GeneratorConfig {
+        config(FormatOptions::Binary { size })
+    }
+
+    pub fn zip_config(
+        file_count: usize,
+        contained_format: &str,
+        compression_level: u32,
+    ) -> GeneratorConfig {
+        config(FormatOptions::Zip {
+            file_count,
+            contained_format: contained_format.to_string(),
+            compression_level,
+        })
     }
 }
 

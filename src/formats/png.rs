@@ -57,7 +57,10 @@ pub fn generate_image_buffer<R: Rng>(
                 let color = Rgba([rng.gen(), rng.gen(), rng.gen(), 200u8]);
                 let cx = rng.gen_range(0..width);
                 let cy = rng.gen_range(0..height);
-                let size = rng.gen_range(10..width.min(height) / 3 + 1);
+                // Clamp the size range so small images never form an empty
+                // range (which would panic in `gen_range`).
+                let max_size = (width.min(height) / 3).max(8);
+                let size = rng.gen_range(4..=max_size);
 
                 if rng.gen_bool(0.5) {
                     // Rectangle
@@ -161,6 +164,7 @@ mod tests {
             index: 0,
             overwrite: false,
             rng: ChaCha8Rng::seed_from_u64(42),
+            locale: crate::data::Locale::EnUs,
             format_options: FormatOptions::Image {
                 width,
                 height,

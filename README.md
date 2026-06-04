@@ -1,25 +1,30 @@
 # demodatagen
 
-A fast, offline CLI tool for generating realistic demo files in **16+ formats**.
+A fast, offline CLI **and library** for generating realistic demo files in **33 formats**.
 
-Built in Rust for maximum performance, with parallel batch generation, deterministic seeding, and zero external service dependencies.
+Built in Rust for maximum performance, with a typed schema engine, locale-aware
+fake data, parallel batch generation, deterministic seeding, and zero external
+service dependencies.
 
 ## Features
 
-| Category            | Formats                        |
-| ------------------- | ------------------------------ |
-| **Structured data** | JSON, XML, CSV                 |
-| **Text**            | Plain text (TXT), Markdown     |
-| **Images**          | PNG, JPG, WebP, GIF (animated) |
-| **Audio**           | MP3                            |
-| **Video**           | MP4, WebM                      |
-| **Binary stubs**    | EXE (PE), DLL (PE)             |
-| **Archives**        | ZIP                            |
+| Category              | Formats                                     |
+| --------------------- | ------------------------------------------- |
+| **Structured data**   | JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL |
+| **Text & config**     | TXT, Markdown, HTML, LOG, INI, ENV          |
+| **Images**            | PNG, JPG, WebP, BMP, TIFF, ICO, GIF, SVG    |
+| **Audio & video**     | MP3, WAV, MP4, WebM                         |
+| **Documents**         | PDF, XLSX                                   |
+| **Binary & archives** | EXE, DLL, ZIP, TAR, GZIP                    |
 
-- **Realistic fake data** – names, emails, addresses, UUIDs, dates, and more via a built-in faker engine
+- **Typed schema engine** – ranges, enums, sequences, arrays, nullable fields
+- **~50 fake-data types** – names, emails, UUIDs, IBANs, credit cards, geo, and more
+- **Locale-aware** – `en_us` and `de_de` for region-appropriate data
 - **Deterministic output** – pass `--seed` for reproducible results
 - **Parallel batch generation** – uses all CPU cores via Rayon with progress bars
-- **Pattern-based filenames** – `{n}` placeholder for file index
+- **Real, valid files** – WAV plays, PDF opens, XLSX loads in Excel, archives extract
+- **Library or CLI** – embed the engine in your own Rust code
+- **Shell completions & `list`** – first-class CLI ergonomics
 - **Self-update** – checks GitHub Releases for new versions
 
 ## Installation
@@ -35,11 +40,13 @@ cargo install --path .
 Download the latest release for your platform from [GitHub Releases](https://github.com/user/demodatagen/releases), then:
 
 **Linux / macOS:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/user/demodatagen/main/install.sh | bash
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 iwr -useb https://raw.githubusercontent.com/user/demodatagen/main/install.ps1 | iex
 ```
@@ -47,232 +54,244 @@ iwr -useb https://raw.githubusercontent.com/user/demodatagen/main/install.ps1 | 
 ### Docker
 
 ```bash
-docker run --rm -v "$PWD/output:/output" ghcr.io/user/demodatagen json --schema "name:name,age:integer" --rows 10
+docker run --rm -v "$PWD/output:/output" ghcr.io/user/demodatagen json --schema "name:name,age:int" --rows 10
+```
+
+## Quick start
+
+```bash
+# 100 JSON files of fake users
+demodatagen -c 100 -o ./data json --schema "id:sequence,name:name,email:email" --rows 50
+
+# A SQL seed script
+demodatagen sql --table users --rows 1000 --schema "id:sequence,name:name,age:int(18..90),active:bool"
+
+# German test data, streamed to stdout
+demodatagen --locale de_de --stdout csv --rows 20 --schema "name:name,city:city,iban:iban"
+
+# See everything on offer
+demodatagen list
 ```
 
 ## Usage
 
-```
+```text
 demodatagen [OPTIONS] <COMMAND>
 ```
 
 ### Global options
 
-| Flag                   | Short | Description                       | Default    |
-| ---------------------- | ----- | --------------------------------- | ---------- |
-| `--output-dir <DIR>`   | `-o`  | Output directory                  | `./output` |
-| `--count <N>`          | `-c`  | Number of files to generate       | `1`        |
-| `--seed <N>`           | `-s`  | RNG seed for reproducibility      | random     |
-| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)  | `demo_{n}` |
-| `--overwrite`          |       | Overwrite existing files          | `false`    |
-| `--quiet`              |       | Suppress all output except errors | `false`    |
-| `--verbose`            |       | Enable debug logging              | `false`    |
-| `--skip-update`        |       | Skip update check                 | `false`    |
-| `--check-update`       |       | Only check for updates            | `false`    |
+| Flag                   | Short | Description                              | Default    |
+| ---------------------- | ----- | ---------------------------------------- | ---------- |
+| `--output-dir <DIR>`   | `-o`  | Output directory                         | `./output` |
+| `--count <N>`          | `-c`  | Number of files to generate              | `1`        |
+| `--seed <N>`           | `-s`  | RNG seed for reproducibility             | random     |
+| `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`)           | `en_us`    |
+| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)         | `demo_{n}` |
+| `--stdout`             |       | Write one file to stdout instead of disk | `false`    |
+| `--overwrite`          |       | Overwrite existing files                 | `false`    |
+| `--quiet`              |       | Suppress all output except errors        | `false`    |
+| `--verbose`            |       | Enable debug logging                     | `false`    |
 
 ### Structured data
 
-#### JSON
 ```bash
-demodatagen json --schema "name:name,email:email,age:integer" --rows 100
+demodatagen json  --schema "name:name,email:email,age:int(18..65)" --rows 100 --pretty
+demodatagen jsonl --schema "id:sequence,event:enum(click,view,buy)" --rows 1000
+demodatagen yaml  --schema "id:sequence,name:name" --rows 20
+demodatagen toml  --schema "host:domain,port:int(1024..65535)" --rows 5
+demodatagen xml   --schema "user:name,score:float" --rows 50 --root users --row-tag user --pretty
+demodatagen csv   --schema "first:first_name,last:last_name,email:email" --rows 200 --delimiter ";"
+demodatagen tsv   --schema "a:int,b:float" --rows 50
+demodatagen sql   --schema "id:sequence,name:name,price:price(1..999)" --rows 100 --table products
 ```
 
-Options: `--schema`, `--rows`, `--pretty`
+### Text & config
 
-#### XML
 ```bash
-demodatagen xml --schema "user:name,score:float" --rows 50 --root "users" --row-tag "user"
-```
-
-Options: `--schema`, `--rows`, `--root`, `--row-tag`, `--compact`
-
-#### CSV
-```bash
-demodatagen csv --schema "first:name,last:name,email:email" --rows 200
-```
-
-Options: `--schema`, `--rows`, `--delimiter`
-
-### Text
-
-#### Plain text
-```bash
-demodatagen txt --paragraphs 5
-```
-
-Options: `--paragraphs`, `--words`
-
-#### Markdown
-```bash
+demodatagen txt      --paragraphs 5
 demodatagen markdown --sections 4 --paragraphs 3
+demodatagen html     --headings 4 --paragraphs 3
+demodatagen log      --lines 500 --style apache    # apache | syslog | json
+demodatagen ini      --sections 3 --keys 5
+demodatagen env      --keys 10
 ```
-
-Options: `--sections`, `--paragraphs`
 
 ### Images
 
-#### PNG
 ```bash
-demodatagen png --width 800 --height 600 --pattern gradient
-```
-
-Options: `--width`, `--height`, `--pattern` (noise | gradient | shapes | checkerboard)
-
-#### JPG
-```bash
-demodatagen jpg --width 1024 --height 768
-```
-
-Options: `--width`, `--height`, `--pattern`
-
-#### WebP
-```bash
+demodatagen png  --width 800 --height 600 --pattern gradient   # noise|gradient|shapes|checkerboard
+demodatagen jpg  --width 1024 --height 768
 demodatagen webp --width 512 --height 512 --pattern shapes
+demodatagen bmp  --width 256 --height 256
+demodatagen tiff --width 256 --height 256
+demodatagen ico  --size 64                                     # max 256
+demodatagen gif  --width 128 --height 128 --frames 10
+demodatagen svg  --width 400 --height 300 --shapes 30
 ```
 
-Options: `--width`, `--height`, `--pattern`
+### Audio & video
 
-#### GIF (animated)
 ```bash
-demodatagen gif --width 128 --height 128 --frames 10
-```
-
-Options: `--width`, `--height`, `--pattern`, `--frames`
-
-### Audio
-
-#### MP3
-```bash
-demodatagen mp3 --duration 5 --tone sine --sample-rate 44100 --bitrate 128
-```
-
-Options: `--duration`, `--tone` (sine | noise | sweep), `--sample-rate`, `--bitrate`
-
-### Video
-
-#### MP4
-```bash
-demodatagen mp4 --width 320 --height 240 --duration 3 --fps 24
-```
-
-Options: `--width`, `--height`, `--duration`, `--fps`
-
-#### WebM
-```bash
+demodatagen mp3  --duration 5 --tone sine --sample-rate 44100  # sine|noise|sweep
+demodatagen wav  --duration 5 --tone sweep                     # real, playable PCM
+demodatagen mp4  --width 320 --height 240 --duration 3 --fps 24
 demodatagen webm --width 320 --height 240 --duration 2 --fps 30
 ```
 
-Options: `--width`, `--height`, `--duration`, `--fps`
+### Documents
 
-### Binary stubs
-
-#### EXE
 ```bash
-demodatagen exe --size 8192
+demodatagen pdf  --headings 4 --paragraphs 8                   # valid, multi-page PDF
+demodatagen xlsx --schema "id:sequence,name:name,total:price(1..999)" --rows 50 --sheet Sales
 ```
 
-Options: `--size`
+### Binary & archives
 
-#### DLL
 ```bash
-demodatagen dll --size 8192
+demodatagen exe  --size 8192
+demodatagen dll  --size 8192
+demodatagen zip  --files 10 --contained-format csv --compression-level 6
+demodatagen tar  --files 10 --contained-format json
+demodatagen gzip --paragraphs 20
 ```
 
-Options: `--size`
+## Schema syntax
 
-### Archives
+The `--schema` option accepts `field:type` pairs separated by commas. A type may
+carry arguments in parentheses and a trailing `?` for nullability:
 
-#### ZIP
-```bash
-demodatagen zip --files 10 --format csv --compression 6
+```text
+id:sequence              # 1, 2, 3, … per row
+id:sequence(100)         # start at 100
+age:int(18..65)          # bounded integer
+score:float(0..1)        # bounded float
+price:price(0..999)      # money, 2 decimals
+status:enum(new,paid)    # pick one at random
+country:const(DE)        # fixed value
+tags:array(word,3)       # array of 3 words
+phone:phone?             # ~10% chance of null
+note:sentence?0.5        # 50% chance of null
 ```
 
-Options: `--files`, `--format`, `--compression`
+### Field types
+
+| Group         | Types                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| **Numeric**   | `int`, `float`, `price`, `age`, `year`, `latitude`, `longitude`, `timestamp`                 |
+| **Boolean**   | `bool`                                                                                       |
+| **People**    | `name`, `first_name`, `last_name`, `username`, `gender`, `password`                          |
+| **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`                 |
+| **Business**  | `company`, `job`, `department`, `product`, `sku`, `currency`, `iban`, `credit_card`, `isbn`  |
+| **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`                         |
+| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`                                        |
+| **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                               |
+| **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                  |
+| **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable) |
+
+Run `demodatagen list` for the full catalogue. Unknown types degrade gracefully
+to a generic word rather than failing.
+
+## Locales
+
+`--locale de_de` switches names, addresses, cities, regions, and company forms to
+German equivalents (emails and usernames are transliterated to ASCII):
+
+```bash
+demodatagen --locale de_de json --schema "name:name,city:city,company:company" --rows 3
+```
 
 ## Batch generation
 
-Generate multiple files at once using `-c`:
+Generate multiple files at once with `-c`:
 
 ```bash
 demodatagen -c 100 -o ./data -n "user_{n}" json --schema "id:uuid,name:name" --rows 50
 ```
 
-This creates 100 JSON files (`user_0.json` through `user_99.json`) in `./data/`, all generated in parallel.
+This creates 100 JSON files (`user_0.json` … `user_99.json`) in `./data/`, all
+generated in parallel across CPU cores.
 
-## Schema types
+## Shell completions
 
-The `--schema` option accepts `field:type` pairs separated by commas:
+```bash
+demodatagen completions bash > /etc/bash_completion.d/demodatagen
+demodatagen completions zsh  > ~/.zfunc/_demodatagen
+```
 
-| Type         | Example output                            |
-| ------------ | ----------------------------------------- |
-| `name`       | `"Alice Johnson"`                         |
-| `first_name` | `"Alice"`                                 |
-| `last_name`  | `"Johnson"`                               |
-| `email`      | `"alice@example.com"`                     |
-| `integer`    | `42`                                      |
-| `float`      | `3.14`                                    |
-| `boolean`    | `true`                                    |
-| `date`       | `"2024-03-15"`                            |
-| `datetime`   | `"2024-03-15T14:30:00Z"`                  |
-| `phone`      | `"+1-555-0123"`                           |
-| `address`    | `"123 Oak Street, Springfield, IL 62701"` |
-| `company`    | `"Tech Solutions Inc."`                   |
-| `url`        | `"https://example.com/page"`              |
-| `uuid`       | `"550e8400-e29b-41d4-a716-446655440000"`  |
-| `ipv4`       | `"192.168.1.42"`                          |
+Supported shells: `bash`, `zsh`, `fish`, `powershell`, `elvish`.
+
+## Library usage
+
+`demodatagen` is also a library:
+
+```rust
+use demodatagen::core::batch::{run_batch, BatchConfig};
+use demodatagen::core::generator::FormatOptions;
+use demodatagen::data::Locale;
+use demodatagen::formats::get_generator;
+use std::path::PathBuf;
+
+let generator = get_generator("json").unwrap();
+let config = BatchConfig {
+    output_dir: PathBuf::from("./output"),
+    count: 3,
+    name_pattern: "demo_{n}".into(),
+    extension: generator.file_extension().to_string(),
+    overwrite: true,
+    seed: Some(42),
+    quiet: true,
+    locale: Locale::EnUs,
+    format_options: FormatOptions::StructuredData {
+        rows: 10,
+        schema: "id:sequence,name:name,email:email".into(),
+        pretty: true,
+    },
+};
+let paths = run_batch(generator.as_ref(), &config).unwrap();
+```
+
+You can also drive the schema engine directly:
+
+```rust
+use demodatagen::data::{Locale, Schema};
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
+
+let schema = Schema::parse("id:sequence,name:name,age:int(18..65)").unwrap();
+let mut rng = ChaCha8Rng::seed_from_u64(42);
+let records = schema.generate_records(&mut rng, Locale::EnUs, 100);
+```
 
 ## Project structure
 
-```
+```text
 src/
-├── main.rs            # Entry point
+├── main.rs            # Thin binary entry point
+├── lib.rs             # Library root (public API)
+├── app.rs             # CLI orchestration (parse → generate)
 ├── error.rs           # Error types (AppError, GenerationError)
-├── cli/
-│   └── mod.rs         # CLI argument parsing (clap)
+├── cli/               # clap argument definitions, `list`, completions
 ├── core/
-│   ├── generator.rs   # Generator trait & config
+│   ├── generator.rs   # Generator trait, FormatOptions, config
 │   └── batch.rs       # Parallel batch execution
 ├── data/
-│   ├── faker.rs       # Fake data generation
+│   ├── schema.rs      # Typed schema engine (FieldValue, Schema)
+│   ├── faker.rs       # Fake-data generators
+│   ├── locale.rs      # Locale data pools (en_us, de_de)
 │   └── lorem.rs       # Lorem ipsum text
-├── formats/
-│   ├── mod.rs         # Format registry
-│   ├── json.rs        # JSON generator
-│   ├── xml.rs         # XML generator
-│   ├── csv.rs         # CSV generator
-│   ├── txt.rs         # Plain text generator
-│   ├── markdown.rs    # Markdown generator
-│   ├── png.rs         # PNG generator (shared image buffer)
-│   ├── jpg.rs         # JPG generator
-│   ├── webp.rs        # WebP generator
-│   ├── gif.rs         # Animated GIF generator
-│   ├── mp3.rs         # MP3 generator
-│   ├── mp4.rs         # MP4 generator
-│   ├── webm.rs        # WebM generator
-│   ├── exe.rs         # PE/EXE stub generator
-│   ├── dll.rs         # PE/DLL stub generator
-│   └── zip.rs         # ZIP archive generator
-└── update/
-    └── mod.rs         # Self-update via GitHub Releases
+├── formats/           # One module per format (33 generators)
+└── update/            # Self-update via GitHub Releases
 ```
 
 ## Development
 
 ```bash
-# Build
-cargo build
-
-# Run tests
-cargo test
-
-# Run with verbose logging
+cargo build              # Build
+cargo test               # Run all tests (unit + integration + property)
+cargo clippy --all-targets   # Lint
+cargo fmt                # Format
 RUST_LOG=debug cargo run -- json --schema "name:name" --rows 5
-
-# Format code
-cargo fmt
-
-# Lint
-cargo clippy
 ```
 
 ## License
