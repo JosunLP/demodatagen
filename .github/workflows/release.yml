@@ -13,6 +13,7 @@ jobs:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
@@ -21,6 +22,14 @@ jobs:
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             archive: tar.gz
+            musl: true
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            archive: tar.gz
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+            archive: tar.gz
+            musl: true
           - target: x86_64-apple-darwin
             os: macos-latest
             archive: tar.gz
@@ -39,48 +48,54 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install musl tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get install -y musl-tools
+        if: matrix.musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
       - name: Package (Unix)
         if: matrix.archive == 'tar.gz'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../demodatagen-${{ github.ref_name }}-${{ matrix.target }}.tar.gz demodatagen
-          cd ../../..
+          tar czf "$GITHUB_WORKSPACE/demodatagen-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" demodatagen
+          cd "$GITHUB_WORKSPACE"
 
       - name: Package (Windows)
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
           Compress-Archive -Path target/${{ matrix.target }}/release/demodatagen.exe `
-            -DestinationPath demodatagen-${{ env.TAG }}-${{ matrix.target }}.zip
-        env:
-          TAG: ${{ github.ref_name }}
+            -DestinationPath "demodatagen-${{ github.ref_name }}-${{ matrix.target }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: demodatagen-${{ matrix.target }}
           path: demodatagen-*.*
+          if-no-files-found: error
 
   release:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd artifacts
+          sha256sum demodatagen-* > SHA256SUMS
+          echo "── checksums ──"
+          cat SHA256SUMS
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

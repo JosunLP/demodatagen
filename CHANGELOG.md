@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-04
+
+Distribution overhaul: hardened install/update/uninstall mechanisms, checksummed
+releases for more platforms, and CI/build fixes.
+
+### Added
+
+- **`demodatagen update --tag <vX.Y.Z>`** to update (or downgrade) to a specific
+  release; `update` now runs non-interactively with a download progress bar.
+- **Checksum-verifying installers.** `install.sh` and `install.ps1` download the
+  release `SHA256SUMS` and verify the archive's SHA-256 before installing.
+- **`install.sh` rewrite**: musl-vs-glibc detection, `curl` *or* `wget`, non-root
+  fallback to `~/.local/bin` (sudo only when needed), automatic `PATH` setup,
+  post-install run check, and flags `--version/--bin-dir/--prefix/--repo/`
+  `--no-modify-path/--force/--quiet`.
+- **`uninstall.sh` rewrite**: locates installs across common dirs and `PATH`,
+  removes installer-added `PATH` entries, and `--purge` for config/cache/data.
+- **PowerShell scripts rewrite**: arch awareness, checksum verification, user +
+  current-session `PATH` updates, TLS 1.2, and `-Version/-InstallDir/-Force/`
+  `-Quiet/-NoModifyPath/-Purge` flags.
+- **Release binaries for aarch64 Linux** (gnu + musl) on native ARM runners, and
+  a published `SHA256SUMS` file. Builds now use `--locked`.
+- Semver-aware update checks (`0.10.0` correctly newer than `0.9.0`) that degrade
+  gracefully when offline or when no releases exist.
+
+### Changed
+
+- `self_update` now uses **rustls** instead of native-tls, so static musl builds
+  no longer require OpenSSL.
+
+### Fixed
+
+- Corrected the placeholder repository (`youruser`/`user` → `j-pfalzgraf`) in the
+  self-update module, both install scripts, both uninstall scripts, and
+  `Cargo.toml` — self-update and the install scripts now target the real repo.
+- Pinned the transitive `time` crate to `0.3.36` so the `rust:1.86` Docker builder
+  (and the declared MSRV) keeps compiling (newer `time` requires rustc 1.88).
+
 ## [0.2.0] - 2026-06-04
 
 A major expansion: **33 format generators** (up from 15), a typed schema engine,

@@ -1,11 +1,11 @@
 [package]
 name = "demodatagen"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.86"
 description = "A fast, offline CLI and library for generating realistic demo files in 33 formats"
 license = "MIT"
-repository = "https://github.com/youruser/demodatagen"
+repository = "https://github.com/j-pfalzgraf/demodatagen"
 readme = "README.md"
 keywords = ["demo", "generator", "cli", "test-data"]
 categories = ["command-line-utilities", "development-tools::testing"]

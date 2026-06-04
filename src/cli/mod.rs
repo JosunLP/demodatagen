@@ -470,8 +470,12 @@ pub enum FormatCommand {
         shell: Shell,
     },
 
-    /// Update the installed `demodatagen` binary to the latest GitHub release.
-    Update,
+    /// Update the installed `demodatagen` binary from GitHub releases.
+    Update {
+        /// Update to a specific release tag (e.g. `v0.2.0`) instead of latest.
+        #[arg(long)]
+        tag: Option<String>,
+    },
 }
 
 /// Prints shell completions for the given shell to stdout.
@@ -647,7 +651,16 @@ mod tests {
     #[test]
     fn test_cli_parse_update() {
         let cli = Cli::parse_from(["demodatagen", "update"]);
-        assert!(matches!(cli.command, FormatCommand::Update));
+        assert!(matches!(cli.command, FormatCommand::Update { tag: None }));
+    }
+
+    #[test]
+    fn test_cli_parse_update_tag() {
+        let cli = Cli::parse_from(["demodatagen", "update", "--tag", "v0.2.0"]);
+        match cli.command {
+            FormatCommand::Update { tag } => assert_eq!(tag.as_deref(), Some("v0.2.0")),
+            _ => panic!("Expected Update command"),
+        }
     }
 
     #[test]

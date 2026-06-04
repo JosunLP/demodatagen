@@ -29,15 +29,15 @@ fn check_for_update() -> AppResult<bool> {
     Err(AppError::Update(UPDATE_DISABLED_MESSAGE.to_string()))
 }
 
-/// Performs a self-update when the feature is enabled.
+/// Performs a self-update when the feature is enabled, optionally to a tag.
 #[cfg(feature = "update")]
-fn perform_update() -> AppResult<()> {
-    crate::update::perform_update()
+fn perform_update(tag: Option<&str>) -> AppResult<()> {
+    crate::update::update_to(tag)
 }
 
 /// Reports that self-update is unavailable in this build.
 #[cfg(not(feature = "update"))]
-fn perform_update() -> AppResult<()> {
+fn perform_update(_tag: Option<&str>) -> AppResult<()> {
     Err(AppError::Update(UPDATE_DISABLED_MESSAGE.to_string()))
 }
 
@@ -83,8 +83,8 @@ fn dispatch(cli: Cli) -> AppResult<i32> {
         };
     }
 
-    if matches!(&cli.command, FormatCommand::Update) {
-        return match perform_update() {
+    if let FormatCommand::Update { tag } = &cli.command {
+        return match perform_update(tag.as_deref()) {
             Ok(()) => Ok(0),
             Err(e) => {
                 error!("Update failed: {e}");
@@ -442,7 +442,7 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "gz",
         ),
-        FormatCommand::Update | FormatCommand::List | FormatCommand::Completions { .. } => {
+        FormatCommand::Update { .. } | FormatCommand::List | FormatCommand::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }
     };

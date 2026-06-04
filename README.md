@@ -37,24 +37,44 @@ cargo install --path .
 
 ### Pre-built binaries
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/user/demodatagen/releases), then:
+The install scripts auto-detect your OS/arch (incl. musl vs glibc on Linux),
+**verify the release SHA-256 checksum**, install the binary, and add it to your
+`PATH`.
 
 **Linux / macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/user/demodatagen/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.sh | bash
 ```
+
+Options (run the downloaded script directly): `--version vX.Y.Z`, `--bin-dir DIR`,
+`--prefix DIR`, `--no-modify-path`, `--force`, `--quiet`. Without root it installs
+to `~/.local/bin`. Remove with `./uninstall.sh` (`--purge` also clears config/cache).
 
 **Windows (PowerShell):**
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/user/demodatagen/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.ps1 | iex
+```
+
+Options: `-Version v0.3.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
+Remove with `.\uninstall.ps1` (`-Purge` to also clear data).
+
+Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
+(x86_64/aarch64), and Windows (x86_64) on [GitHub Releases](https://github.com/j-pfalzgraf/demodatagen/releases).
+
+### Self-update
+
+```bash
+demodatagen update            # update to the latest release
+demodatagen update --tag v0.3.0   # update (or downgrade) to a specific tag
+demodatagen --check-update    # report whether an update is available
 ```
 
 ### Docker
 
 ```bash
-docker run --rm -v "$PWD/output:/output" ghcr.io/user/demodatagen json --schema "name:name,age:int" --rows 10
+docker run --rm -v "$PWD/output:/output" ghcr.io/j-pfalzgraf/demodatagen json --schema "name:name,age:int" --rows 10
 ```
 
 ## Quick start
