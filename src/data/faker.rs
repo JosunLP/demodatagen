@@ -1193,7 +1193,7 @@ mod tests {
             }
             sum += v;
         }
-        sum % 10 == 0
+        sum.is_multiple_of(10)
     }
 
     #[test]
