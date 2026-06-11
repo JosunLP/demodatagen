@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`demodatagen` is a Rust **CLI and library** that generates realistic demo files in 33 formats (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, PDF, XLSX, PNG, WAV, MP4, ZIP, TAR, …). It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
+`demodatagen` is a Rust **CLI and library** that generates realistic demo files in 33 formats (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, PDF, XLSX, PNG, WAV, MP4, ZIP, TAR, …) across **10 data locales**, with a **fully internationalized interface** (English/German/French/Spanish) and an animated terminal UI. It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
 
 ## Architecture
 
@@ -15,10 +15,13 @@ The codebase builds as both a library (`src/lib.rs`) and a thin binary (`src/mai
    - `batch.rs` — Parallel batch execution via `rayon` with `indicatif` progress bars. Includes path-traversal validation.
 4. **`src/data/`** — Format-agnostic building blocks:
    - `schema.rs` — **The typed schema engine.** `Schema::parse()` → `Vec<FieldSpec>`; `generate_records()` → `Vec<Record>` of typed `FieldValue`s. Supports ranges `int(1..9)`, `enum(...)`, `const(...)`, `sequence(n)`, `array(t,n)`, and nullable `type?p`.
-   - `faker.rs` — ~50 procedural fake-data generators, locale-aware.
-   - `locale.rs` — `Locale` enum (`EnUs`, `DeDe`) + static data pools.
+   - `faker.rs` — 60+ procedural fake-data generators, locale-aware.
+   - `locale/` — `Locale` enum + `LocaleData` struct, generated from a `define_locales!` table in `mod.rs`; one data module per locale (`en_us.rs`, `de_de.rs`, …, 10 total).
    - `lorem.rs` — Lorem ipsum text generation.
-5. **`src/formats/`** — One module per format, each implementing `Generator`. Registry in `mod.rs::get_generator()` maps format keys to boxed generators.
+5. **`src/formats/`** — One module per format, each implementing `Generator`. Registry in `mod.rs::get_generator()` maps format keys to boxed generators; `FORMAT_GROUPS` is the canonical catalogue used by `list`, the banner, and tests.
+6. **`src/i18n/`** — Interface translations. One `catalog!` table holds every user-facing string in `en`/`de`/`fr`/`es`; `Language::detect()` resolves `--lang`/env/default; `tr!(lang, key, "name" => val)` fills `{placeholder}` templates. A missing translation is a **compile error**.
+7. **`src/ui/`** — The only module that touches `console` styling and `indicatif` progress. Banner, animated progress (spinner for one file, bar for many), and styled summaries. **All status output goes to stderr** so `--stdout` stays clean. Honors `NO_COLOR` / `--color`.
+8. **`src/cli/args.rs`** — Reusable argument groups (`DataArgs`, `ImageArgs`, `AudioArgs`, `VideoArgs`, `DocArgs`, `TextArgs`) pulled into subcommands via `#[command(flatten)]`; each owns its `FormatOptions` mapping.
 
 **Data flow:** `main.rs` → `app::run()` parses CLI → `resolve_format()` builds `FormatOptions` + key → `get_generator()` → `run_batch()` → rayon parallel iter → per-file `Generator::generate()` returns `Vec<u8>` → written to disk.
 
@@ -59,13 +62,21 @@ cargo fmt                          # Format (CI enforces --check)
 - **FormatOptions:** Always pattern-match the expected variant in `generate()` and return `GenerationError::InvalidConfig` for mismatches.
 - **Tests:** Unit tests in `#[cfg(test)] mod tests` using `test_support` constructors; property tests with `proptest`; integration tests in `tests/` use `assert_cmd` + `tempfile`. Validate real files by magic bytes / round-trip parsing.
 - **Doc comments:** Every public item has a `///` doc comment; modules use `//!`.
+- **i18n:** Never hard-code user-facing strings. Add a key to the `catalog!` in `src/i18n/mod.rs` (with all four translations — a gap is a compile error) and emit it via `tr!(lang, key, "name" => val)`. Thread `Language` through call sites; don't reach for a global.
+- **UI/output:** Render status through `crate::ui` (which writes to **stderr**); keep stdout for `--stdout` data only. Don't `println!` status messages. Use `log::debug!` for diagnostics, never for user-facing output.
 - **Feature flags:** The `update` feature (default-enabled) gates self-update.
+
+## Adding a Locale or Interface Language
+
+- **Data locale:** add `src/data/locale/<id>.rs` with a `pub static <ID>: LocaleData = …`, declare `mod <id>;`, and add one row to the `define_locales!` table in `src/data/locale/mod.rs`. The enum, parser, `data()`, `all()`, and `label()` are all generated from that table.
+- **Interface language:** add a variant to `Language` (enum, `catalog()`, `as_str()`, `label()`, `variants()`, `all()`, `FromStr`) and a `<lang>:` arm to every entry of the `catalog!` table.
 
 ## Key Dependencies
 
 | Crate | Purpose |
 |-------|---------|
 | `clap` + `clap_complete` | CLI parsing & shell completions |
+| `indicatif` + `console` | Animated progress bars & terminal styling/color |
 | `rayon` | Parallel batch generation |
 | `rand` + `rand_chacha` | Deterministic RNG |
 | `image` | PNG/JPG/WebP/BMP/TIFF/ICO/GIF generation |

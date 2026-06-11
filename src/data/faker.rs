@@ -84,14 +84,17 @@ pub fn phone<R: Rng>(rng: &mut R, locale: Locale) -> String {
 }
 
 /// Generates a street address line (number + street name).
+///
+/// The number/street order follows the locale's
+/// [`street_number_first`](crate::data::locale::LocaleData::street_number_first)
+/// convention (e.g. "12 Main St" vs "Hauptstraße 12").
 pub fn street<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let number: u32 = rng.gen_range(1..9999);
     let street = pick(rng, locale.data().streets);
-    // German convention puts the house number after the street name.
-    if locale == Locale::DeDe {
-        format!("{street} {number}")
-    } else {
+    if locale.data().street_number_first {
         format!("{number} {street}")
+    } else {
+        format!("{street} {number}")
     }
 }
 
@@ -115,21 +118,67 @@ pub fn country_code(locale: Locale) -> &'static str {
     locale.data().country_code
 }
 
-/// Generates a postal code appropriate for the locale (5 digits).
-pub fn zipcode<R: Rng>(rng: &mut R, _locale: Locale) -> String {
-    format!("{:05}", rng.gen_range(1000..99999u32))
+/// Generates a postal code in a format plausible for the locale's country.
+///
+/// Falls back to a generic five-digit code for countries without a special
+/// case. Codes are illustrative only — they are not guaranteed to be assigned.
+pub fn zipcode<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let upper = |rng: &mut R| (b'A' + rng.gen_range(0..26u8)) as char;
+    match locale.data().country_code {
+        // "1234 AB"
+        "NL" => format!(
+            "{:04} {}{}",
+            rng.gen_range(1000..9999u32),
+            upper(rng),
+            upper(rng)
+        ),
+        // "123 45"
+        "SE" => format!(
+            "{:03} {:02}",
+            rng.gen_range(100..999u32),
+            rng.gen_range(0..99u32)
+        ),
+        // "12-345"
+        "PL" => format!(
+            "{:02}-{:03}",
+            rng.gen_range(0..99u32),
+            rng.gen_range(0..999u32)
+        ),
+        // "SW1 9AA"
+        "GB" => format!(
+            "{}{}{} {}{}{}",
+            upper(rng),
+            upper(rng),
+            rng.gen_range(1..99u32),
+            rng.gen_range(1..9u32),
+            upper(rng),
+            upper(rng)
+        ),
+        // "12345-678"
+        "BR" => format!(
+            "{:05}-{:03}",
+            rng.gen_range(1000..99999u32),
+            rng.gen_range(0..999u32)
+        ),
+        // Generic five-digit (US, DE, FR, ES, IT, …)
+        _ => format!("{:05}", rng.gen_range(1000..99999u32)),
+    }
 }
 
 /// Generates a full street address: street, city, region, postcode, country.
+///
+/// The component order follows the locale's house-number convention: countries
+/// that write the number first (US/UK/FR) use "street, city, region zip";
+/// number-last countries (DE/IT/ES/…) use "street, zip city, region".
 pub fn address<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let s = street(rng, locale);
     let city = city(rng, locale);
     let zip = zipcode(rng, locale);
     let state = state(rng, locale);
-    if locale == Locale::DeDe {
-        format!("{s}, {zip} {city}, {state}")
-    } else {
+    if locale.data().street_number_first {
         format!("{s}, {city}, {state} {zip}")
+    } else {
+        format!("{s}, {zip} {city}, {state}")
     }
 }
 
@@ -309,6 +358,91 @@ pub fn user_agent<R: Rng>(rng: &mut R) -> &'static str {
 }
 
 // ---------------------------------------------------------------------------
+// Identifiers, tokens & web
+// ---------------------------------------------------------------------------
+
+/// Returns a common MIME / content type string.
+pub fn mime_type<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, MIME_TYPES)
+}
+
+/// Generates a filename with a plausible extension (e.g. `lorem_ipsum.pdf`).
+pub fn filename<R: Rng>(rng: &mut R) -> String {
+    let stem = (0..rng.gen_range(1..=3))
+        .map(|_| crate::data::lorem::word(rng))
+        .collect::<Vec<_>>()
+        .join("_");
+    format!("{stem}.{}", pick(rng, FILE_EXTENSIONS))
+}
+
+/// Generates a semantic-version string (`MAJOR.MINOR.PATCH`).
+pub fn semver<R: Rng>(rng: &mut R) -> String {
+    format!(
+        "{}.{}.{}",
+        rng.gen_range(0..10u32),
+        rng.gen_range(0..30u32),
+        rng.gen_range(0..50u32)
+    )
+}
+
+/// Generates a social-media style hashtag (e.g. `#LoremIpsum`).
+pub fn hashtag<R: Rng>(rng: &mut R) -> String {
+    let mut tag = String::from("#");
+    for _ in 0..rng.gen_range(1..=2) {
+        let word = crate::data::lorem::word(rng);
+        let mut chars = word.chars();
+        if let Some(first) = chars.next() {
+            tag.extend(first.to_uppercase());
+            tag.push_str(chars.as_str());
+        }
+    }
+    tag
+}
+
+/// Generates a base64-like token of 24 characters.
+pub fn base64_token<R: Rng>(rng: &mut R) -> String {
+    const CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    (0..24).map(|_| pick(rng, CHARS) as char).collect()
+}
+
+/// Generates a lowercase hexadecimal token of `len` (at least 1) characters.
+pub fn hex_token<R: Rng>(rng: &mut R, len: usize) -> String {
+    (0..len.max(1))
+        .map(|_| char::from_digit(rng.gen_range(0..16u32), 16).unwrap())
+        .collect()
+}
+
+/// Generates a US-style Social Security Number (synthetic — not a real SSN).
+pub fn ssn<R: Rng>(rng: &mut R) -> String {
+    format!(
+        "{:03}-{:02}-{:04}",
+        rng.gen_range(100..900u32),
+        rng.gen_range(10..99u32),
+        rng.gen_range(1..9999u32)
+    )
+}
+
+/// Returns a currency symbol.
+pub fn currency_symbol<R: Rng>(rng: &mut R) -> &'static str {
+    pick(rng, &["$", "€", "£", "¥", "₹", "₽", "₣", "¢", "₩", "R$"])
+}
+
+/// Generates a percentage value in `[0, 100]`, rounded to one decimal.
+pub fn percent<R: Rng>(rng: &mut R) -> f64 {
+    (rng.gen_range(0.0..=100.0f64) * 10.0).round() / 10.0
+}
+
+/// Generates a 1.0–5.0 star rating, rounded to one decimal.
+pub fn rating<R: Rng>(rng: &mut R) -> f64 {
+    (rng.gen_range(1.0..=5.0f64) * 10.0).round() / 10.0
+}
+
+/// Generates a TCP/UDP port in the registered/dynamic range (1024–65535).
+pub fn port<R: Rng>(rng: &mut R) -> i64 {
+    rng.gen_range(1024..=65535) as i64
+}
+
+// ---------------------------------------------------------------------------
 // Misc descriptive
 // ---------------------------------------------------------------------------
 
@@ -474,8 +608,13 @@ pub fn month<R: Rng>(rng: &mut R) -> &'static str {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Converts a name to a lowercase ASCII slug, transliterating common German
-/// umlauts so emails/usernames stay ASCII-safe.
+/// Converts a name to a lowercase ASCII slug so emails/usernames stay
+/// ASCII-safe across every locale.
+///
+/// German umlauts and ligatures expand to digraphs (`ä → ae`, `ß → ss`); other
+/// accented Latin letters are folded to their base letter via [`deburr`]. Any
+/// remaining non-ASCII-alphanumeric character is dropped. An empty result
+/// degrades to `"x"` so downstream formatting always has something to work with.
 fn ascii_slug(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for ch in s.chars() {
@@ -484,14 +623,45 @@ fn ascii_slug(s: &str) -> String {
             'ö' | 'Ö' => out.push_str("oe"),
             'ü' | 'Ü' => out.push_str("ue"),
             'ß' => out.push_str("ss"),
-            c if c.is_ascii_alphanumeric() => out.push(c.to_ascii_lowercase()),
-            _ => {}
+            'æ' | 'Æ' => out.push_str("ae"),
+            'œ' | 'Œ' => out.push_str("oe"),
+            other => {
+                if let Some(base) = deburr(other) {
+                    out.push(base);
+                } else if other.is_ascii_alphanumeric() {
+                    out.push(other.to_ascii_lowercase());
+                }
+            }
         }
     }
     if out.is_empty() {
         out.push('x');
     }
     out
+}
+
+/// Folds a single accented Latin letter to its lowercase ASCII base, covering
+/// the diacritics used by every supported locale (French, Spanish, Italian,
+/// Portuguese, Dutch, Polish, Swedish, …). Returns `None` for characters that
+/// have no single-letter ASCII equivalent.
+fn deburr(c: char) -> Option<char> {
+    Some(match c {
+        'à' | 'á' | 'â' | 'ã' | 'å' | 'ą' | 'À' | 'Á' | 'Â' | 'Ã' | 'Å' | 'Ą' => 'a',
+        'ç' | 'ć' | 'č' | 'Ç' | 'Ć' | 'Č' => 'c',
+        'ď' | 'Ď' => 'd',
+        'è' | 'é' | 'ê' | 'ë' | 'ę' | 'ě' | 'È' | 'É' | 'Ê' | 'Ë' | 'Ę' | 'Ě' => 'e',
+        'ì' | 'í' | 'î' | 'ï' | 'Ì' | 'Í' | 'Î' | 'Ï' => 'i',
+        'ł' | 'Ł' => 'l',
+        'ñ' | 'ń' | 'Ñ' | 'Ń' => 'n',
+        'ò' | 'ó' | 'ô' | 'õ' | 'ø' | 'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ø' => 'o',
+        'ř' | 'Ř' => 'r',
+        'ś' | 'š' | 'ş' | 'Ś' | 'Š' | 'Ş' => 's',
+        'ť' | 'Ť' => 't',
+        'ù' | 'ú' | 'û' | 'Ù' | 'Ú' | 'Û' => 'u',
+        'ý' | 'ÿ' | 'Ý' | 'Ÿ' => 'y',
+        'ż' | 'ź' | 'ž' | 'Ż' | 'Ź' | 'Ž' => 'z',
+        _ => return None,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -643,6 +813,30 @@ const USER_AGENTS: &[&str] = &[
     "curl/8.4.0",
 ];
 
+const MIME_TYPES: &[&str] = &[
+    "application/json",
+    "application/xml",
+    "application/pdf",
+    "application/zip",
+    "application/octet-stream",
+    "application/javascript",
+    "application/vnd.ms-excel",
+    "text/html",
+    "text/plain",
+    "text/csv",
+    "text/markdown",
+    "image/png",
+    "image/jpeg",
+    "image/svg+xml",
+    "audio/mpeg",
+    "video/mp4",
+];
+
+const FILE_EXTENSIONS: &[&str] = &[
+    "txt", "pdf", "csv", "json", "xml", "png", "jpg", "zip", "docx", "xlsx", "mp4", "mp3", "log",
+    "md", "html", "svg",
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -772,9 +966,30 @@ mod tests {
 
     #[test]
     fn test_ascii_slug_transliterates() {
+        // German digraph expansion.
         assert_eq!(ascii_slug("Müller"), "mueller");
         assert_eq!(ascii_slug("Weiß"), "weiss");
         assert_eq!(ascii_slug("Öztürk"), "oeztuerk");
+        // Generic Latin diacritic folding.
+        assert_eq!(ascii_slug("Łukasz"), "lukasz");
+        assert_eq!(ascii_slug("São"), "sao");
+        assert_eq!(ascii_slug("Niño"), "nino");
+        assert_eq!(ascii_slug("Sjöberg"), "sjoeberg"); // ö → oe even outside German names
+        assert_eq!(ascii_slug("François"), "francois");
+        // Non-alphanumeric is dropped; empty degrades to "x".
+        assert_eq!(ascii_slug("---"), "x");
+    }
+
+    #[test]
+    fn test_email_is_ascii_for_every_locale() {
+        let mut r = rng();
+        for locale in Locale::variants() {
+            for _ in 0..30 {
+                let e = email(&mut r, *locale);
+                assert!(e.is_ascii(), "{locale} produced non-ASCII email: {e}");
+                assert!(e.contains('@'));
+            }
+        }
     }
 
     #[test]

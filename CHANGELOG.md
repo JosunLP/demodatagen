@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-11
+
+A major quality-and-reach release: a fully internationalized interface, eight
+new data locales, an animated terminal UI, eleven new schema field types, and a
+substantial DRY/OOP refactor of the CLI and locale subsystems.
+
+### Added
+
+- **Internationalized interface** (`src/i18n`). All progress, summary, update,
+  and `list` output is now localized to **English, German, French, and Spanish**
+  via `--lang`, auto-detected from `DEMODATAGEN_LANG` / `LC_ALL` / `LC_MESSAGES`
+  / `LANG` / `LANGUAGE` and defaulting to English. A single declarative
+  `catalog!` table is the source of truth, so a missing translation is a compile
+  error; the `tr!` macro fills `{placeholder}` templates at call sites.
+- **8 new data locales** (10 total): `en_gb`, `fr_fr`, `es_es`, `it_it`,
+  `pt_br`, `nl_nl`, `pl_pl`, `sv_se` — each with authentic names, streets,
+  cities, regions, and legal-form company suffixes. Locale data now lives in
+  per-locale modules under `src/data/locale/`, registered via a `define_locales!`
+  macro (adding a locale is one file plus one table line).
+- **Animated, colorized terminal UI** (`src/ui`): a startup banner, an
+  indeterminate spinner for single files, a live progress bar with throughput
+  and ETA for batches, and styled success/partial/error summaries with total
+  bytes and elapsed time. Respects `NO_COLOR`; new `--color auto|always|never`.
+- **11 new schema field types**: `percent`, `rating`, `port`, `ssn`,
+  `currency_symbol`, `mime_type`, `filename`, `semver`, `hashtag`, `base64`,
+  and `hex(n)`.
+- **Locale-aware postal codes** — Dutch (`1234 AB`), Swedish (`123 45`), Polish
+  (`12-345`), UK (`SW1 9AA`), and Brazilian (`12345-678`) formats — plus
+  per-locale street-number ordering driven by locale data rather than hard-coded
+  country checks.
+- Short flags `-q` (`--quiet`) and `-v` (`--verbose`).
+
+### Changed
+
+- **DRY CLI refactor**: repeated subcommand parameters are now reusable argument
+  groups (`DataArgs`, `ImageArgs`, `AudioArgs`, `VideoArgs`, `DocArgs`,
+  `TextArgs`) flattened in via `#[command(flatten)]`, each owning its mapping to
+  `FormatOptions`. `resolve_format` shrank to one-liners per format.
+- ASCII transliteration broadened from German umlauts to all Latin diacritics
+  used by the supported locales, so every locale yields clean ASCII emails.
+- Status output and diagnostic logging are now cleanly separated: user-facing
+  text goes through the styled UI on stderr; `--verbose`/`RUST_LOG` controls
+  diagnostics only. `--stdout` keeps a pristine, pipeable byte stream.
+- Self-update messages are localized and routed through the UI.
+
+### Fixed
+
+- README documented `markdown --sections`; the flag is `--headings`.
+- Removed an unused `update::perform_update` helper.
+
 ## [0.3.0] - 2026-06-04
 
 Distribution overhaul: hardened install/update/uninstall mechanisms, checksummed

@@ -1,10 +1,11 @@
 # demodatagen
 
-A fast, offline CLI **and library** for generating realistic demo files in **33 formats**.
+A fast, offline, **fully internationalized** CLI **and library** for generating
+realistic demo files in **33 formats** across **10 data locales**.
 
 Built in Rust for maximum performance, with a typed schema engine, locale-aware
-fake data, parallel batch generation, deterministic seeding, and zero external
-service dependencies.
+fake data, parallel batch generation, deterministic seeding, animated terminal
+output, a four-language interface, and zero external service dependencies.
 
 ## Features
 
@@ -18,14 +19,20 @@ service dependencies.
 | **Binary & archives** | EXE, DLL, ZIP, TAR, GZIP                    |
 
 - **Typed schema engine** – ranges, enums, sequences, arrays, nullable fields
-- **~50 fake-data types** – names, emails, UUIDs, IBANs, credit cards, geo, and more
-- **Locale-aware** – `en_us` and `de_de` for region-appropriate data
-- **Deterministic output** – pass `--seed` for reproducible results
-- **Parallel batch generation** – uses all CPU cores via Rayon with progress bars
+- **60+ fake-data types** – names, emails, UUIDs, IBANs, credit cards, geo,
+  SSNs, MIME types, semver, hashtags, ports, ratings, and more
+- **10 data locales** – `en_us`, `en_gb`, `de_de`, `fr_fr`, `es_es`, `it_it`,
+  `pt_br`, `nl_nl`, `pl_pl`, `sv_se` for region-appropriate names, addresses,
+  postal-code formats, and company forms
+- **Internationalized interface** – messages in English, German, French, and
+  Spanish (`--lang`), auto-detected from your system locale, defaulting to English
+- **Polished, animated CLI** – spinners, a live progress bar with throughput &
+  ETA, colorized summaries, and a `list` overview; honors `NO_COLOR`
+- **Deterministic output** – pass `--seed` for byte-identical, reproducible results
+- **Parallel batch generation** – uses all CPU cores via Rayon
 - **Real, valid files** – WAV plays, PDF opens, XLSX loads in Excel, archives extract
 - **Library or CLI** – embed the engine in your own Rust code
-- **Shell completions & `list`** – first-class CLI ergonomics
-- **Self-update** – checks GitHub Releases for new versions
+- **Shell completions, self-update & `list`** – first-class CLI ergonomics
 
 ## Installation
 
@@ -57,7 +64,7 @@ to `~/.local/bin`. Remove with `./uninstall.sh` (`--purge` also clears config/ca
 iwr -useb https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.ps1 | iex
 ```
 
-Options: `-Version v0.3.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
+Options: `-Version v0.4.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
 Remove with `.\uninstall.ps1` (`-Purge` to also clear data).
 
 Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
@@ -66,9 +73,9 @@ Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
 ### Self-update
 
 ```bash
-demodatagen update            # update to the latest release
-demodatagen update --tag v0.3.0   # update (or downgrade) to a specific tag
-demodatagen --check-update    # report whether an update is available
+demodatagen update                # update to the latest release
+demodatagen update --tag v0.4.0   # update (or downgrade) to a specific tag
+demodatagen --check-update        # report whether an update is available
 ```
 
 ### Docker
@@ -86,10 +93,10 @@ demodatagen -c 100 -o ./data json --schema "id:sequence,name:name,email:email" -
 # A SQL seed script
 demodatagen sql --table users --rows 1000 --schema "id:sequence,name:name,age:int(18..90),active:bool"
 
-# German test data, streamed to stdout
-demodatagen --locale de_de --stdout csv --rows 20 --schema "name:name,city:city,iban:iban"
+# German test data, with a German interface, streamed to stdout
+demodatagen --locale de_de --lang de --stdout csv --rows 20 --schema "name:name,city:city,iban:iban"
 
-# See everything on offer
+# See everything on offer (formats, schema types, locales, languages)
 demodatagen list
 ```
 
@@ -101,17 +108,19 @@ demodatagen [OPTIONS] <COMMAND>
 
 ### Global options
 
-| Flag                   | Short | Description                              | Default    |
-| ---------------------- | ----- | ---------------------------------------- | ---------- |
-| `--output-dir <DIR>`   | `-o`  | Output directory                         | `./output` |
-| `--count <N>`          | `-c`  | Number of files to generate              | `1`        |
-| `--seed <N>`           | `-s`  | RNG seed for reproducibility             | random     |
-| `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`)           | `en_us`    |
-| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)         | `demo_{n}` |
-| `--stdout`             |       | Write one file to stdout instead of disk | `false`    |
-| `--overwrite`          |       | Overwrite existing files                 | `false`    |
-| `--quiet`              |       | Suppress all output except errors        | `false`    |
-| `--verbose`            |       | Enable debug logging                     | `false`    |
+| Flag                   | Short | Description                                  | Default    |
+| ---------------------- | ----- | -------------------------------------------- | ---------- |
+| `--output-dir <DIR>`   | `-o`  | Output directory                             | `./output` |
+| `--count <N>`          | `-c`  | Number of files to generate                  | `1`        |
+| `--seed <N>`           | `-s`  | RNG seed for reproducibility                 | random     |
+| `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`, `fr_fr`, …)   | `en_us`    |
+| `--lang <LANG>`        |       | Interface language (`en`, `de`, `fr`, `es`)  | auto / en  |
+| `--color <WHEN>`       |       | Colorize output (`auto`, `always`, `never`)  | `auto`     |
+| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)             | `demo_{n}` |
+| `--stdout`             |       | Write one file to stdout instead of disk     | `false`    |
+| `--overwrite`          |       | Overwrite existing files                     | `false`    |
+| `--quiet`              | `-q`  | Suppress all output except errors            | `false`    |
+| `--verbose`            | `-v`  | Enable debug logging                         | `false`    |
 
 ### Structured data
 
@@ -119,7 +128,7 @@ demodatagen [OPTIONS] <COMMAND>
 demodatagen json  --schema "name:name,email:email,age:int(18..65)" --rows 100 --pretty
 demodatagen jsonl --schema "id:sequence,event:enum(click,view,buy)" --rows 1000
 demodatagen yaml  --schema "id:sequence,name:name" --rows 20
-demodatagen toml  --schema "host:domain,port:int(1024..65535)" --rows 5
+demodatagen toml  --schema "host:domain,port:port" --rows 5
 demodatagen xml   --schema "user:name,score:float" --rows 50 --root users --row-tag user --pretty
 demodatagen csv   --schema "first:first_name,last:last_name,email:email" --rows 200 --delimiter ";"
 demodatagen tsv   --schema "a:int,b:float" --rows 50
@@ -130,7 +139,7 @@ demodatagen sql   --schema "id:sequence,name:name,price:price(1..999)" --rows 10
 
 ```bash
 demodatagen txt      --paragraphs 5
-demodatagen markdown --sections 4 --paragraphs 3
+demodatagen markdown --headings 4 --paragraphs 3
 demodatagen html     --headings 4 --paragraphs 3
 demodatagen log      --lines 500 --style apache    # apache | syslog | json
 demodatagen ini      --sections 3 --keys 5
@@ -196,30 +205,55 @@ note:sentence?0.5        # 50% chance of null
 
 ### Field types
 
-| Group         | Types                                                                                        |
-| ------------- | -------------------------------------------------------------------------------------------- |
-| **Numeric**   | `int`, `float`, `price`, `age`, `year`, `latitude`, `longitude`, `timestamp`                 |
-| **Boolean**   | `bool`                                                                                       |
-| **People**    | `name`, `first_name`, `last_name`, `username`, `gender`, `password`                          |
-| **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`                 |
-| **Business**  | `company`, `job`, `department`, `product`, `sku`, `currency`, `iban`, `credit_card`, `isbn`  |
-| **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`                         |
-| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`                                        |
-| **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                               |
-| **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                  |
-| **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable) |
+| Group         | Types                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| **Numeric**   | `int`, `float`, `price`, `age`, `year`, `latitude`, `longitude`, `percent`, `rating`, `port`, `timestamp` |
+| **Boolean**   | `bool`                                                                                               |
+| **People**    | `name`, `first_name`, `last_name`, `username`, `gender`, `password`, `ssn`                           |
+| **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`, `country_code`         |
+| **Business**  | `company`, `job`, `department`, `product`, `sku`, `currency`, `currency_symbol`, `iban`, `credit_card`, `isbn` |
+| **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`, `mime_type`, `filename`, `semver` |
+| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`, `hashtag`, `base64`, `hex(n)`                 |
+| **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                                       |
+| **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                          |
+| **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)         |
 
 Run `demodatagen list` for the full catalogue. Unknown types degrade gracefully
 to a generic word rather than failing.
 
-## Locales
+## Data locales
 
-`--locale de_de` switches names, addresses, cities, regions, and company forms to
-German equivalents (emails and usernames are transliterated to ASCII):
+`--locale` switches names, addresses, postal-code formats, cities, regions, and
+company forms to region-appropriate equivalents (emails/usernames are always
+transliterated to ASCII):
+
+| Locale  | Region                  | Locale  | Region              |
+| ------- | ----------------------- | ------- | ------------------- |
+| `en_us` | English (United States) | `it_it` | Italian (Italy)     |
+| `en_gb` | English (United Kingdom)| `pt_br` | Portuguese (Brazil) |
+| `de_de` | German (Germany)        | `nl_nl` | Dutch (Netherlands) |
+| `fr_fr` | French (France)         | `pl_pl` | Polish (Poland)     |
+| `es_es` | Spanish (Spain)         | `sv_se` | Swedish (Sweden)    |
 
 ```bash
-demodatagen --locale de_de json --schema "name:name,city:city,company:company" --rows 3
+demodatagen --locale pt_br json --schema "name:name,city:city,company:company" --rows 3
 ```
+
+## Interface language
+
+Separately from the *data* locale, `--lang` selects the language of the
+**program's own messages** (progress, summaries, errors, `list`). Supported:
+`en`, `de`, `fr`, `es`. When omitted, the language is detected from
+`DEMODATAGEN_LANG` and the standard `LC_ALL` / `LC_MESSAGES` / `LANG` /
+`LANGUAGE` variables, falling back to English.
+
+```bash
+demodatagen --lang fr -c 5 json          # French interface, English data
+demodatagen --locale de_de --lang de sql # German data and German interface
+```
+
+> Note: clap-generated `--help` text remains in English (the lingua franca for
+> flags); everything else is fully localized.
 
 ## Batch generation
 
@@ -230,7 +264,7 @@ demodatagen -c 100 -o ./data -n "user_{n}" json --schema "id:uuid,name:name" --r
 ```
 
 This creates 100 JSON files (`user_0.json` … `user_99.json`) in `./data/`, all
-generated in parallel across CPU cores.
+generated in parallel across CPU cores, with a live progress bar.
 
 ## Shell completions
 
@@ -249,6 +283,7 @@ Supported shells: `bash`, `zsh`, `fish`, `powershell`, `elvish`.
 use demodatagen::core::batch::{run_batch, BatchConfig};
 use demodatagen::core::generator::FormatOptions;
 use demodatagen::data::Locale;
+use demodatagen::i18n::Language;
 use demodatagen::formats::get_generator;
 use std::path::PathBuf;
 
@@ -262,6 +297,7 @@ let config = BatchConfig {
     seed: Some(42),
     quiet: true,
     locale: Locale::EnUs,
+    lang: Language::En,
     format_options: FormatOptions::StructuredData {
         rows: 10,
         schema: "id:sequence,name:name,email:email".into(),
@@ -291,14 +327,18 @@ src/
 ├── lib.rs             # Library root (public API)
 ├── app.rs             # CLI orchestration (parse → generate)
 ├── error.rs           # Error types (AppError, GenerationError)
-├── cli/               # clap argument definitions, `list`, completions
+├── i18n/              # Interface translations (En/De/Fr/Es) + tr! macro
+├── ui/                # Banner, colors, animated progress, summaries
+├── cli/
+│   ├── mod.rs         # clap argument definitions, `list`, completions
+│   └── args.rs        # Reusable, flattened argument groups (DRY)
 ├── core/
 │   ├── generator.rs   # Generator trait, FormatOptions, config
 │   └── batch.rs       # Parallel batch execution
 ├── data/
 │   ├── schema.rs      # Typed schema engine (FieldValue, Schema)
-│   ├── faker.rs       # Fake-data generators
-│   ├── locale.rs      # Locale data pools (en_us, de_de)
+│   ├── faker.rs       # 60+ fake-data generators
+│   ├── locale/        # Locale registry (macro) + 10 per-locale data modules
 │   └── lorem.rs       # Lorem ipsum text
 ├── formats/           # One module per format (33 generators)
 └── update/            # Self-update via GitHub Releases
@@ -308,11 +348,14 @@ src/
 
 ```bash
 cargo build              # Build
-cargo test               # Run all tests (unit + integration + property)
-cargo clippy --all-targets   # Lint
+cargo test               # Run all tests (unit + integration + property + doc)
+cargo clippy --all-targets   # Lint (CI uses -D warnings)
 cargo fmt                # Format
 RUST_LOG=debug cargo run -- json --schema "name:name" --rows 5
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the architecture overview and the
+step-by-step guide to adding a new format or locale.
 
 ## License
 

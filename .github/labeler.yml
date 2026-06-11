@@ -1,0 +1,47 @@
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
+
+formats:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/formats/**"
+
+cli:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/cli/**"
+          - "src/app.rs"
+
+core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/core/**"
+
+data:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/data/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Cargo.toml"
+          - "Cargo.lock"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+
+i18n:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/i18n/**"

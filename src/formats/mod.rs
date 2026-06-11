@@ -39,6 +39,51 @@ pub mod zip;
 
 use crate::core::generator::Generator;
 
+/// A display category for the format catalogue shown by `list`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FormatGroup {
+    /// JSON, YAML, CSV, SQL, … — typed, schema-driven records.
+    Structured,
+    /// Plain text, Markdown, HTML, logs, and config files.
+    Text,
+    /// Raster and vector images.
+    Images,
+    /// Audio and video containers.
+    AudioVideo,
+    /// PDF and spreadsheet documents.
+    Documents,
+    /// Executable stubs and archives.
+    Binary,
+}
+
+/// The canonical catalogue of output formats, grouped by category.
+///
+/// This is the single source of truth for the *set* of formats: the `list`
+/// command, the banner's format count, and the round-trip test below all read
+/// from it. Every key here must resolve via [`get_generator`].
+pub const FORMAT_GROUPS: &[(FormatGroup, &[&str])] = &[
+    (
+        FormatGroup::Structured,
+        &["json", "jsonl", "yaml", "toml", "xml", "csv", "tsv", "sql"],
+    ),
+    (
+        FormatGroup::Text,
+        &["txt", "markdown", "html", "log", "ini", "env"],
+    ),
+    (
+        FormatGroup::Images,
+        &["png", "jpg", "webp", "bmp", "tiff", "ico", "gif", "svg"],
+    ),
+    (FormatGroup::AudioVideo, &["mp3", "wav", "mp4", "webm"]),
+    (FormatGroup::Documents, &["pdf", "xlsx"]),
+    (FormatGroup::Binary, &["exe", "dll", "zip", "tar", "gzip"]),
+];
+
+/// Returns the number of distinct output formats in the catalogue.
+pub fn format_count() -> usize {
+    FORMAT_GROUPS.iter().map(|(_, fmts)| fmts.len()).sum()
+}
+
 /// Returns the appropriate generator for the given format key.
 ///
 /// Keys are case-insensitive. Returns `None` for unknown formats.
@@ -110,6 +155,23 @@ mod tests {
     #[test]
     fn test_unknown_format() {
         assert!(get_generator("unknown").is_none());
+    }
+
+    #[test]
+    fn test_catalogue_entries_all_resolve() {
+        for (_, formats) in FORMAT_GROUPS {
+            for fmt in *formats {
+                assert!(
+                    get_generator(fmt).is_some(),
+                    "catalogued format does not resolve: {fmt}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_format_count_is_33() {
+        assert_eq!(format_count(), 33);
     }
 
     #[test]

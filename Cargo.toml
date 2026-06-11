@@ -1,13 +1,13 @@
 [package]
 name = "demodatagen"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.86"
-description = "A fast, offline CLI and library for generating realistic demo files in 33 formats"
+description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 33 formats and 10 locales"
 license = "MIT"
-repository = "https://github.com/j-pfalzgraf/demodatagen"
+repository = "https://github.com/josunlp/demodatagen"
 readme = "README.md"
-keywords = ["demo", "generator", "cli", "test-data"]
+keywords = ["demo", "generator", "cli", "test-data", "fake-data"]
 categories = ["command-line-utilities", "development-tools::testing"]
 
 [[bin]]
@@ -56,8 +56,9 @@ anyhow = "1"
 env_logger = "0.11"
 log = "0.4"
 
-# Progress bars
+# Progress bars & terminal styling / animations
 indicatif = { version = "0.17", features = ["rayon"] }
+console = "0.15"
 
 # Self-update (rustls instead of native-tls so static musl builds don't need OpenSSL)
 self_update = { version = "0.39", optional = true, default-features = false, features = ["rustls", "archive-tar", "archive-zip", "compression-flate2"] }

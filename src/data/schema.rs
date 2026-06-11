@@ -152,9 +152,11 @@ fn sql_type_for_kind(kind: &FieldKind) -> &'static str {
         FieldKind::Sequence(_) => "INTEGER",
         FieldKind::Const(_) | FieldKind::Enum(_) | FieldKind::Array { .. } => "TEXT",
         FieldKind::Scalar { base, .. } => match base.as_str() {
-            "int" | "integer" | "number" | "year" | "age" | "timestamp" | "unix" => "INTEGER",
+            "int" | "integer" | "number" | "year" | "age" | "timestamp" | "unix" | "port" => {
+                "INTEGER"
+            }
             "float" | "decimal" | "double" | "price" | "amount" | "money" | "latitude" | "lat"
-            | "longitude" | "lng" | "lon" => "REAL",
+            | "longitude" | "lng" | "lon" | "percent" | "percentage" | "rating" | "stars" => "REAL",
             "bool" | "boolean" => "BOOLEAN",
             _ => "TEXT",
         },
@@ -494,6 +496,18 @@ fn eval_scalar<R: Rng>(base: &str, args: &Args, rng: &mut R, locale: Locale) -> 
         "weekday" | "day" => V::Str(faker::weekday(rng).into()),
         "month" => V::Str(faker::month(rng).into()),
 
+        "percent" | "percentage" => V::Float(faker::percent(rng)),
+        "rating" | "stars" => V::Float(faker::rating(rng)),
+        "port" => V::Int(faker::port(rng)),
+        "ssn" => V::Str(faker::ssn(rng)),
+        "currency_symbol" | "currency_sign" => V::Str(faker::currency_symbol(rng).into()),
+        "mime_type" | "mime" | "content_type" => V::Str(faker::mime_type(rng).into()),
+        "filename" | "file" | "file_name" => V::Str(faker::filename(rng)),
+        "semver" | "version" => V::Str(faker::semver(rng)),
+        "hashtag" => V::Str(faker::hashtag(rng)),
+        "base64" | "token" => V::Str(faker::base64_token(rng)),
+        "hex" => V::Str(faker::hex_token(rng, count(16))),
+
         "word" => V::Str(lorem::word(rng).into()),
         "words" => V::Str(lorem::words(rng, count(3))),
         "sentence" => V::Str(lorem::sentence(rng, count(0))),
@@ -621,6 +635,41 @@ mod tests {
     }
 
     #[test]
+    fn test_new_scalar_types() {
+        let s = Schema::parse(
+            "p:percent,r:rating,port:port,id:ssn,sym:currency_symbol,m:mime_type,f:filename,v:semver,h:hashtag,t:base64,x:hex(8)",
+        )
+        .unwrap();
+        let rec = s.generate_record(&mut rng(), Locale::EnUs, 0);
+        // Numeric kinds.
+        assert!(matches!(rec[0].1, FieldValue::Float(p) if (0.0..=100.0).contains(&p)));
+        assert!(matches!(rec[1].1, FieldValue::Float(r) if (1.0..=5.0).contains(&r)));
+        assert!(matches!(rec[2].1, FieldValue::Int(p) if (1024..=65535).contains(&p)));
+        // String kinds with structural checks.
+        if let FieldValue::Str(ssn) = &rec[3].1 {
+            assert_eq!(ssn.split('-').count(), 3);
+        } else {
+            panic!("ssn should be a string");
+        }
+        if let FieldValue::Str(ver) = &rec[7].1 {
+            assert_eq!(ver.split('.').count(), 3);
+        } else {
+            panic!("semver should be a string");
+        }
+        if let FieldValue::Str(tag) = &rec[8].1 {
+            assert!(tag.starts_with('#'));
+        } else {
+            panic!("hashtag should be a string");
+        }
+        if let FieldValue::Str(hex) = &rec[10].1 {
+            assert_eq!(hex.len(), 8);
+            assert!(hex.chars().all(|c| c.is_ascii_hexdigit()));
+        } else {
+            panic!("hex should be a string");
+        }
+    }
+
+    #[test]
     fn test_sql_type_inference() {
         let s = Schema::parse("a:int,b:float,c:bool,d:name,e:sequence").unwrap();
         assert_eq!(s.fields[0].sql_type(), "INTEGER");
@@ -678,6 +727,14 @@ mod proptests {
         "price(1..9)",
         "city",
         "ipv4",
+        "percent",
+        "rating",
+        "port",
+        "semver",
+        "mime_type",
+        "filename",
+        "ssn",
+        "hex(8)",
     ];
 
     proptest! {
@@ -725,13 +782,14 @@ mod proptests {
             );
         }
 
-        /// Both locales generate without panicking for every vocabulary type.
+        /// Every supported locale generates without panicking for every
+        /// vocabulary type.
         #[test]
         fn all_locales_generate(idx in 0usize..TYPE_VOCAB.len(), seed in any::<u64>()) {
             let schema = Schema::parse(&format!("f:{}", TYPE_VOCAB[idx])).unwrap();
-            for locale in [Locale::EnUs, Locale::DeDe] {
+            for locale in Locale::variants() {
                 let mut rng = ChaCha8Rng::seed_from_u64(seed);
-                let recs = schema.generate_records(&mut rng, locale, 3);
+                let recs = schema.generate_records(&mut rng, *locale, 3);
                 prop_assert_eq!(recs.len(), 3);
             }
         }

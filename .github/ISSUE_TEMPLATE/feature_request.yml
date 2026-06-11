@@ -1,0 +1,81 @@
+name: Feature Request
+description: Suggest a new feature, format, or enhancement for demodatagen.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make demodatagen better!
+
+        Please search the existing issues first to see whether your idea has already been proposed.
+        Clear, concrete proposals with a motivating use case are the easiest for us to act on.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I have searched the [existing issues](https://github.com/j-pfalzgraf/demodatagen/issues) and this has not already been requested.
+          required: true
+        - label: I have reviewed the [README](https://github.com/j-pfalzgraf/demodatagen#readme) and documentation to confirm this is not already supported.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve? What is the use case or pain point this feature would address?
+      placeholder: "I'm always frustrated when ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or change you would like to see. Include example commands, schema, or API usage if relevant.
+      placeholder: |
+        e.g. Add a `--format avro` option that emits Apache Avro container files from the schema engine.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternative solutions, workarounds, or features you have considered.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of demodatagen does this request relate to?
+      options:
+        - "Not sure / general"
+        - "New output format"
+        - "Existing output format"
+        - "Schema engine"
+        - "Fake data / locale"
+        - "Seeding / determinism"
+        - "Parallel batch generation"
+        - "CLI / argument parsing"
+        - "Library / public API"
+        - "Performance"
+        - "Build / install / packaging"
+        - "Documentation"
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to help implement this?
+      options:
+        - label: I am willing to submit a pull request to implement this feature.
+          required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context, references, prior art, or screenshots about the feature request here.
+    validations:
+      required: false

@@ -24,6 +24,7 @@
 //!     seed: Some(42),
 //!     quiet: true,
 //!     locale: demodatagen::data::Locale::EnUs,
+//!     lang: demodatagen::i18n::Language::En,
 //!     format_options: FormatOptions::StructuredData {
 //!         rows: 10,
 //!         schema: "id:sequence,name:name,email:email".into(),
@@ -40,6 +41,8 @@ pub mod core;
 pub mod data;
 pub mod error;
 pub mod formats;
+pub mod i18n;
+pub mod ui;
 #[cfg(feature = "update")]
 pub mod update;
 
@@ -48,3 +51,4 @@ pub use crate::core::generator::{
 };
 pub use crate::data::Locale;
 pub use crate::error::{AppError, AppResult, GenResult, GenerationError};
+pub use crate::i18n::Language;

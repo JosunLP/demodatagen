@@ -4,6 +4,7 @@
 //! atomically replaces the running binary. Networking uses rustls (no OpenSSL)
 //! so it works on static musl builds too.
 use crate::error::{AppError, AppResult};
+use crate::i18n::{tr, Language};
 use log::{info, warn};
 
 /// GitHub repository owner for update checks.
@@ -48,47 +49,48 @@ pub fn latest_version() -> AppResult<Option<String>> {
     }
 }
 
-/// Checks for available updates via GitHub Releases.
+/// Checks for available updates via GitHub Releases, reporting in `lang`.
 ///
 /// Returns `Ok(true)` if a newer version is available, `Ok(false)` if the
 /// current version is up to date (or the check could not be completed).
-pub fn check_for_update() -> AppResult<bool> {
+pub fn check_for_update(lang: Language) -> AppResult<bool> {
     info!("Checking for updates (current: v{CURRENT_VERSION})…");
+    eprintln!(
+        "{}",
+        tr!(lang, update_checking, "version" => CURRENT_VERSION)
+    );
 
     let Some(latest) = latest_version()? else {
-        println!(
-            "Could not determine the latest version. Check {} manually.",
-            releases_url()
-        );
+        eprintln!("{}", tr!(lang, update_unknown, "url" => releases_url()));
         return Ok(false);
     };
 
     if version_is_newer(&latest, CURRENT_VERSION) {
-        println!(
-            "Update available: v{CURRENT_VERSION} -> v{latest}\n  \
-             Run `demodatagen update` to upgrade, or download from {}/latest",
-            releases_url()
+        eprintln!(
+            "{}",
+            tr!(lang, update_available, "current" => CURRENT_VERSION, "latest" => latest)
+        );
+        eprintln!(
+            "  {}",
+            tr!(lang, update_hint, "url" => format!("{}/latest", releases_url()))
         );
         Ok(true)
     } else {
-        println!("demodatagen is up to date (v{CURRENT_VERSION}).");
+        eprintln!(
+            "{}",
+            tr!(lang, update_up_to_date, "version" => CURRENT_VERSION)
+        );
         Ok(false)
     }
 }
 
-/// Performs a self-update to the latest release (non-interactive).
-///
-/// Equivalent to `update_to(None)`.
-pub fn perform_update() -> AppResult<()> {
-    update_to(None)
-}
-
 /// Performs a self-update, optionally pinning to a specific tag (e.g.
-/// `"v0.2.0"`). Runs non-interactively and shows download progress.
+/// `"v0.2.0"`), reporting in `lang`. Runs non-interactively and shows download
+/// progress.
 ///
 /// # Errors
 /// Returns [`AppError::Update`] if the update process fails.
-pub fn update_to(target_tag: Option<&str>) -> AppResult<()> {
+pub fn update_to(target_tag: Option<&str>, lang: Language) -> AppResult<()> {
     info!("Starting self-update (current: v{CURRENT_VERSION})…");
 
     let mut builder = updater_builder();
@@ -103,15 +105,18 @@ pub fn update_to(target_tag: Option<&str>) -> AppResult<()> {
 
     match updater.update() {
         Ok(status) if status.updated() => {
-            println!(
-                "Updated demodatagen v{CURRENT_VERSION} -> v{}",
-                status.version()
+            eprintln!(
+                "{}",
+                tr!(lang, update_updated, "from" => CURRENT_VERSION, "to" => status.version())
             );
-            println!("Restart the command to use the new version.");
+            eprintln!("{}", tr!(lang, update_restart));
             Ok(())
         }
         Ok(_) => {
-            println!("Already running the latest version (v{CURRENT_VERSION}).");
+            eprintln!(
+                "{}",
+                tr!(lang, update_already_latest, "version" => CURRENT_VERSION)
+            );
             Ok(())
         }
         Err(e) => {
