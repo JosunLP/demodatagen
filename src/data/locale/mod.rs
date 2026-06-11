@@ -9,7 +9,7 @@
 //! 1. Create `src/data/locale/<id>.rs` exposing a single
 //!    `pub static <ID>: LocaleData = LocaleData { … };`.
 //! 2. Declare the module below (`mod <id>;`).
-//! 3. Add one line to the [`define_locales!`] table.
+//! 3. Add one line to the `define_locales!` table.
 //!
 //! The macro generates the [`Locale`] enum, the `id → variant` parser, the data
 //! lookup, and the `all()` catalogue from that single source of truth, so the

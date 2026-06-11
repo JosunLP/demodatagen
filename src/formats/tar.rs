@@ -1,7 +1,7 @@
 //! TAR archive file generator.
 //!
 //! Produces valid (uncompressed) TAR archives containing multiple generated
-//! files, reusing [`generate_contained_file`](crate::formats::zip::generate_contained_file).
+//! files, reusing [`generate_contained_file`].
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 use crate::formats::zip::generate_contained_file;

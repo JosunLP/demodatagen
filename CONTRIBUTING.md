@@ -1,11 +1,12 @@
 # Contributing to demodatagen
 
 Thanks for your interest in contributing to **demodatagen** — a fast, offline Rust CLI and library
-that generates realistic demo/test files in 33+ formats. Contributions of all kinds are welcome:
-bug reports, new formats, locale data, documentation, and performance improvements.
+that generates realistic demo/test files in 33 formats across 10 data locales and 9 interface
+languages. Contributions of all kinds are welcome: bug reports, new formats, locale data,
+translations, schema presets, documentation, and performance improvements.
 
 This guide explains how to set up your environment, the conventions we follow, and the exact
-checklist for adding a new output format.
+checklists for adding a new format, locale, interface language, or preset.
 
 - Repository: <https://github.com/josunlp/demodatagen>
 - Maintainer contact: <webadmins@leuchtturm.com>
@@ -20,6 +21,9 @@ checklist for adding a new output format.
 - [Build, test, lint, and format](#build-test-lint-and-format)
 - [Project architecture](#project-architecture)
 - [Adding a new format (7-step checklist)](#adding-a-new-format-7-step-checklist)
+- [Adding a data locale](#adding-a-data-locale)
+- [Adding an interface language](#adding-an-interface-language)
+- [Adding a schema preset](#adding-a-schema-preset)
 - [Coding conventions](#coding-conventions)
 - [Commit and pull-request conventions](#commit-and-pull-request-conventions)
 
@@ -150,6 +154,48 @@ order**. The format will not be complete (and CI will not pass) until every step
 
 After completing the checklist, run the full
 [build/test/lint/format](#build-test-lint-and-format) suite.
+
+---
+
+## Adding a data locale
+
+A **data locale** (`--locale`) selects the pools of names, places, and company forms used for
+generated *content*. Adding one is three small edits, all driven by a single table:
+
+1. Create `src/data/locale/<id>.rs` exposing one `pub static <ID>: LocaleData = LocaleData { … };`
+   with authentic first/last names, streets, cities, regions, the country and its ISO code, the
+   phone prefix, company prefixes/suffixes, and the `street_number_first` convention.
+2. Declare the module (`mod <id>;`) in `src/data/locale/mod.rs`.
+3. Add one row to the `define_locales!` table. The `Locale` enum, parser, `data()`, `all()`,
+   `variants()`, and `label()` are all generated from that table, so nothing else needs touching.
+
+---
+
+## Adding an interface language
+
+An **interface language** (`--lang`) selects the language of the *program's own messages*. The
+catalog is fully compile-checked, so a missing string is a build error rather than a silent English
+fallback.
+
+1. Add a variant to the `Language` enum in `src/i18n/mod.rs` and extend `catalog()`, `as_str()`,
+   `label()`, `variants()`, `all()`, and `FromStr`.
+2. Extend the `catalog!` macro's per-entry arm list and add a matching `<LANG>_CATALOG` const.
+3. Add the new `<lang>:` translation to **every** entry of the `catalog!` table (and every
+   `preset_desc_*` key). The completeness and placeholder-consistency tests enforce that each
+   translation exists and uses exactly the same `{placeholders}` as the English source.
+
+---
+
+## Adding a schema preset
+
+A **preset** (`--preset`) is a named, ready-made schema for a common data shape.
+
+1. Add a `Preset { name, schema }` row to `PRESETS` in `src/presets.rs`. The `schema` uses the
+   normal `--schema` syntax and should reference only known field types.
+2. Add a `preset_desc_<name>` key to the `catalog!` table (all nine languages) and a match arm in
+   `Preset::description()`.
+3. The preset tests automatically verify that the schema parses, uses only known types, and has a
+   description in every language.
 
 ---
 

@@ -30,10 +30,13 @@ body:
       options:
         - "Not sure / general"
         - "Schema engine"
+        - "Schema presets (--preset)"
         - "Fake data / locale"
+        - "Interface language / i18n (--lang)"
         - "Seeding / determinism"
         - "Parallel batch generation"
         - "CLI / argument parsing"
+        - "Terminal UI / animations"
         - "Library / public API"
         - "Format: JSON"
         - "Format: YAML"
@@ -85,9 +88,9 @@ body:
       label: Steps to reproduce
       description: Provide the exact command(s), schema, and inputs needed to reproduce the problem.
       placeholder: |
-        1. Create a schema file `schema.yml` with `...`
-        2. Run `demodatagen generate --schema schema.yml --format json --seed 42`
-        3. Observe the output
+        1. Run `demodatagen --seed 42 json --schema "id:sequence,name:name,email:email" --rows 10`
+        2. Open the generated file in ./output
+        3. Observe the unexpected output
       render: shell
     validations:
       required: true

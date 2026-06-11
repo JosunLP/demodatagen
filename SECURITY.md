@@ -10,10 +10,10 @@ Security updates are provided for the following release series:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.4.x   | :white_check_mark: |
-| < 0.4   | :x:                |
+| 0.5.x   | :white_check_mark: |
+| < 0.5   | :x:                |
 
-Older release series no longer receive security updates. Please upgrade to the latest `0.4.x`
+Older release series no longer receive security updates. Please upgrade to the latest `0.5.x`
 release to stay supported.
 
 ## Reporting a Vulnerability

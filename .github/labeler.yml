@@ -45,3 +45,13 @@ i18n:
   - changed-files:
       - any-glob-to-any-file:
           - "src/i18n/**"
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/ui/**"
+
+presets:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/presets.rs"

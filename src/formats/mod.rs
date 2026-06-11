@@ -1,7 +1,7 @@
 //! Format-specific file generators.
 //!
-//! Each sub-module implements the [`Generator`](crate::core::generator::Generator)
-//! trait for a specific output format. [`get_generator`] acts as a registry,
+//! Each sub-module implements the [`Generator`] trait for a specific output
+//! format. [`get_generator`] acts as a registry,
 //! returning the appropriate generator for a given format key.
 pub mod bmp;
 pub mod csv;

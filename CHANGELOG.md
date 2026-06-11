@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-11
+
+A major usability-and-reach release: the interface is now translated into nine
+languages, the schema engine ships with ready-made presets and typo-aware
+suggestions, the CLI gains `info`, `presets`, `--dry-run`, and `--jobs`, the
+terminal UI gets a gradient banner and a boxed info panel, and thirteen new
+schema field types land — all behind a fully DRY, compile-checked design.
+
+### Added
+
+- **Five more interface languages (9 total).** `--lang` now speaks **Italian,
+  Portuguese, Dutch, Polish, and Swedish** in addition to English, German,
+  French, and Spanish — one for every language family covered by the data
+  locales. The `catalog!` macro generates all nine immutable catalogs from a
+  single table, and a new `Catalog::fields()` accessor powers completeness and
+  `{placeholder}`-consistency tests that fail the build on any gap or mismatch.
+- **Built-in schema presets** (`src/presets.rs`). Twelve ready-made schemas —
+  `users`, `employees`, `customers`, `products`, `orders`, `transactions`,
+  `events`, `servers`, `geo`, `posts`, `payments`, `sensors` — usable on any
+  structured format via `--preset <name>` (mutually exclusive with `--schema`),
+  each with a localized description. The new `presets` subcommand lists them and
+  the schema each expands to.
+- **`info` subcommand** — a boxed panel of version, build target, profile, format
+  / locale / language / preset counts, worker-thread count, self-update status,
+  license, and repository.
+- **`--dry-run`** — plan a run and print the file paths that *would* be written
+  (to stdout, capped and greppable) without touching the filesystem.
+- **`--jobs` / `-j`** — cap the Rayon worker-thread count (default: all cores).
+- **Thirteen new schema field types**: `bic`, `ean`, `imei`, `card_network`,
+  `company_email`, `job_level`, `http_method`, `http_status`, `os`, `browser`,
+  `device`, `file_size`, and `coordinates` (with aliases) — bringing the faker
+  library past 70 generators.
+- **"Did you mean …?" schema hints.** A Levenshtein-based `suggest_type()` turns
+  a typo like `emial` into a localized hint pointing at `email`; generation
+  still proceeds (unknown types degrade to a generic word).
+- **Terminal UI upgrades** — a per-character gradient banner, an attended-only
+  animated banner reveal, a reusable `Spinner` (now driving the update check), a
+  rounded **boxed** panel renderer, per-group icons in `list`, and a richer
+  progress style. All motion is gated on `animations_enabled()`, so pipes, CI,
+  `--quiet`, `--color never`, and tests stay perfectly static.
+
+### Changed
+
+- The schema type catalogue moved into `src/data/schema.rs` as the single source
+  of truth (`FIELD_TYPE_GROUPS` + `KNOWN_TYPE_NAMES`), consumed by `list`,
+  suggestions, and a drift-guard test — removing the duplicate table that lived
+  in the CLI module.
+- `DataArgs` builders are now fallible and `Language`-aware so `--preset`
+  resolution can surface a localized error; the Luhn check-digit logic shared by
+  `credit_card` and `imei` was extracted into one helper.
+- CI now runs doctests explicitly (`cargo test --doc`), checks the MSRV (1.86),
+  builds the docs with `-D warnings`, and cancels superseded runs.
+
+### Fixed
+
+- The bug-report template's reproduction example used a non-existent
+  `generate --format` syntax; it now shows the real `demodatagen <format>
+  --schema …` invocation.
+
 ## [0.4.0] - 2026-06-11
 
 A major quality-and-reach release: a fully internationalized interface, eight

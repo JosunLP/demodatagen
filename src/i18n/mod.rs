@@ -15,7 +15,7 @@
 //!
 //! # Design
 //!
-//! Every translatable string lives in exactly one place — the [`catalog!`]
+//! Every translatable string lives in exactly one place — the `catalog!`
 //! invocation below — as a template with `{placeholder}` slots. The macro turns
 //! that single table into a [`Catalog`] struct plus one immutable instance per
 //! language, so adding a message (or a language) is a localized, compiler-checked

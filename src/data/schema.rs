@@ -207,7 +207,7 @@ impl Schema {
         self.fields.iter().map(|f| f.name.as_str()).collect()
     }
 
-    /// Generates a single record. `index` drives [`FieldKind::Sequence`].
+    /// Generates a single record. `index` drives the `sequence` field kind.
     pub fn generate_record<R: Rng>(&self, rng: &mut R, locale: Locale, index: usize) -> Record {
         self.fields
             .iter()
@@ -745,8 +745,8 @@ pub const FIELD_TYPE_GROUPS: &[(&str, &[&str])] = &[
 /// Every base type name and alias the schema engine recognizes, used by
 /// [`is_known_type`] and [`suggest_type`].
 ///
-/// Keep this in sync with the match arms in [`eval_scalar`] and the modifier
-/// keywords in [`parse_typespec`]; the `test_known_types_cover_catalogue` test
+/// Keep this in sync with the match arms in `eval_scalar` and the modifier
+/// keywords in `parse_typespec`; the `test_known_types_cover_catalogue` test
 /// guards against the catalogue drifting ahead of this list.
 pub const KNOWN_TYPE_NAMES: &[&str] = &[
     // Numeric

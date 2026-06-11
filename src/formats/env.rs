@@ -1,8 +1,7 @@
 //! Dotenv (`.env`) file generator.
 //!
 //! Produces `KEY=value` lines with uppercased keys, reusing the INI generator's
-//! [`config_pair`](crate::formats::ini::config_pair) helper. Values containing
-//! whitespace are quoted.
+//! `config_pair` helper. Values containing whitespace are quoted.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
 

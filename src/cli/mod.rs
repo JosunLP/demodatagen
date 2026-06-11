@@ -44,7 +44,7 @@ impl ColorWhen {
 /// text (TXT, Markdown, HTML, LOG, INI, ENV), images (PNG, JPG, WebP, BMP,
 /// TIFF, ICO, GIF, SVG), audio (MP3, WAV), video (MP4, WebM), documents
 /// (PDF, XLSX), binary stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across
-/// ten data locales and four interface languages.
+/// ten data locales and nine interface languages, with built-in schema presets.
 #[derive(Parser, Debug)]
 #[command(name = "demodatagen")]
 #[command(version, about, long_about = None)]
@@ -66,8 +66,8 @@ pub struct Cli {
     #[arg(short = 'l', long, default_value = "en_us", global = true)]
     pub locale: String,
 
-    /// Interface language for messages (`en`, `de`, `fr`, `es`).
-    /// Defaults to the system locale, then English.
+    /// Interface language for messages (`en`, `de`, `fr`, `es`, `it`, `pt`,
+    /// `nl`, `pl`, `sv`). Defaults to the system locale, then English.
     #[arg(long, global = true)]
     pub lang: Option<String>,
 

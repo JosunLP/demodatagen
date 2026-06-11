@@ -1,11 +1,13 @@
 # demodatagen
 
 A fast, offline, **fully internationalized** CLI **and library** for generating
-realistic demo files in **33 formats** across **10 data locales**.
+realistic demo files in **33 formats**, **10 data locales**, and **9 interface
+languages**.
 
-Built in Rust for maximum performance, with a typed schema engine, locale-aware
-fake data, parallel batch generation, deterministic seeding, animated terminal
-output, a four-language interface, and zero external service dependencies.
+Built in Rust for maximum performance, with a typed schema engine, built-in
+schema presets, locale-aware fake data, parallel batch generation, deterministic
+seeding, an animated terminal UI, a nine-language interface, and zero external
+service dependencies.
 
 ## Features
 
@@ -18,21 +20,29 @@ output, a four-language interface, and zero external service dependencies.
 | **Documents**         | PDF, XLSX                                   |
 | **Binary & archives** | EXE, DLL, ZIP, TAR, GZIP                    |
 
-- **Typed schema engine** – ranges, enums, sequences, arrays, nullable fields
-- **60+ fake-data types** – names, emails, UUIDs, IBANs, credit cards, geo,
-  SSNs, MIME types, semver, hashtags, ports, ratings, and more
+- **Typed schema engine** – ranges, enums, sequences, arrays, nullable fields,
+  and a "did you mean …?" hint for mistyped field types
+- **70+ fake-data types** – names, emails, UUIDs, IBANs, BICs, credit cards, geo
+  coordinates, SSNs, MIME types, semver, IMEIs, EAN barcodes, HTTP methods &
+  statuses, and more
+- **12 built-in schema presets** – `users`, `products`, `orders`, `events`,
+  `servers`, … via `--preset`, so the common cases need no hand-written schema
 - **10 data locales** – `en_us`, `en_gb`, `de_de`, `fr_fr`, `es_es`, `it_it`,
   `pt_br`, `nl_nl`, `pl_pl`, `sv_se` for region-appropriate names, addresses,
   postal-code formats, and company forms
-- **Internationalized interface** – messages in English, German, French, and
-  Spanish (`--lang`), auto-detected from your system locale, defaulting to English
-- **Polished, animated CLI** – spinners, a live progress bar with throughput &
-  ETA, colorized summaries, and a `list` overview; honors `NO_COLOR`
+- **9-language interface** – messages in English, German, French, Spanish,
+  Italian, Portuguese, Dutch, Polish, and Swedish (`--lang`), auto-detected from
+  your system locale, defaulting to English
+- **Polished, animated CLI** – a gradient banner, spinners, a live progress bar
+  with throughput & ETA, colorized summaries, a boxed `info` panel, and `list` /
+  `presets` overviews; honors `NO_COLOR` and non-TTY pipes
+- **Plan before you write** – `--dry-run` reports exactly what would be generated
 - **Deterministic output** – pass `--seed` for byte-identical, reproducible results
-- **Parallel batch generation** – uses all CPU cores via Rayon
+- **Parallel batch generation** – uses all CPU cores via Rayon (cap with `--jobs`)
 - **Real, valid files** – WAV plays, PDF opens, XLSX loads in Excel, archives extract
 - **Library or CLI** – embed the engine in your own Rust code
-- **Shell completions, self-update & `list`** – first-class CLI ergonomics
+- **Shell completions, self-update, `list`, `presets` & `info`** – first-class
+  CLI ergonomics
 
 ## Installation
 
@@ -90,13 +100,19 @@ docker run --rm -v "$PWD/output:/output" ghcr.io/josunlp/demodatagen json --sche
 # 100 JSON files of fake users
 demodatagen -c 100 -o ./data json --schema "id:sequence,name:name,email:email" --rows 50
 
+# Skip the schema entirely with a built-in preset
+demodatagen csv --preset products --rows 200
+
 # A SQL seed script
 demodatagen sql --table users --rows 1000 --schema "id:sequence,name:name,age:int(18..90),active:bool"
 
 # German test data, with a German interface, streamed to stdout
 demodatagen --locale de_de --lang de --stdout csv --rows 20 --schema "name:name,city:city,iban:iban"
 
-# See everything on offer (formats, schema types, locales, languages)
+# Preview a large run without writing anything
+demodatagen -c 1000 --dry-run json --preset orders
+
+# See everything on offer (formats, schema types, presets, locales, languages)
 demodatagen list
 ```
 
@@ -114,9 +130,11 @@ demodatagen [OPTIONS] <COMMAND>
 | `--count <N>`          | `-c`  | Number of files to generate                 | `1`        |
 | `--seed <N>`           | `-s`  | RNG seed for reproducibility                | random     |
 | `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`, `fr_fr`, …)  | `en_us`    |
-| `--lang <LANG>`        |       | Interface language (`en`, `de`, `fr`, `es`) | auto / en  |
+| `--lang <LANG>`        |       | Interface language (9; run `list` for all)  | auto / en  |
 | `--color <WHEN>`       |       | Colorize output (`auto`, `always`, `never`) | `auto`     |
 | `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)            | `demo_{n}` |
+| `--dry-run`            |       | Plan the run; print what would be written   | `false`    |
+| `--jobs <N>`           | `-j`  | Worker threads                              | all cores  |
 | `--stdout`             |       | Write one file to stdout instead of disk    | `false`    |
 | `--overwrite`          |       | Overwrite existing files                    | `false`    |
 | `--quiet`              | `-q`  | Suppress all output except errors           | `false`    |
@@ -218,8 +236,44 @@ note:sentence?0.5        # 50% chance of null
 | **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                                    |
 | **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)                   |
 
-Run `demodatagen list` for the full catalogue. Unknown types degrade gracefully
-to a generic word rather than failing.
+The catalogue above is representative; 0.5.0 also adds `http_status`,
+`job_level`, `company_email`, `coordinates`, `bic`, `card_network`, `ean`,
+`http_method`, `os`, `browser`, `device`, `imei`, and `file_size`. Run
+`demodatagen list` for the complete, always-current reference.
+
+Unknown types degrade gracefully to a generic word rather than failing — and a
+**"did you mean …?"** hint points at the closest known type, so a typo like
+`emial` is caught immediately:
+
+```console
+$ demodatagen json --schema "mail:emial"
+⚠ Unknown schema type 'emial'; did you mean 'email'? Generating a generic word instead.
+```
+
+## Schema presets
+
+Don't want to write a schema at all? Use a **preset** — a named, ready-made
+schema for a common shape — on any structured format:
+
+```bash
+demodatagen json --preset users --rows 100
+demodatagen csv  --preset products --rows 500
+demodatagen sql  --preset orders --table orders --rows 1000
+```
+
+`--preset` and `--schema` are mutually exclusive. Run `demodatagen presets` to
+see every preset and the schema it expands to. Built in: `users`, `employees`,
+`customers`, `products`, `orders`, `transactions`, `events`, `servers`, `geo`,
+`posts`, `payments`, `sensors`.
+
+## Discovering & planning
+
+```bash
+demodatagen list      # formats, schema types, presets, locales, languages
+demodatagen presets   # built-in presets and the schema each expands to
+demodatagen info      # version, build, threads, and capability counts
+demodatagen -c 1000 --dry-run json --preset orders   # plan without writing
+```
 
 ## Data locales
 
@@ -242,10 +296,11 @@ demodatagen --locale pt_br json --schema "name:name,city:city,company:company" -
 ## Interface language
 
 Separately from the *data* locale, `--lang` selects the language of the
-**program's own messages** (progress, summaries, errors, `list`). Supported:
-`en`, `de`, `fr`, `es`. When omitted, the language is detected from
-`DEMODATAGEN_LANG` and the standard `LC_ALL` / `LC_MESSAGES` / `LANG` /
-`LANGUAGE` variables, falling back to English.
+**program's own messages** (progress, summaries, errors, `list`, `presets`,
+`info`). Supported: `en`, `de`, `fr`, `es`, `it`, `pt`, `nl`, `pl`, `sv` — one
+for every language family covered by the data locales. When omitted, the
+language is detected from `DEMODATAGEN_LANG` and the standard `LC_ALL` /
+`LC_MESSAGES` / `LANG` / `LANGUAGE` variables, falling back to English.
 
 ```bash
 demodatagen --lang fr -c 5 json          # French interface, English data
@@ -325,19 +380,20 @@ let records = schema.generate_records(&mut rng, Locale::EnUs, 100);
 src/
 ├── main.rs            # Thin binary entry point
 ├── lib.rs             # Library root (public API)
-├── app.rs             # CLI orchestration (parse → generate)
+├── app.rs             # CLI orchestration (parse → generate, dry-run, --jobs)
 ├── error.rs           # Error types (AppError, GenerationError)
-├── i18n/              # Interface translations (En/De/Fr/Es) + tr! macro
-├── ui/                # Banner, colors, animated progress, summaries
+├── presets.rs         # Built-in named schemas (--preset, `presets`)
+├── i18n/              # Interface translations (9 languages) + tr! macro
+├── ui/                # Gradient banner, boxed panel, spinner, animated progress
 ├── cli/
-│   ├── mod.rs         # clap argument definitions, `list`, completions
+│   ├── mod.rs         # clap definitions, `list` / `presets` / `info` / completions
 │   └── args.rs        # Reusable, flattened argument groups (DRY)
 ├── core/
 │   ├── generator.rs   # Generator trait, FormatOptions, config
 │   └── batch.rs       # Parallel batch execution
 ├── data/
-│   ├── schema.rs      # Typed schema engine (FieldValue, Schema)
-│   ├── faker.rs       # 60+ fake-data generators
+│   ├── schema.rs      # Typed schema engine + type catalogue + suggestions
+│   ├── faker.rs       # 70+ fake-data generators
 │   ├── locale/        # Locale registry (macro) + 10 per-locale data modules
 │   └── lorem.rs       # Lorem ipsum text
 ├── formats/           # One module per format (33 generators)
