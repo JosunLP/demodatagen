@@ -108,19 +108,19 @@ demodatagen [OPTIONS] <COMMAND>
 
 ### Global options
 
-| Flag                   | Short | Description                                  | Default    |
-| ---------------------- | ----- | -------------------------------------------- | ---------- |
-| `--output-dir <DIR>`   | `-o`  | Output directory                             | `./output` |
-| `--count <N>`          | `-c`  | Number of files to generate                  | `1`        |
-| `--seed <N>`           | `-s`  | RNG seed for reproducibility                 | random     |
-| `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`, `fr_fr`, …)   | `en_us`    |
-| `--lang <LANG>`        |       | Interface language (`en`, `de`, `fr`, `es`)  | auto / en  |
-| `--color <WHEN>`       |       | Colorize output (`auto`, `always`, `never`)  | `auto`     |
-| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)             | `demo_{n}` |
-| `--stdout`             |       | Write one file to stdout instead of disk     | `false`    |
-| `--overwrite`          |       | Overwrite existing files                     | `false`    |
-| `--quiet`              | `-q`  | Suppress all output except errors            | `false`    |
-| `--verbose`            | `-v`  | Enable debug logging                         | `false`    |
+| Flag                   | Short | Description                                 | Default    |
+| ---------------------- | ----- | ------------------------------------------- | ---------- |
+| `--output-dir <DIR>`   | `-o`  | Output directory                            | `./output` |
+| `--count <N>`          | `-c`  | Number of files to generate                 | `1`        |
+| `--seed <N>`           | `-s`  | RNG seed for reproducibility                | random     |
+| `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`, `fr_fr`, …)  | `en_us`    |
+| `--lang <LANG>`        |       | Interface language (`en`, `de`, `fr`, `es`) | auto / en  |
+| `--color <WHEN>`       |       | Colorize output (`auto`, `always`, `never`) | `auto`     |
+| `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)            | `demo_{n}` |
+| `--stdout`             |       | Write one file to stdout instead of disk    | `false`    |
+| `--overwrite`          |       | Overwrite existing files                    | `false`    |
+| `--quiet`              | `-q`  | Suppress all output except errors           | `false`    |
+| `--verbose`            | `-v`  | Enable debug logging                        | `false`    |
 
 ### Structured data
 
@@ -205,18 +205,18 @@ note:sentence?0.5        # 50% chance of null
 
 ### Field types
 
-| Group         | Types                                                                                                |
-| ------------- | ---------------------------------------------------------------------------------------------------- |
-| **Numeric**   | `int`, `float`, `price`, `age`, `year`, `latitude`, `longitude`, `percent`, `rating`, `port`, `timestamp` |
-| **Boolean**   | `bool`                                                                                               |
-| **People**    | `name`, `first_name`, `last_name`, `username`, `gender`, `password`, `ssn`                           |
-| **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`, `country_code`         |
+| Group         | Types                                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Numeric**   | `int`, `float`, `price`, `age`, `year`, `latitude`, `longitude`, `percent`, `rating`, `port`, `timestamp`      |
+| **Boolean**   | `bool`                                                                                                         |
+| **People**    | `name`, `first_name`, `last_name`, `username`, `gender`, `password`, `ssn`                                     |
+| **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`, `country_code`                   |
 | **Business**  | `company`, `job`, `department`, `product`, `sku`, `currency`, `currency_symbol`, `iban`, `credit_card`, `isbn` |
-| **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`, `mime_type`, `filename`, `semver` |
-| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`, `hashtag`, `base64`, `hex(n)`                 |
-| **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                                       |
-| **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                          |
-| **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)         |
+| **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`, `mime_type`, `filename`, `semver`        |
+| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`, `hashtag`, `base64`, `hex(n)`                           |
+| **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                                                 |
+| **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                                    |
+| **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)                   |
 
 Run `demodatagen list` for the full catalogue. Unknown types degrade gracefully
 to a generic word rather than failing.
@@ -227,13 +227,13 @@ to a generic word rather than failing.
 company forms to region-appropriate equivalents (emails/usernames are always
 transliterated to ASCII):
 
-| Locale  | Region                  | Locale  | Region              |
-| ------- | ----------------------- | ------- | ------------------- |
-| `en_us` | English (United States) | `it_it` | Italian (Italy)     |
-| `en_gb` | English (United Kingdom)| `pt_br` | Portuguese (Brazil) |
-| `de_de` | German (Germany)        | `nl_nl` | Dutch (Netherlands) |
-| `fr_fr` | French (France)         | `pl_pl` | Polish (Poland)     |
-| `es_es` | Spanish (Spain)         | `sv_se` | Swedish (Sweden)    |
+| Locale  | Region                   | Locale  | Region              |
+| ------- | ------------------------ | ------- | ------------------- |
+| `en_us` | English (United States)  | `it_it` | Italian (Italy)     |
+| `en_gb` | English (United Kingdom) | `pt_br` | Portuguese (Brazil) |
+| `de_de` | German (Germany)         | `nl_nl` | Dutch (Netherlands) |
+| `fr_fr` | French (France)          | `pl_pl` | Polish (Poland)     |
+| `es_es` | Spanish (Spain)          | `sv_se` | Swedish (Sweden)    |
 
 ```bash
 demodatagen --locale pt_br json --schema "name:name,city:city,company:company" --rows 3
