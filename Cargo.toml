@@ -70,7 +70,7 @@ log = "0.4"
 # Progress bars & terminal styling / animations
 # indicatif >=0.18 drops the unmaintained `number_prefix` (RUSTSEC-2025-0119).
 indicatif = { version = "0.18", features = ["rayon"] }
-console = "0.15"
+console = "0.16"
 
 # Self-update. We use the lightweight pure-Rust `ureq` backend with rustls+ring
 # (no OpenSSL and no aws-lc-rs C build, so static musl builds stay simple) and need
