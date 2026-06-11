@@ -33,7 +33,7 @@ checklists for adding a new format, locale, interface language, or preset.
 
 This project and everyone participating in it is governed by our
 [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold it.
-Please report unacceptable behavior to <webadmins@leuchtturm.com>.
+Please report unacceptable behavior to <support@josunlp.de>.
 
 ---
 
