@@ -9,7 +9,7 @@ This guide explains how to set up your environment, the conventions we follow, a
 checklists for adding a new format, locale, interface language, or preset.
 
 - Repository: <https://github.com/josunlp/demodatagen>
-- Maintainer contact: <webadmins@leuchtturm.com>
+- Maintainer contact: <support@josunlp.de>
 - License: MIT
 
 ---
