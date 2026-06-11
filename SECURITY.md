@@ -25,7 +25,7 @@ Report vulnerabilities through either of these private channels:
 1. **GitHub Security Advisories (preferred).** Use the repository's
    [private vulnerability reporting](https://github.com/josunlp/demodatagen/security/advisories/new)
    feature to open a private advisory. This keeps the report confidential while we investigate.
-2. **Email.** Send the details to <webadmins@leuchtturm.com>.
+2. **Email.** Send the details to <support@josunlp.de>.
 
 When reporting, please include as much of the following as you can:
 
@@ -48,7 +48,7 @@ We aim to meet the following timelines for reports received through the channels
   available.
 
 If you do not receive an acknowledgement within the stated window, please follow up via email to
-<webadmins@leuchtturm.com>.
+<support@josunlp.de>.
 
 ## Scope
 
