@@ -28,6 +28,9 @@ allow = [
     "Unicode-3.0",
     "Zlib",
     "MPL-2.0",
+    # Mozilla's bundled CA root set (webpki-roots / webpki-root-certs), reachable
+    # only via the optional self-update TLS stack under `--all-features`.
+    "CDLA-Permissive-2.0",
 ]
 # Confidence threshold for detecting a license from its text (0.0 - 1.0).
 confidence-threshold = 0.8

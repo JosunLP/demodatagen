@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Dependency advisory sweep — `cargo audit` and `cargo deny` are clean again.**
+  - Dropped the unused `avif` codec from `image` (explicit `default-features =
+    false` + the seven codecs we actually emit). This removes the `rav1e → ravif`
+    subtree, eliminating the `NCSA`-licensed `libfuzzer-sys` (rejected by
+    `cargo deny`) and the unmaintained `paste` crate (RUSTSEC-2024-0436).
+  - Modernized the self-update TLS stack: `self_update` 0.39 → 0.44 on the
+    lightweight pure-Rust **`ureq` + rustls + ring** backend (no OpenSSL, no
+    `aws-lc-rs` C build — static musl builds stay simple). This pulls
+    `rustls-webpki` ≥ 0.103, patching RUSTSEC-2026-0098/0099/0104, and drops the
+    unmaintained `rustls-pemfile` (RUSTSEC-2025-0134).
+  - `indicatif` 0.17 → 0.18, dropping the unmaintained `number_prefix`
+    (RUSTSEC-2025-0119).
+  - Refreshed `tar` (→ 0.4.46; RUSTSEC-2026-0067/0068), `time` (→ 0.3.47;
+    RUSTSEC-2026-0009), and `rand` (→ 0.8.6; RUSTSEC-2026-0097).
+  - Allowed `CDLA-Permissive-2.0` in `deny.toml` for Mozilla's bundled CA root
+    set (`webpki-roots`), reachable only through the self-update stack.
+
 ## [0.5.0] - 2026-06-11
 
 A major usability-and-reach release: the interface is now translated into nine
