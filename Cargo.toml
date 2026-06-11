@@ -61,7 +61,7 @@ indicatif = { version = "0.17", features = ["rayon"] }
 console = "0.15"
 
 # Self-update (rustls instead of native-tls so static musl builds don't need OpenSSL)
-self_update = { version = "0.39", optional = true, default-features = false, features = ["rustls", "archive-tar", "archive-zip", "compression-flate2"] }
+self_update = { version = "0.44", optional = true, default-features = false, features = ["rustls", "archive-tar", "archive-zip", "compression-flate2"] }
 
 [dev-dependencies]
 assert_cmd = "2"
