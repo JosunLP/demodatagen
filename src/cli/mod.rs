@@ -37,6 +37,15 @@ impl ColorWhen {
     }
 }
 
+/// Parses the `--jobs` value, rejecting `0` (which would mean "no workers").
+fn parse_jobs(raw: &str) -> Result<usize, String> {
+    match raw.parse::<usize>() {
+        Ok(0) => Err("must be at least 1".to_string()),
+        Ok(n) => Ok(n),
+        Err(_) => Err(format!("`{raw}` is not a positive integer")),
+    }
+}
+
 /// A fast, offline, fully internationalized CLI for generating realistic demo
 /// files in many formats.
 ///
@@ -109,7 +118,7 @@ pub struct Cli {
     pub dry_run: bool,
 
     /// Number of worker threads (default: all available CPU cores).
-    #[arg(short = 'j', long, global = true)]
+    #[arg(short = 'j', long, global = true, value_parser = parse_jobs)]
     pub jobs: Option<usize>,
 
     /// The command to run.
@@ -497,7 +506,11 @@ pub fn print_presets(lang: Language) {
     for p in crate::presets::PRESETS {
         println!("  {}", style(p.name).green().bold());
         println!("    {}", style(p.description(lang)).dim());
-        println!("    {} {}", style("schema:").dim(), style(p.schema).cyan());
+        println!(
+            "    {} {}",
+            style(tr!(lang, preset_schema_label)).dim(),
+            style(p.schema).cyan()
+        );
     }
 
     println!("\n{}", style(tr!(lang, presets_hint)).dim());
@@ -696,5 +709,20 @@ mod tests {
     fn test_verify_cli() {
         // Ensures the clap command tree is internally consistent.
         Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn test_parse_jobs() {
+        assert_eq!(parse_jobs("4").unwrap(), 4);
+        assert_eq!(parse_jobs("1").unwrap(), 1);
+        assert!(parse_jobs("0").is_err());
+        assert!(parse_jobs("-1").is_err());
+        assert!(parse_jobs("x").is_err());
+    }
+
+    #[test]
+    fn test_cli_rejects_zero_jobs() {
+        assert!(Cli::try_parse_from(["demodatagen", "-j", "0", "txt"]).is_err());
+        assert!(Cli::try_parse_from(["demodatagen", "-j", "2", "txt"]).is_ok());
     }
 }

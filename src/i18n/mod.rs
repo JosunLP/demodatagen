@@ -562,6 +562,18 @@ catalog! {
         pl: "Działa z każdym formatem strukturalnym (json, csv, sql, yaml, …); można łączyć z --rows i --locale.",
         sv: "Fungerar med alla strukturerade format (json, csv, sql, yaml, …); kombineras med --rows och --locale.",
     },
+    /// Inline label preceding a preset's schema string in `presets` output.
+    preset_schema_label {
+        en: "Schema:",
+        de: "Schema:",
+        fr: "Schéma :",
+        es: "Esquema:",
+        it: "Schema:",
+        pt: "Esquema:",
+        nl: "Schema:",
+        pl: "Schemat:",
+        sv: "Schema:",
+    },
     /// One-line description of the 'users' preset.
     preset_desc_users {
         en: "User accounts with names, emails, usernames and signup dates.",

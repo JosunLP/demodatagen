@@ -22,7 +22,7 @@ fn test_presets_subcommand_lists_presets() {
         .success()
         .stdout(predicate::str::contains("users"))
         .stdout(predicate::str::contains("sensors"))
-        .stdout(predicate::str::contains("schema:"));
+        .stdout(predicate::str::contains("Schema:"));
 }
 
 #[test]

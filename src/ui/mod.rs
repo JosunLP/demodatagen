@@ -201,22 +201,28 @@ pub fn boxed(title: &str, rows: &[String]) -> String {
 }
 
 /// Prints the one-line header shown at the start of a generation run (stderr).
+///
+/// Styles are marked `.for_stderr()` so their color follows the *stderr* TTY /
+/// color state, not stdout's — otherwise piping stdout (e.g. `… | less`) would
+/// strip color from these status lines on a perfectly capable terminal.
 pub fn run_header(lang: Language, count: usize, format_name: &str, dir: &Path) {
     let header = tr!(
         lang,
         generating_header,
         "count" => count,
-        "format" => style(format_name).cyan().bold(),
-        "dir" => style(dir.display()).underlined(),
+        "format" => style(format_name).cyan().bold().for_stderr(),
+        "dir" => style(dir.display()).underlined().for_stderr(),
     );
-    eprintln!("{} {header}", style(SPARK).cyan());
+    eprintln!("{} {header}", style(SPARK).cyan().for_stderr());
 }
 
 /// Builds a configured, animated [`ProgressBar`] for a run of `count` files.
 ///
 /// A single file gets an indeterminate spinner; multiple files get a bar with
 /// throughput and ETA. When `quiet` is set, a hidden bar is returned so callers
-/// need no branching. The bar animates on its own via a steady tick.
+/// need no branching. On an attended terminal the bar self-animates via a steady
+/// tick; in pipes/CI (see [`animations_enabled`]) it only redraws on progress,
+/// so it never spams non-interactive logs with spinner frames.
 pub fn progress(count: usize, format_name: &str, lang: Language, quiet: bool) -> ProgressBar {
     if quiet {
         return ProgressBar::hidden();
@@ -246,7 +252,9 @@ pub fn progress(count: usize, format_name: &str, lang: Language, quiet: bool) ->
     };
 
     pb.set_message(message);
-    pb.enable_steady_tick(Duration::from_millis(80));
+    if animations_enabled() {
+        pb.enable_steady_tick(Duration::from_millis(80));
+    }
     pb
 }
 
@@ -265,10 +273,16 @@ pub fn summary(lang: Language, count: usize, bytes: u64, elapsed: Duration, dir:
         "bytes" => HumanBytes(bytes),
         "elapsed" => HumanDuration(elapsed),
     );
-    eprintln!("{}{}", style(CHECK).green().bold(), style(line).green());
+    eprintln!(
+        "{}{}",
+        style(CHECK).green().bold().for_stderr(),
+        style(line).green().for_stderr()
+    );
     eprintln!(
         "  {}",
-        style(tr!(lang, summary_location, "dir" => dir.display())).dim()
+        style(tr!(lang, summary_location, "dir" => dir.display()))
+            .dim()
+            .for_stderr()
     );
 }
 
@@ -281,22 +295,34 @@ pub fn partial(lang: Language, ok: usize, total: usize, errors: usize) {
         "total" => total,
         "errors" => errors,
     );
-    eprintln!("{}{}", style(WARN).yellow().bold(), style(line).yellow());
+    eprintln!(
+        "{}{}",
+        style(WARN).yellow().bold().for_stderr(),
+        style(line).yellow().for_stderr()
+    );
 }
 
 /// Prints a localized, styled error line to stderr (used on the failure path).
 pub fn error_line(message: &str) {
-    eprintln!("{}{}", style(CROSS).red().bold(), style(message).red());
+    eprintln!(
+        "{}{}",
+        style(CROSS).red().bold().for_stderr(),
+        style(message).red().for_stderr()
+    );
 }
 
 /// Prints a localized warning line to stderr.
 pub fn warn_line(message: &str) {
-    eprintln!("{}{}", style(WARN).yellow().bold(), style(message).yellow());
+    eprintln!(
+        "{}{}",
+        style(WARN).yellow().bold().for_stderr(),
+        style(message).yellow().for_stderr()
+    );
 }
 
 /// Prints a dimmed, indented hint/tip line to stderr.
 pub fn hint_line(message: &str) {
-    eprintln!("  {}", style(message).dim());
+    eprintln!("  {}", style(message).dim().for_stderr());
 }
 
 /// An indeterminate spinner for a single blocking operation (e.g. a network

@@ -134,8 +134,9 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
     }
 
     #[cfg(feature = "update")]
-    if !cli.skip_update && !cli.quiet && !cli.stdout {
-        // Best-effort, non-blocking update notice.
+    if !cli.skip_update && !cli.quiet && !cli.stdout && !cli.dry_run {
+        // Best-effort update notice — skipped for `--dry-run`, which is a fast,
+        // side-effect-free planning mode that should never touch the network.
         let _ = check_for_update(lang);
     }
 
