@@ -57,7 +57,7 @@ env_logger = "0.11"
 log = "0.4"
 
 # Progress bars & terminal styling / animations
-indicatif = { version = "0.17", features = ["rayon"] }
+indicatif = { version = "0.18", features = ["rayon"] }
 console = "0.15"
 
 # Self-update (rustls instead of native-tls so static musl builds don't need OpenSSL)
