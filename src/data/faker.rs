@@ -248,12 +248,15 @@ pub fn iban<R: Rng>(rng: &mut R, locale: Locale) -> String {
     format!("{cc}{check}{bban}")
 }
 
-/// Generates a credit-card-like number (Luhn-valid 16 digits).
-pub fn credit_card<R: Rng>(rng: &mut R) -> String {
-    let mut digits: Vec<u8> = (0..15).map(|_| rng.gen_range(0..10u8)).collect();
-    // Compute Luhn check digit.
+/// Computes the Luhn check digit for a sequence of payload digits (each 0–9).
+///
+/// The returned digit, appended to `payload`, makes the whole number pass the
+/// Luhn (mod-10) checksum used by credit cards and IMEIs. Doubling starts at the
+/// rightmost payload digit, which becomes position 1 once the check digit is
+/// appended.
+fn luhn_check_digit(payload: &[u8]) -> u8 {
     let mut sum = 0u32;
-    for (i, d) in digits.iter().rev().enumerate() {
+    for (i, d) in payload.iter().rev().enumerate() {
         let mut v = *d as u32;
         if i % 2 == 0 {
             v *= 2;
@@ -263,13 +266,83 @@ pub fn credit_card<R: Rng>(rng: &mut R) -> String {
         }
         sum += v;
     }
-    let check = (10 - (sum % 10)) % 10;
-    digits.push(check as u8);
+    ((10 - (sum % 10)) % 10) as u8
+}
+
+/// Generates a credit-card-like number (Luhn-valid 16 digits).
+pub fn credit_card<R: Rng>(rng: &mut R) -> String {
+    let mut digits: Vec<u8> = (0..15).map(|_| rng.gen_range(0..10u8)).collect();
+    digits.push(luhn_check_digit(&digits));
     digits
         .chunks(4)
         .map(|c| c.iter().map(|d| (b'0' + d) as char).collect::<String>())
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Returns a random credit-card network name (Visa, Mastercard, …).
+pub fn card_network<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Visa",
+            "Mastercard",
+            "American Express",
+            "Discover",
+            "JCB",
+            "Diners Club",
+            "UnionPay",
+            "Maestro",
+        ],
+    )
+}
+
+/// Generates a BIC / SWIFT business identifier code (8 or 11 chars, demo only).
+///
+/// Format: 4-letter bank code, the locale's 2-letter country code, a 2-char
+/// location code, and — 50% of the time — a 3-char branch code.
+pub fn bic<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let alnum = |rng: &mut R| {
+        let n = rng.gen_range(0..36u8);
+        if n < 26 {
+            (b'A' + n) as char
+        } else {
+            (b'0' + (n - 26)) as char
+        }
+    };
+    let upper = |rng: &mut R| (b'A' + rng.gen_range(0..26u8)) as char;
+    let bank: String = (0..4).map(|_| upper(rng)).collect();
+    let cc = locale.data().country_code;
+    let location: String = (0..2).map(|_| alnum(rng)).collect();
+    if rng.gen_bool(0.5) {
+        let branch: String = (0..3).map(|_| alnum(rng)).collect();
+        format!("{bank}{cc}{location}{branch}")
+    } else {
+        format!("{bank}{cc}{location}")
+    }
+}
+
+/// Generates an EAN-13 barcode number with a valid check digit (demo only).
+pub fn ean13<R: Rng>(rng: &mut R) -> String {
+    let data: Vec<u8> = (0..12).map(|_| rng.gen_range(0..10u8)).collect();
+    // EAN-13: odd 1-indexed positions weight 1, even positions weight 3.
+    let sum: u32 = data
+        .iter()
+        .enumerate()
+        .map(|(i, d)| *d as u32 * if i % 2 == 0 { 1 } else { 3 })
+        .sum();
+    let check = ((10 - (sum % 10)) % 10) as u8;
+    data.iter()
+        .chain(std::iter::once(&check))
+        .map(|d| (b'0' + d) as char)
+        .collect()
+}
+
+/// Generates a 15-digit IMEI device identifier (Luhn-valid, demo only).
+pub fn imei<R: Rng>(rng: &mut R) -> String {
+    let mut digits: Vec<u8> = (0..14).map(|_| rng.gen_range(0..10u8)).collect();
+    digits.push(luhn_check_digit(&digits));
+    digits.iter().map(|d| (b'0' + d) as char).collect()
 }
 
 /// Generates an ISBN-13 string (demo, valid prefix/format).
@@ -488,6 +561,107 @@ pub fn emoji<R: Rng>(rng: &mut R) -> &'static str {
             "😀", "🎉", "🚀", "🔥", "💡", "📦", "✅", "⚡", "🌟", "🐳", "🦀", "📊",
         ],
     )
+}
+
+// ---------------------------------------------------------------------------
+// Web, tech & geo
+// ---------------------------------------------------------------------------
+
+/// Returns a random HTTP request method.
+pub fn http_method<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    )
+}
+
+/// Returns a plausible HTTP status code, weighted toward common ones.
+pub fn http_status<R: Rng>(rng: &mut R) -> i64 {
+    pick(
+        rng,
+        &[
+            200, 200, 200, 201, 204, 301, 302, 304, 400, 401, 403, 404, 404, 409, 422, 429, 500,
+            502, 503,
+        ],
+    )
+}
+
+/// Returns a random operating-system name.
+pub fn os_name<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Windows 11",
+            "Windows 10",
+            "macOS 14",
+            "macOS 13",
+            "Ubuntu 24.04",
+            "Debian 12",
+            "Fedora 40",
+            "Arch Linux",
+            "Android 14",
+            "iOS 17",
+        ],
+    )
+}
+
+/// Returns a random web-browser name.
+pub fn browser<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Chrome", "Firefox", "Safari", "Edge", "Opera", "Brave", "Vivaldi",
+        ],
+    )
+}
+
+/// Returns a random device category.
+pub fn device<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Desktop", "Laptop", "Mobile", "Tablet", "Smart TV", "Wearable",
+        ],
+    )
+}
+
+/// Generates a work email of the form `first.last@<company-domain>`.
+pub fn company_email<R: Rng>(rng: &mut R, locale: Locale) -> String {
+    let first = ascii_slug(first_name(rng, locale));
+    let last = ascii_slug(last_name(rng, locale));
+    format!("{first}.{last}@{}", domain(rng))
+}
+
+/// Returns a random seniority / job level.
+pub fn job_level<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "Intern",
+            "Junior",
+            "Mid-level",
+            "Senior",
+            "Staff",
+            "Lead",
+            "Principal",
+            "Director",
+        ],
+    )
+}
+
+/// Generates a human-readable file size such as `4.20 MB` or `512.00 KB`.
+pub fn file_size<R: Rng>(rng: &mut R) -> String {
+    let unit = pick(rng, &["B", "KB", "MB", "GB"]);
+    let value: f64 = match unit {
+        "B" => rng.gen_range(1.0..1024.0),
+        _ => rng.gen_range(1.0..1000.0),
+    };
+    format!("{value:.2} {unit}")
+}
+
+/// Generates a `"latitude,longitude"` coordinate pair.
+pub fn coordinates<R: Rng>(rng: &mut R) -> String {
+    format!("{},{}", latitude(rng), longitude(rng))
 }
 
 // ---------------------------------------------------------------------------
@@ -999,5 +1173,111 @@ mod tests {
             full_name(&mut rng(), Locale::EnUs)
         );
         assert_eq!(uuid(&mut rng()), uuid(&mut rng()));
+    }
+
+    /// Validates a sequence of digit chars against the Luhn (mod-10) checksum.
+    fn luhn_valid(s: &str) -> bool {
+        let digits: Vec<u32> = s
+            .chars()
+            .filter(|c| c.is_ascii_digit())
+            .map(|c| c.to_digit(10).unwrap())
+            .collect();
+        let mut sum = 0u32;
+        for (i, d) in digits.iter().rev().enumerate() {
+            let mut v = *d;
+            if i % 2 == 1 {
+                v *= 2;
+                if v > 9 {
+                    v -= 9;
+                }
+            }
+            sum += v;
+        }
+        sum % 10 == 0
+    }
+
+    #[test]
+    fn test_imei_is_15_digits_and_luhn_valid() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let imei = imei(&mut r);
+            assert_eq!(imei.len(), 15, "imei not 15 digits: {imei}");
+            assert!(imei.chars().all(|c| c.is_ascii_digit()));
+            assert!(luhn_valid(&imei), "imei failed Luhn: {imei}");
+        }
+    }
+
+    #[test]
+    fn test_ean13_check_digit_valid() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let ean = ean13(&mut r);
+            assert_eq!(ean.len(), 13);
+            let d: Vec<u32> = ean.chars().map(|c| c.to_digit(10).unwrap()).collect();
+            let sum: u32 = d[..12]
+                .iter()
+                .enumerate()
+                .map(|(i, x)| x * if i % 2 == 0 { 1 } else { 3 })
+                .sum();
+            let check = (10 - (sum % 10)) % 10;
+            assert_eq!(check, d[12], "EAN-13 check digit invalid: {ean}");
+        }
+    }
+
+    #[test]
+    fn test_bic_length_and_country() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let bic = bic(&mut r, Locale::DeDe);
+            assert!(bic.len() == 8 || bic.len() == 11, "bad BIC length: {bic}");
+            assert_eq!(&bic[4..6], "DE", "BIC country segment wrong: {bic}");
+            assert!(bic.chars().all(|c| c.is_ascii_alphanumeric()));
+        }
+    }
+
+    #[test]
+    fn test_http_status_in_known_set() {
+        let mut r = rng();
+        for _ in 0..100 {
+            let s = http_status(&mut r);
+            assert!((100..=599).contains(&s), "implausible status: {s}");
+        }
+    }
+
+    #[test]
+    fn test_coordinates_parse_into_bounds() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let c = coordinates(&mut r);
+            let (lat, lng) = c.split_once(',').expect("coordinates need a comma");
+            let lat: f64 = lat.parse().unwrap();
+            let lng: f64 = lng.parse().unwrap();
+            assert!((-90.0..=90.0).contains(&lat));
+            assert!((-180.0..=180.0).contains(&lng));
+        }
+    }
+
+    #[test]
+    fn test_file_size_has_unit() {
+        let mut r = rng();
+        for _ in 0..30 {
+            let fs = file_size(&mut r);
+            assert!(
+                ["B", "KB", "MB", "GB"].iter().any(|u| fs.ends_with(u)),
+                "no unit: {fs}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_company_email_is_ascii() {
+        let mut r = rng();
+        for locale in Locale::variants() {
+            for _ in 0..20 {
+                let e = company_email(&mut r, *locale);
+                assert!(e.is_ascii(), "{locale} company_email not ASCII: {e}");
+                assert!(e.contains('@') && e.contains('.'));
+            }
+        }
     }
 }

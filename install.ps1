@@ -8,7 +8,7 @@
     install directory to the user PATH (and the current session).
 
 .EXAMPLE
-    iwr -useb https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.ps1 | iex
+    iwr -useb https://raw.githubusercontent.com/josunlp/demodatagen/main/install.ps1 | iex
 
 .EXAMPLE
     .\install.ps1 -Version v0.2.0 -Force
@@ -16,7 +16,7 @@
 [CmdletBinding()]
 param(
     [string]$Version = $env:DEMODATAGEN_VERSION,
-    [string]$Repo = $(if ($env:DEMODATAGEN_REPO) { $env:DEMODATAGEN_REPO } else { "j-pfalzgraf/demodatagen" }),
+    [string]$Repo = $(if ($env:DEMODATAGEN_REPO) { $env:DEMODATAGEN_REPO } else { "josunlp/demodatagen" }),
     [string]$InstallDir = "$env:LOCALAPPDATA\demodatagen\bin",
     [switch]$NoModifyPath,
     [switch]$Force,

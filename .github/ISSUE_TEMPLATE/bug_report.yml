@@ -16,11 +16,11 @@ body:
       label: Preflight checklist
       description: Please confirm the following before submitting.
       options:
-        - label: I have searched the [existing issues](https://github.com/j-pfalzgraf/demodatagen/issues) and this has not already been reported.
+        - label: I have searched the [existing issues](https://github.com/josunlp/demodatagen/issues) and this has not already been reported.
           required: true
         - label: I am running the latest release of demodatagen, or have noted the exact version below.
           required: true
-        - label: I have reviewed the [README](https://github.com/j-pfalzgraf/demodatagen#readme) and documentation.
+        - label: I have reviewed the [README](https://github.com/josunlp/demodatagen#readme) and documentation.
           required: false
   - type: dropdown
     id: area

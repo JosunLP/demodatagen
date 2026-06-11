@@ -23,7 +23,7 @@ Please **do not** open a public GitHub issue for security vulnerabilities.
 Report vulnerabilities through either of these private channels:
 
 1. **GitHub Security Advisories (preferred).** Use the repository's
-   [private vulnerability reporting](https://github.com/j-pfalzgraf/demodatagen/security/advisories/new)
+   [private vulnerability reporting](https://github.com/josunlp/demodatagen/security/advisories/new)
    feature to open a private advisory. This keeps the report confidential while we investigate.
 2. **Email.** Send the details to <webadmins@leuchtturm.com>.
 

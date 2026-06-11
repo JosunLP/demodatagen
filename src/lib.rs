@@ -42,6 +42,7 @@ pub mod data;
 pub mod error;
 pub mod formats;
 pub mod i18n;
+pub mod presets;
 pub mod ui;
 #[cfg(feature = "update")]
 pub mod update;
@@ -52,3 +53,4 @@ pub use crate::core::generator::{
 pub use crate::data::Locale;
 pub use crate::error::{AppError, AppResult, GenResult, GenerationError};
 pub use crate::i18n::Language;
+pub use crate::presets::Preset;

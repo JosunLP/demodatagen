@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions & Discussions
-    url: https://github.com/j-pfalzgraf/demodatagen/discussions
+    url: https://github.com/josunlp/demodatagen/discussions
     about: Have a question, idea, or want to share how you use demodatagen? Start a discussion here.
   - name: Documentation & README
-    url: https://github.com/j-pfalzgraf/demodatagen#readme
+    url: https://github.com/josunlp/demodatagen#readme
     about: Read the README and documentation for usage, supported formats, and configuration.

@@ -51,7 +51,7 @@ The install scripts auto-detect your OS/arch (incl. musl vs glibc on Linux),
 **Linux / macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/josunlp/demodatagen/main/install.sh | bash
 ```
 
 Options (run the downloaded script directly): `--version vX.Y.Z`, `--bin-dir DIR`,
@@ -61,14 +61,14 @@ to `~/.local/bin`. Remove with `./uninstall.sh` (`--purge` also clears config/ca
 **Windows (PowerShell):**
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/josunlp/demodatagen/main/install.ps1 | iex
 ```
 
 Options: `-Version v0.4.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
 Remove with `.\uninstall.ps1` (`-Purge` to also clear data).
 
 Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
-(x86_64/aarch64), and Windows (x86_64) on [GitHub Releases](https://github.com/j-pfalzgraf/demodatagen/releases).
+(x86_64/aarch64), and Windows (x86_64) on [GitHub Releases](https://github.com/josunlp/demodatagen/releases).
 
 ### Self-update
 
@@ -81,7 +81,7 @@ demodatagen --check-update        # report whether an update is available
 ### Docker
 
 ```bash
-docker run --rm -v "$PWD/output:/output" ghcr.io/j-pfalzgraf/demodatagen json --schema "name:name,age:int" --rows 10
+docker run --rm -v "$PWD/output:/output" ghcr.io/josunlp/demodatagen json --schema "name:name,age:int" --rows 10
 ```
 
 ## Quick start

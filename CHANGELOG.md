@@ -87,7 +87,7 @@ releases for more platforms, and CI/build fixes.
 
 ### Fixed
 
-- Corrected the placeholder repository (`youruser`/`user` → `j-pfalzgraf`) in the
+- Corrected the placeholder repository (`youruser`/`user` → `josunlp`) in the
   self-update module, both install scripts, both uninstall scripts, and
   `Cargo.toml` — self-update and the install scripts now target the real repo.
 - Pinned the transitive `time` crate to `0.3.36` so the `rust:1.86` Docker builder

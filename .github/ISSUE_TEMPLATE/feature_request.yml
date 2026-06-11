@@ -16,9 +16,9 @@ body:
       label: Preflight checklist
       description: Please confirm the following before submitting.
       options:
-        - label: I have searched the [existing issues](https://github.com/j-pfalzgraf/demodatagen/issues) and this has not already been requested.
+        - label: I have searched the [existing issues](https://github.com/josunlp/demodatagen/issues) and this has not already been requested.
           required: true
-        - label: I have reviewed the [README](https://github.com/j-pfalzgraf/demodatagen#readme) and documentation to confirm this is not already supported.
+        - label: I have reviewed the [README](https://github.com/josunlp/demodatagen#readme) and documentation to confirm this is not already supported.
           required: true
   - type: textarea
     id: problem

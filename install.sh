@@ -3,7 +3,7 @@
 # install.sh — install the demodatagen binary from GitHub releases.
 #
 # Quick install (latest):
-#   curl -fsSL https://raw.githubusercontent.com/j-pfalzgraf/demodatagen/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/josunlp/demodatagen/main/install.sh | bash
 #
 # With options (run the downloaded script directly):
 #   ./install.sh [--version vX.Y.Z] [--bin-dir DIR] [--prefix DIR]
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 # ── Configuration & defaults ─────────────────────────────────────────
-REPO="${DEMODATAGEN_REPO:-j-pfalzgraf/demodatagen}"
+REPO="${DEMODATAGEN_REPO:-josunlp/demodatagen}"
 VERSION="${DEMODATAGEN_VERSION:-}"
 BIN_DIR="${BIN_DIR:-}"
 PREFIX="${INSTALL_PREFIX:-}"

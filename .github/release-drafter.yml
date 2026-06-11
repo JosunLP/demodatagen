@@ -61,4 +61,4 @@ template: |
 
   $CHANGES
 
-  **Full Changelog**: https://github.com/j-pfalzgraf/demodatagen/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  **Full Changelog**: https://github.com/josunlp/demodatagen/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

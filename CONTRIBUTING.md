@@ -7,7 +7,7 @@ bug reports, new formats, locale data, documentation, and performance improvemen
 This guide explains how to set up your environment, the conventions we follow, and the exact
 checklist for adding a new output format.
 
-- Repository: <https://github.com/j-pfalzgraf/demodatagen>
+- Repository: <https://github.com/josunlp/demodatagen>
 - Maintainer contact: <webadmins@leuchtturm.com>
 - License: MIT
 

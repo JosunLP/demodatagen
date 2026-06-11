@@ -1,9 +1,9 @@
 [package]
 name = "demodatagen"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 rust-version = "1.86"
-description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 33 formats and 10 locales"
+description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 33 formats, 10 data locales, and 9 interface languages"
 license = "MIT"
 repository = "https://github.com/josunlp/demodatagen"
 readme = "README.md"

@@ -8,7 +8,7 @@ use crate::i18n::{tr, Language};
 use log::{info, warn};
 
 /// GitHub repository owner for update checks.
-const REPO_OWNER: &str = "j-pfalzgraf";
+const REPO_OWNER: &str = "josunlp";
 /// GitHub repository name for update checks.
 const REPO_NAME: &str = "demodatagen";
 /// Binary name to locate inside release archives.
@@ -55,12 +55,23 @@ pub fn latest_version() -> AppResult<Option<String>> {
 /// current version is up to date (or the check could not be completed).
 pub fn check_for_update(lang: Language) -> AppResult<bool> {
     info!("Checking for updates (current: v{CURRENT_VERSION})…");
-    eprintln!(
-        "{}",
-        tr!(lang, update_checking, "version" => CURRENT_VERSION)
-    );
 
-    let Some(latest) = latest_version()? else {
+    // Animate the check on an attended terminal; fall back to a static line
+    // (so pipes and CI still record that a check happened).
+    let checking = tr!(lang, update_checking, "version" => CURRENT_VERSION);
+    let spinner = if crate::ui::animations_enabled() {
+        Some(crate::ui::Spinner::start(checking))
+    } else {
+        eprintln!("{checking}");
+        None
+    };
+
+    let latest = latest_version();
+    if let Some(s) = spinner {
+        s.finish_and_clear();
+    }
+
+    let Some(latest) = latest? else {
         eprintln!("{}", tr!(lang, update_unknown, "url" => releases_url()));
         return Ok(false);
     };
@@ -158,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_repo_constants() {
-        assert_eq!(REPO_OWNER, "j-pfalzgraf");
+        assert_eq!(REPO_OWNER, "josunlp");
         assert_eq!(REPO_NAME, "demodatagen");
         assert!(!CURRENT_VERSION.is_empty());
         assert!(releases_url().ends_with("/releases"));

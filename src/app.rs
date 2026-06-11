@@ -50,12 +50,25 @@ pub fn run() -> i32 {
     crate::ui::set_colors(cli.color.to_choice());
     let lang = Language::detect(cli.lang.as_deref());
     init_logging(&cli);
+    configure_threads(cli.jobs);
     match dispatch(cli, lang) {
         Ok(code) => code,
         Err(e) => {
             crate::ui::error_line(&e.to_string());
             1
         }
+    }
+}
+
+/// Sizes the global Rayon thread pool when `--jobs` is given.
+///
+/// Best-effort: building the global pool can only happen once, so a second call
+/// (or an already-initialized pool) is silently ignored.
+fn configure_threads(jobs: Option<usize>) {
+    if let Some(n) = jobs {
+        let _ = rayon::ThreadPoolBuilder::new()
+            .num_threads(n.max(1))
+            .build_global();
     }
 }
 
@@ -105,6 +118,14 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
             crate::cli::print_format_list(lang);
             return Ok(0);
         }
+        FormatCommand::Presets => {
+            crate::cli::print_presets(lang);
+            return Ok(0);
+        }
+        FormatCommand::Info => {
+            crate::cli::print_info(lang, cli.jobs);
+            return Ok(0);
+        }
         FormatCommand::Completions { shell } => {
             crate::cli::print_completions(*shell);
             return Ok(0);
@@ -124,6 +145,19 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
     let generator = crate::formats::get_generator(format_key)
         .ok_or_else(|| AppError::Cli(tr!(lang, err_unknown_format, "format" => format_key)))?;
     let extension = generator.file_extension().to_string();
+
+    // Surface likely schema typos as a non-fatal, localized hint. Generation
+    // still proceeds (unknown types degrade to a generic word).
+    if !cli.quiet {
+        if let Some(schema) = schema_of(&format_options) {
+            warn_unknown_schema_types(schema, lang);
+        }
+    }
+
+    // Plan-only mode: report what would be generated and stop.
+    if cli.dry_run {
+        return Ok(dry_run_report(&cli, generator.as_ref(), &extension, lang));
+    }
 
     // Stream a single artifact to stdout when requested.
     if cli.stdout {
@@ -173,6 +207,84 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
     }
 }
 
+/// Returns the schema string carried by a [`FormatOptions`], if any.
+fn schema_of(options: &FormatOptions) -> Option<&str> {
+    use FormatOptions as O;
+    match options {
+        O::StructuredData { schema, .. }
+        | O::Xml { schema, .. }
+        | O::Delimited { schema, .. }
+        | O::Sql { schema, .. } => Some(schema.as_str()),
+        _ => None,
+    }
+}
+
+/// Prints a localized "did you mean …" hint for each unrecognized schema type.
+///
+/// Non-fatal: unknown types still generate (a generic word); this only helps
+/// users notice typos like `emial` for `email`.
+fn warn_unknown_schema_types(schema: &str, lang: Language) {
+    let Ok(parsed) = crate::data::Schema::parse(schema) else {
+        return;
+    };
+    for unknown in parsed.unknown_field_types() {
+        match crate::data::schema::suggest_type(&unknown) {
+            Some(s) => crate::ui::warn_line(
+                &tr!(lang, warn_unknown_type, "type" => unknown, "suggestion" => s),
+            ),
+            None => crate::ui::warn_line(&tr!(lang, warn_unknown_type_plain, "type" => unknown)),
+        }
+    }
+}
+
+/// Prints the plan for a `--dry-run`: header, plan line, and the file paths that
+/// *would* be written (capped), without touching the filesystem.
+///
+/// Status lines go to stderr; the planned paths go to stdout so they stay
+/// greppable and pipeable. Returns the process exit code (always `0`).
+fn dry_run_report(
+    cli: &Cli,
+    generator: &dyn crate::core::generator::Generator,
+    extension: &str,
+    lang: Language,
+) -> i32 {
+    use crate::core::generator::resolve_filename;
+    let format_name = generator.format_name();
+
+    crate::ui::warn_line(&tr!(lang, dryrun_header));
+
+    if cli.stdout {
+        eprintln!(
+            "{}",
+            tr!(lang, dryrun_plan, "count" => 1, "format" => format_name, "dir" => "stdout")
+        );
+        eprintln!("{}", tr!(lang, dryrun_done, "count" => 1));
+        return 0;
+    }
+
+    eprintln!(
+        "{}",
+        tr!(lang, dryrun_plan,
+            "count" => cli.count,
+            "format" => format_name,
+            "dir" => cli.output_dir.display())
+    );
+    eprintln!("{}", tr!(lang, dryrun_files_title));
+
+    const MAX_LISTED: usize = 20;
+    let show = cli.count.min(MAX_LISTED);
+    for i in 0..show {
+        let filename = resolve_filename(&cli.name_pattern, i, extension);
+        println!("{}", cli.output_dir.join(filename).display());
+    }
+    if cli.count > show {
+        crate::ui::hint_line(&tr!(lang, dryrun_more, "count" => cli.count - show));
+    }
+
+    eprintln!("{}", tr!(lang, dryrun_done, "count" => cli.count));
+    0
+}
+
 /// Resolves a format subcommand into its [`FormatOptions`] and registry key.
 ///
 /// Each arm is a one-liner thanks to the [`args`] helper methods, which own the
@@ -183,19 +295,22 @@ fn resolve_format(
 ) -> AppResult<(FormatOptions, &'static str)> {
     use FormatCommand as C;
     let resolved = match command {
-        C::Json { data, pretty } => (data.structured(*pretty), "json"),
-        C::Jsonl { data } => (data.structured(false), "jsonl"),
-        C::Yaml { data } => (data.structured(true), "yaml"),
-        C::Toml { data } => (data.structured(true), "toml"),
+        C::Json { data, pretty } => (data.structured(*pretty, lang)?, "json"),
+        C::Jsonl { data } => (data.structured(false, lang)?, "jsonl"),
+        C::Yaml { data } => (data.structured(true, lang)?, "yaml"),
+        C::Toml { data } => (data.structured(true, lang)?, "toml"),
         C::Xml {
             data,
             pretty,
             root,
             row_tag,
-        } => (data.xml(*pretty, root.clone(), row_tag.clone()), "xml"),
-        C::Csv { data, delimiter } => (data.delimited(parse_delimiter(delimiter)?), "csv"),
-        C::Tsv { data } => (data.delimited(b'\t'), "tsv"),
-        C::Sql { data, table } => (data.sql(table.clone()), "sql"),
+        } => (
+            data.xml(*pretty, root.clone(), row_tag.clone(), lang)?,
+            "xml",
+        ),
+        C::Csv { data, delimiter } => (data.delimited(parse_delimiter(delimiter)?, lang)?, "csv"),
+        C::Tsv { data } => (data.delimited(b'\t', lang)?, "tsv"),
+        C::Sql { data, table } => (data.sql(table.clone(), lang)?, "sql"),
         C::Markdown { doc } => (doc.options(), "md"),
         C::Html { doc } => (doc.options(), "html"),
         C::Pdf { doc } => (doc.options(), "pdf"),
@@ -299,8 +414,8 @@ fn resolve_format(
             },
             "tar",
         ),
-        C::Xlsx { data, sheet } => (data.sql(sheet.clone()), "xlsx"),
-        C::Update { .. } | C::List | C::Completions { .. } => {
+        C::Xlsx { data, sheet } => (data.sql(sheet.clone(), lang)?, "xlsx"),
+        C::Update { .. } | C::List | C::Presets | C::Info | C::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }
     };

@@ -104,6 +104,14 @@ pub struct Cli {
     #[arg(long, default_value_t = false, global = true)]
     pub check_update: bool,
 
+    /// Plan the run and print what would be generated, without writing files.
+    #[arg(long, default_value_t = false, global = true)]
+    pub dry_run: bool,
+
+    /// Number of worker threads (default: all available CPU cores).
+    #[arg(short = 'j', long, global = true)]
+    pub jobs: Option<usize>,
+
     /// The command to run.
     #[command(subcommand)]
     pub command: FormatCommand,
@@ -381,6 +389,12 @@ pub enum FormatCommand {
     /// List all supported formats, schema types, locales, and languages.
     List,
 
+    /// List the built-in schema presets and the schema each expands to.
+    Presets,
+
+    /// Show environment, build, and capability information.
+    Info,
+
     /// Print shell completion script for the given shell.
     Completions {
         /// Target shell: bash, zsh, fish, powershell, elvish.
@@ -403,35 +417,60 @@ pub fn print_completions(shell: Shell) {
     clap_complete::generate(shell, &mut cmd, name, &mut std::io::stdout());
 }
 
-/// Prints the catalogue of formats, schema field types, locales, and interface
-/// languages, localized to `lang` and styled for the terminal.
+/// Returns the localized title for a format group.
+fn group_title(group: crate::formats::FormatGroup, lang: Language) -> &'static str {
+    use crate::formats::FormatGroup;
+    match group {
+        FormatGroup::Structured => lang.catalog().group_structured,
+        FormatGroup::Text => lang.catalog().group_text,
+        FormatGroup::Images => lang.catalog().group_images,
+        FormatGroup::AudioVideo => lang.catalog().group_av,
+        FormatGroup::Documents => lang.catalog().group_docs,
+        FormatGroup::Binary => lang.catalog().group_binary,
+    }
+}
+
+/// Returns a decorative icon for a format group (ASCII fallback included).
+fn group_icon(group: crate::formats::FormatGroup) -> console::Emoji<'static, 'static> {
+    use crate::formats::FormatGroup;
+    use console::Emoji;
+    match group {
+        FormatGroup::Structured => Emoji("🗂️  ", "• "),
+        FormatGroup::Text => Emoji("📝 ", "• "),
+        FormatGroup::Images => Emoji("🖼️  ", "• "),
+        FormatGroup::AudioVideo => Emoji("🎬 ", "• "),
+        FormatGroup::Documents => Emoji("📄 ", "• "),
+        FormatGroup::Binary => Emoji("📦 ", "• "),
+    }
+}
+
+/// Prints the catalogue of formats, schema field types, presets, locales, and
+/// interface languages, localized to `lang` and styled for the terminal.
 pub fn print_format_list(lang: Language) {
-    use crate::formats::{FormatGroup, FORMAT_GROUPS};
+    use crate::data::schema::FIELD_TYPE_GROUPS;
+    use crate::formats::FORMAT_GROUPS;
 
-    println!("{}\n", ui::banner(lang));
-
-    let group_title = |group: FormatGroup| -> &'static str {
-        match group {
-            FormatGroup::Structured => lang.catalog().group_structured,
-            FormatGroup::Text => lang.catalog().group_text,
-            FormatGroup::Images => lang.catalog().group_images,
-            FormatGroup::AudioVideo => lang.catalog().group_av,
-            FormatGroup::Documents => lang.catalog().group_docs,
-            FormatGroup::Binary => lang.catalog().group_binary,
-        }
-    };
+    ui::show_banner(lang);
+    println!();
 
     println!("{}", style(tr!(lang, list_title)).bold().underlined());
     for (group, formats) in FORMAT_GROUPS {
-        println!("  {}", style(group_title(*group)).cyan().bold());
+        println!(
+            "  {}{}",
+            group_icon(*group),
+            style(group_title(*group, lang)).cyan().bold()
+        );
         println!("    {}", formats.join(", "));
     }
 
     println!("\n{}", style(tr!(lang, list_schema_title)).bold());
-    for (group, types) in SCHEMA_TYPE_GROUPS {
+    for (group, types) in FIELD_TYPE_GROUPS {
         println!("  {}", style(group).cyan());
         println!("    {}", types.join(", "));
     }
+
+    println!("\n{}", style(tr!(lang, list_presets_title)).bold());
+    println!("    {}", crate::presets::names().join(", "));
 
     println!("\n{}", style(tr!(lang, list_locales_title)).bold());
     for loc in crate::data::Locale::variants() {
@@ -446,112 +485,86 @@ pub fn print_format_list(lang: Language) {
     println!("\n{}", style(tr!(lang, list_hint)).dim());
 }
 
-/// Schema field types grouped by theme, for the `list` command. The category
-/// labels are intentionally technical (kept in English across languages).
-const SCHEMA_TYPE_GROUPS: &[(&str, &[&str])] = &[
-    (
-        "Numeric",
-        &[
-            "int(min..max)",
-            "float(min..max)",
-            "price(min..max)",
-            "age",
-            "year",
-            "latitude",
-            "longitude",
-            "percent",
-            "rating",
-            "port",
-            "timestamp",
-        ],
-    ),
-    ("Boolean", &["bool"]),
-    (
-        "People",
-        &[
-            "name",
-            "first_name",
-            "last_name",
-            "username",
-            "gender",
-            "password",
-            "ssn",
-        ],
-    ),
-    (
-        "Contact",
-        &[
-            "email",
-            "phone",
-            "address",
-            "street",
-            "city",
-            "state",
-            "zipcode",
-            "country",
-            "country_code",
-        ],
-    ),
-    (
-        "Business",
-        &[
-            "company",
-            "job",
-            "department",
-            "product",
-            "sku",
-            "currency",
-            "currency_symbol",
-            "iban",
-            "credit_card",
-            "isbn",
-        ],
-    ),
-    (
-        "Internet",
-        &[
-            "url",
-            "domain",
-            "slug",
-            "ipv4",
-            "ipv6",
-            "mac",
-            "uuid",
-            "user_agent",
-            "mime_type",
-            "filename",
-            "semver",
-        ],
-    ),
-    (
-        "Misc",
-        &[
-            "color",
-            "hex_color",
-            "language",
-            "timezone",
-            "emoji",
-            "hashtag",
-            "base64",
-            "hex",
-        ],
-    ),
-    (
-        "Temporal",
-        &["date", "time", "datetime", "weekday", "month"],
-    ),
-    ("Text", &["word", "words(n)", "sentence", "paragraph"]),
-    (
-        "Modifiers",
-        &[
-            "enum(a,b,c)",
-            "const(value)",
-            "sequence(start)",
-            "array(type,n)",
-            "type? / type?p (nullable)",
-        ],
-    ),
-];
+/// Prints the built-in schema presets, each with its localized description and
+/// the schema string it expands to.
+pub fn print_presets(lang: Language) {
+    ui::show_banner(lang);
+    println!();
+
+    println!("{}", style(tr!(lang, presets_title)).bold().underlined());
+    println!("{}\n", style(tr!(lang, presets_intro)).dim());
+
+    for p in crate::presets::PRESETS {
+        println!("  {}", style(p.name).green().bold());
+        println!("    {}", style(p.description(lang)).dim());
+        println!("    {} {}", style("schema:").dim(), style(p.schema).cyan());
+    }
+
+    println!("\n{}", style(tr!(lang, presets_hint)).dim());
+}
+
+/// Prints a boxed panel of environment, build, and capability information.
+pub fn print_info(lang: Language, jobs: Option<usize>) {
+    let version = env!("CARGO_PKG_VERSION");
+    let target = format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS);
+    let profile = if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
+    };
+    let threads = jobs.unwrap_or_else(rayon::current_num_threads);
+    let update_state = if cfg!(feature = "update") {
+        tr!(lang, info_enabled)
+    } else {
+        tr!(lang, info_disabled)
+    };
+    let repo = option_env!("CARGO_PKG_REPOSITORY").unwrap_or("n/a");
+    let license = option_env!("CARGO_PKG_LICENSE").unwrap_or("n/a");
+
+    let entries: Vec<(String, String)> = vec![
+        (tr!(lang, info_version), format!("v{version}")),
+        (tr!(lang, info_build_target), target),
+        (tr!(lang, info_profile), profile.to_string()),
+        (
+            tr!(lang, info_formats),
+            crate::formats::format_count().to_string(),
+        ),
+        (
+            tr!(lang, info_locales),
+            crate::data::Locale::variants().len().to_string(),
+        ),
+        (
+            tr!(lang, info_languages),
+            Language::variants().len().to_string(),
+        ),
+        (tr!(lang, info_presets), crate::presets::count().to_string()),
+        (tr!(lang, info_threads), threads.to_string()),
+        (tr!(lang, info_update_feature), update_state),
+        (tr!(lang, info_license), license.to_string()),
+        (tr!(lang, info_repository), repo.to_string()),
+    ];
+
+    let label_w = entries
+        .iter()
+        .map(|(l, _)| console::measure_text_width(l))
+        .max()
+        .unwrap_or(0);
+    let rows: Vec<String> = entries
+        .iter()
+        .map(|(label, value)| {
+            let pad = label_w.saturating_sub(console::measure_text_width(label));
+            format!(
+                "{}{}   {}",
+                style(label).dim(),
+                " ".repeat(pad),
+                style(value).cyan().bold()
+            )
+        })
+        .collect();
+
+    println!("{}", ui::boxed(&tr!(lang, info_title), &rows));
+    println!("\n{}", style(tr!(lang, info_hint)).dim());
+}
 
 #[cfg(test)]
 mod tests {

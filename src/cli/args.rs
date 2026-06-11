@@ -17,54 +17,78 @@ use clap::Args;
 /// Default schema used by structured-data subcommands.
 pub const DEFAULT_SCHEMA: &str = "id:sequence,name:name,email:email,created:datetime";
 
-/// Shared `--rows` / `--schema` options for structured and tabular formats.
+/// Shared `--rows` / `--schema` / `--preset` options for structured and tabular
+/// formats.
 #[derive(Args, Debug, Clone)]
 pub struct DataArgs {
     /// Number of data rows / records.
     #[arg(long, default_value_t = 10)]
     pub rows: usize,
     /// Schema definition, e.g. `"id:sequence,name:name,age:int(18..65)"`.
-    #[arg(long, default_value = DEFAULT_SCHEMA)]
+    #[arg(long, default_value = DEFAULT_SCHEMA, conflicts_with = "preset")]
     pub schema: String,
+    /// Use a built-in schema preset instead of `--schema` (run `presets` to
+    /// list them), e.g. `--preset users`.
+    #[arg(long, conflicts_with = "schema")]
+    pub preset: Option<String>,
 }
 
 impl DataArgs {
-    /// Builds object-stream options (JSON/JSONL/YAML/TOML).
-    pub fn structured(&self, pretty: bool) -> FormatOptions {
-        FormatOptions::StructuredData {
-            rows: self.rows,
-            schema: self.schema.clone(),
-            pretty,
+    /// Resolves the effective schema string: the named preset's schema when
+    /// `--preset` is given, otherwise `--schema`.
+    ///
+    /// Returns a localized [`AppError::Cli`] if the preset name is unknown.
+    pub fn resolved_schema(&self, lang: Language) -> AppResult<String> {
+        match &self.preset {
+            Some(name) => crate::presets::get(name)
+                .map(|p| p.schema.to_string())
+                .ok_or_else(|| AppError::Cli(tr!(lang, err_invalid_preset, "preset" => name))),
+            None => Ok(self.schema.clone()),
         }
+    }
+
+    /// Builds object-stream options (JSON/JSONL/YAML/TOML).
+    pub fn structured(&self, pretty: bool, lang: Language) -> AppResult<FormatOptions> {
+        Ok(FormatOptions::StructuredData {
+            rows: self.rows,
+            schema: self.resolved_schema(lang)?,
+            pretty,
+        })
     }
 
     /// Builds XML options with configurable element names.
-    pub fn xml(&self, pretty: bool, root: String, row_tag: String) -> FormatOptions {
-        FormatOptions::Xml {
+    pub fn xml(
+        &self,
+        pretty: bool,
+        root: String,
+        row_tag: String,
+        lang: Language,
+    ) -> AppResult<FormatOptions> {
+        Ok(FormatOptions::Xml {
             rows: self.rows,
-            schema: self.schema.clone(),
+            schema: self.resolved_schema(lang)?,
             pretty,
             root,
             row_tag,
-        }
+        })
     }
 
     /// Builds delimited options (CSV/TSV) for an already-parsed delimiter byte.
-    pub fn delimited(&self, delimiter: u8) -> FormatOptions {
-        FormatOptions::Delimited {
+    pub fn delimited(&self, delimiter: u8, lang: Language) -> AppResult<FormatOptions> {
+        Ok(FormatOptions::Delimited {
             rows: self.rows,
-            schema: self.schema.clone(),
+            schema: self.resolved_schema(lang)?,
             delimiter,
-        }
+        })
     }
 
     /// Builds SQL / spreadsheet options targeting `table`.
-    pub fn sql(&self, table: String) -> FormatOptions {
-        FormatOptions::Sql {
+    pub fn sql(&self, table: String, lang: Language) -> AppResult<FormatOptions> {
+        Ok(FormatOptions::Sql {
             rows: self.rows,
-            schema: self.schema.clone(),
+            schema: self.resolved_schema(lang)?,
             table,
-        }
+        })
     }
 }
 
@@ -265,13 +289,35 @@ mod tests {
         let data = DataArgs {
             rows: 7,
             schema: "a:int".into(),
+            preset: None,
         };
-        match data.structured(true) {
+        match data.structured(true, Language::En).unwrap() {
             FormatOptions::StructuredData { rows, pretty, .. } => {
                 assert_eq!(rows, 7);
                 assert!(pretty);
             }
             _ => panic!("expected StructuredData"),
         }
+    }
+
+    #[test]
+    fn test_data_args_preset_resolves_schema() {
+        let data = DataArgs {
+            rows: 5,
+            schema: DEFAULT_SCHEMA.to_string(),
+            preset: Some("users".into()),
+        };
+        let schema = data.resolved_schema(Language::En).unwrap();
+        assert_eq!(schema, crate::presets::get("users").unwrap().schema);
+    }
+
+    #[test]
+    fn test_data_args_unknown_preset_errors() {
+        let data = DataArgs {
+            rows: 5,
+            schema: DEFAULT_SCHEMA.to_string(),
+            preset: Some("nonexistent".into()),
+        };
+        assert!(data.resolved_schema(Language::En).is_err());
     }
 }
