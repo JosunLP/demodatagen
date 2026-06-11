@@ -39,7 +39,7 @@ Please report unacceptable behavior to <webadmins@leuchtturm.com>.
 
 ## Development environment
 
-demodatagen targets **Rust edition 2021** with a **minimum supported Rust version (MSRV) of 1.86**.
+demodatagen targets **Rust edition 2021** with a **minimum supported Rust version (MSRV) of 1.88**.
 
 1. Install Rust via [rustup](https://rustup.rs/):
 
@@ -51,9 +51,9 @@ demodatagen targets **Rust edition 2021** with a **minimum supported Rust versio
    reproduce CI results locally:
 
    ```bash
-   rustup toolchain install 1.86
-   rustup override set 1.86      # pins this directory to 1.86
-   rustc --version               # should print 1.86.x
+   rustup toolchain install 1.88
+   rustup override set 1.88      # pins this directory to 1.88
+   rustc --version               # should print 1.88.x
    ```
 
 3. Add the components used by our lint and format checks:

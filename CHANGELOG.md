@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Allowed `CDLA-Permissive-2.0` in `deny.toml` for Mozilla's bundled CA root
     set (`webpki-roots`), reachable only through the self-update stack.
 
+### Changed
+
+- **MSRV raised to 1.88** (from 1.86). The patched `time` ≥ 0.3.47 requires
+  rustc 1.88, and keeping the vulnerable 0.3.36 pin was not an option. CI, the
+  Docker builder, and `CONTRIBUTING.md` were updated to match.
+
 ## [0.5.0] - 2026-06-11
 
 A major usability-and-reach release: the interface is now translated into nine
