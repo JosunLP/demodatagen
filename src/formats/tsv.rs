@@ -1,8 +1,8 @@
 //! TSV (tab-separated values) generator.
 //!
 //! TSV is CSV with a tab delimiter, so this generator delegates to the
-//! [`CsvGenerator`](crate::formats::csv::CsvGenerator) — the app layer supplies
-//! a tab delimiter — and only differs in its reported name and extension.
+//! [`CsvGenerator`] — the app layer supplies a tab delimiter — and only differs
+//! in its reported name and extension.
 use crate::core::generator::{Generator, GeneratorConfig};
 use crate::error::GenResult;
 use crate::formats::csv::CsvGenerator;

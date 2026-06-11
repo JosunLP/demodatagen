@@ -1,0 +1,55 @@
+# cargo-deny configuration
+# https://embarkstudios.github.io/cargo-deny/
+#
+# Run locally with:
+#   cargo deny check
+#   cargo deny check advisories bans licenses sources
+
+[graph]
+# Check all target triples by default; restrict here if needed.
+all-features = true
+
+[advisories]
+# Use the upstream RustSec advisory database.
+db-urls = ["https://github.com/rustsec/advisory-db"]
+# Fail on any unmaintained or yanked crates as well as vulnerabilities.
+unmaintained = "all"
+yanked = "warn"
+ignore = []
+
+[licenses]
+# SPDX identifiers for licenses considered acceptable for this project.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "MPL-2.0",
+    # Mozilla's bundled CA root set (webpki-roots / webpki-root-certs), reachable
+    # only via the optional self-update TLS stack under `--all-features`.
+    "CDLA-Permissive-2.0",
+]
+# Confidence threshold for detecting a license from its text (0.0 - 1.0).
+confidence-threshold = 0.8
+
+[bans]
+# Warn (rather than error) when multiple versions of the same crate are pulled in.
+multiple-versions = "warn"
+# Warn when a crate uses a wildcard ("*") version requirement.
+wildcards = "warn"
+# Crates explicitly allowed/denied can be listed here.
+allow = []
+deny = []
+skip = []
+skip-tree = []
+
+[sources]
+# Disallow crates from unknown registries or git sources.
+unknown-registry = "deny"
+unknown-git = "deny"
+# Only crates.io is permitted by default.
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

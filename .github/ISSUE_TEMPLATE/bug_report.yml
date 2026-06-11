@@ -1,0 +1,128 @@
+name: Bug Report
+description: Report a defect or unexpected behavior in demodatagen.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report!
+
+        Before submitting, please search the existing issues to avoid duplicates and make sure
+        you are running the latest release. The more detail you provide, the faster we can help.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I have searched the [existing issues](https://github.com/josunlp/demodatagen/issues) and this has not already been reported.
+          required: true
+        - label: I am running the latest release of demodatagen, or have noted the exact version below.
+          required: true
+        - label: I have reviewed the [README](https://github.com/josunlp/demodatagen#readme) and documentation.
+          required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected format or area
+      description: Which output format or component does this bug affect?
+      options:
+        - "Not sure / general"
+        - "Schema engine"
+        - "Schema presets (--preset)"
+        - "Fake data / locale"
+        - "Interface language / i18n (--lang)"
+        - "Seeding / determinism"
+        - "Parallel batch generation"
+        - "CLI / argument parsing"
+        - "Terminal UI / animations"
+        - "Library / public API"
+        - "Format: JSON"
+        - "Format: YAML"
+        - "Format: XML"
+        - "Format: CSV / TSV"
+        - "Format: SQL"
+        - "Format: PNG / image"
+        - "Format: WAV / audio"
+        - "Format: MP4 / video"
+        - "Format: PDF"
+        - "Format: XLSX / spreadsheet"
+        - "Format: ZIP / archive"
+        - "Format: other"
+        - "Build / install / packaging"
+        - "Documentation"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: demodatagen version
+      description: "Output of `demodatagen --version` (or the crate version, git commit, or release tag you are using)."
+      placeholder: "e.g. demodatagen 1.2.3 (or git rev c0af7b2)"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: Where did you observe this bug?
+      options:
+        - "Linux"
+        - "macOS"
+        - "Windows"
+        - "Other / multiple"
+    validations:
+      required: true
+  - type: input
+    id: install-method
+    attributes:
+      label: Installation method
+      description: How did you install demodatagen?
+      placeholder: "e.g. cargo install, prebuilt binary, Docker image, built from source"
+    validations:
+      required: false
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the exact command(s), schema, and inputs needed to reproduce the problem.
+      placeholder: |
+        1. Run `demodatagen --seed 42 json --schema "id:sequence,name:name,email:email" --rows 10`
+        2. Open the generated file in ./output
+        3. Observe the unexpected output
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include any incorrect output or generated files where helpful.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs and output
+      description: |
+        Paste any error messages, stack traces, or console output. Re-running with verbose logging
+        (e.g. `RUST_LOG=debug` or `RUST_BACKTRACE=1`) is especially helpful.
+        This will be automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context, screenshots, or sample files that might help diagnose the issue.
+    validations:
+      required: false

@@ -1,7 +1,7 @@
 //! INI configuration-file generator.
 //!
 //! Produces an INI file with the requested number of `[section]` blocks, each
-//! containing realistic `key = value` config pairs. The [`config_pair`] helper
+//! containing realistic `key = value` config pairs. The `config_pair` helper
 //! is shared with the `.env` generator.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;

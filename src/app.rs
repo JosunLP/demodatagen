@@ -3,42 +3,43 @@
 //! This is the glue between [`crate::cli`] and the [`crate::core`] batch engine.
 //! Keeping it in the library (rather than `main.rs`) lets integration tests and
 //! embedders drive the whole pipeline programmatically.
+//!
+//! Responsibilities, in order: configure color, detect the interface language,
+//! initialize logging, then dispatch the parsed command. All user-facing text
+//! flows through [`crate::i18n`]; all status rendering through [`crate::ui`].
+use crate::cli::args::{self, parse_delimiter};
 use crate::cli::{Cli, FormatCommand};
 use crate::core::batch::{run_batch, BatchConfig};
-use crate::core::generator::{create_rng, FormatOptions, GeneratorConfig, ImagePattern, ToneType};
+use crate::core::generator::{create_rng, FormatOptions, GeneratorConfig};
 use crate::data::Locale;
 use crate::error::{AppError, AppResult};
+use crate::i18n::{tr, Language};
 use clap::Parser;
-use log::{error, info};
+use log::debug;
 use std::io::Write;
-
-/// Error shown when update support is disabled at compile time.
-#[cfg(not(feature = "update"))]
-const UPDATE_DISABLED_MESSAGE: &str =
-    "Self-update support is disabled in this build. Rebuild with --features update.";
 
 /// Checks for updates when the feature is enabled.
 #[cfg(feature = "update")]
-fn check_for_update() -> AppResult<bool> {
-    crate::update::check_for_update()
+fn check_for_update(lang: Language) -> AppResult<bool> {
+    crate::update::check_for_update(lang)
 }
 
 /// Reports that update support is unavailable in this build.
 #[cfg(not(feature = "update"))]
-fn check_for_update() -> AppResult<bool> {
-    Err(AppError::Update(UPDATE_DISABLED_MESSAGE.to_string()))
+fn check_for_update(lang: Language) -> AppResult<bool> {
+    Err(AppError::Update(tr!(lang, update_disabled)))
 }
 
-/// Performs a self-update when the feature is enabled.
+/// Performs a self-update when the feature is enabled, optionally to a tag.
 #[cfg(feature = "update")]
-fn perform_update() -> AppResult<()> {
-    crate::update::perform_update()
+fn perform_update(tag: Option<&str>, lang: Language) -> AppResult<()> {
+    crate::update::update_to(tag, lang)
 }
 
 /// Reports that self-update is unavailable in this build.
 #[cfg(not(feature = "update"))]
-fn perform_update() -> AppResult<()> {
-    Err(AppError::Update(UPDATE_DISABLED_MESSAGE.to_string()))
+fn perform_update(_tag: Option<&str>, lang: Language) -> AppResult<()> {
+    Err(AppError::Update(tr!(lang, update_disabled)))
 }
 
 /// Parses the CLI from `std::env::args` and runs the program.
@@ -46,17 +47,35 @@ fn perform_update() -> AppResult<()> {
 /// Returns the process exit code.
 pub fn run() -> i32 {
     let cli = Cli::parse();
+    crate::ui::set_colors(cli.color.to_choice());
+    let lang = Language::detect(cli.lang.as_deref());
     init_logging(&cli);
-    match dispatch(cli) {
+    configure_threads(cli.jobs);
+    match dispatch(cli, lang) {
         Ok(code) => code,
         Err(e) => {
-            error!("{e}");
+            crate::ui::error_line(&e.to_string());
             1
         }
     }
 }
 
+/// Sizes the global Rayon thread pool when `--jobs` is given.
+///
+/// Best-effort: building the global pool can only happen once, so a second call
+/// (or an already-initialized pool) is silently ignored.
+fn configure_threads(jobs: Option<usize>) {
+    if let Some(n) = jobs {
+        let _ = rayon::ThreadPoolBuilder::new()
+            .num_threads(n.max(1))
+            .build_global();
+    }
+}
+
 /// Initializes the logger from the verbosity flags.
+///
+/// Logging is for *diagnostics* (opt-in via `--verbose` or `RUST_LOG`); the
+/// user-facing status output is rendered separately by [`crate::ui`].
 fn init_logging(cli: &Cli) {
     let log_level = if cli.verbose {
         "debug"
@@ -71,32 +90,40 @@ fn init_logging(cli: &Cli) {
 }
 
 /// Dispatches a parsed CLI to the right action, returning an exit code.
-fn dispatch(cli: Cli) -> AppResult<i32> {
+fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
     // Update-only flows.
     if cli.check_update {
-        return match check_for_update() {
-            Ok(_) => Ok(0),
+        return Ok(match check_for_update(lang) {
+            Ok(_) => 0,
             Err(e) => {
-                error!("Update check failed: {e}");
-                Ok(1)
+                crate::ui::error_line(&tr!(lang, update_check_failed, "error" => e));
+                1
             }
-        };
+        });
     }
 
-    if matches!(&cli.command, FormatCommand::Update) {
-        return match perform_update() {
-            Ok(()) => Ok(0),
+    if let FormatCommand::Update { tag } = &cli.command {
+        return Ok(match perform_update(tag.as_deref(), lang) {
+            Ok(()) => 0,
             Err(e) => {
-                error!("Update failed: {e}");
-                Ok(1)
+                crate::ui::error_line(&tr!(lang, update_failed, "error" => e));
+                1
             }
-        };
+        });
     }
 
     // Informational subcommands that don't generate files.
     match &cli.command {
         FormatCommand::List => {
-            crate::cli::print_format_list();
+            crate::cli::print_format_list(lang);
+            return Ok(0);
+        }
+        FormatCommand::Presets => {
+            crate::cli::print_presets(lang);
+            return Ok(0);
+        }
+        FormatCommand::Info => {
+            crate::cli::print_info(lang, cli.jobs);
             return Ok(0);
         }
         FormatCommand::Completions { shell } => {
@@ -107,18 +134,31 @@ fn dispatch(cli: Cli) -> AppResult<i32> {
     }
 
     #[cfg(feature = "update")]
-    if !cli.skip_update && !cli.quiet && !cli.stdout {
-        // Best-effort, non-blocking update notice.
-        let _ = check_for_update();
+    if !cli.skip_update && !cli.quiet && !cli.stdout && !cli.dry_run {
+        // Best-effort update notice — skipped for `--dry-run`, which is a fast,
+        // side-effect-free planning mode that should never touch the network.
+        let _ = check_for_update(lang);
     }
 
-    let locale: Locale = cli.locale.parse().map_err(|e: String| AppError::Cli(e))?;
-
-    let (format_options, format_key) = resolve_format(&cli.command)?;
+    let locale: Locale = cli.locale.parse().map_err(AppError::Cli)?;
+    let (format_options, format_key) = resolve_format(&cli.command, lang)?;
 
     let generator = crate::formats::get_generator(format_key)
-        .ok_or_else(|| AppError::Cli(format!("Unknown format: {format_key}")))?;
+        .ok_or_else(|| AppError::Cli(tr!(lang, err_unknown_format, "format" => format_key)))?;
     let extension = generator.file_extension().to_string();
+
+    // Surface likely schema typos as a non-fatal, localized hint. Generation
+    // still proceeds (unknown types degrade to a generic word).
+    if !cli.quiet {
+        if let Some(schema) = schema_of(&format_options) {
+            warn_unknown_schema_types(schema, lang);
+        }
+    }
+
+    // Plan-only mode: report what would be generated and stop.
+    if cli.dry_run {
+        return Ok(dry_run_report(&cli, generator.as_ref(), &extension, lang));
+    }
 
     // Stream a single artifact to stdout when requested.
     if cli.stdout {
@@ -148,149 +188,149 @@ fn dispatch(cli: Cli) -> AppResult<i32> {
         seed: cli.seed,
         quiet: cli.quiet,
         locale,
+        lang,
         format_options,
     };
 
     match run_batch(generator.as_ref(), &batch_config) {
         Ok(paths) => {
-            if !cli.quiet {
-                info!(
-                    "Generated {} file(s) in {:?}",
-                    paths.len(),
-                    batch_config.output_dir
-                );
-            }
+            debug!(
+                "Wrote {} file(s) to {:?}",
+                paths.len(),
+                batch_config.output_dir
+            );
             Ok(0)
         }
         Err(e) => {
-            error!("Generation failed: {e}");
+            crate::ui::error_line(&tr!(lang, err_generation_failed, "error" => e));
             Ok(1)
         }
     }
 }
 
+/// Returns the schema string carried by a [`FormatOptions`], if any.
+fn schema_of(options: &FormatOptions) -> Option<&str> {
+    use FormatOptions as O;
+    match options {
+        O::StructuredData { schema, .. }
+        | O::Xml { schema, .. }
+        | O::Delimited { schema, .. }
+        | O::Sql { schema, .. } => Some(schema.as_str()),
+        _ => None,
+    }
+}
+
+/// Prints a localized "did you mean …" hint for each unrecognized schema type.
+///
+/// Non-fatal: unknown types still generate (a generic word); this only helps
+/// users notice typos like `emial` for `email`.
+fn warn_unknown_schema_types(schema: &str, lang: Language) {
+    let Ok(parsed) = crate::data::Schema::parse(schema) else {
+        return;
+    };
+    for unknown in parsed.unknown_field_types() {
+        match crate::data::schema::suggest_type(&unknown) {
+            Some(s) => crate::ui::warn_line(
+                &tr!(lang, warn_unknown_type, "type" => unknown, "suggestion" => s),
+            ),
+            None => crate::ui::warn_line(&tr!(lang, warn_unknown_type_plain, "type" => unknown)),
+        }
+    }
+}
+
+/// Prints the plan for a `--dry-run`: header, plan line, and the file paths that
+/// *would* be written (capped), without touching the filesystem.
+///
+/// Status lines go to stderr; the planned paths go to stdout so they stay
+/// greppable and pipeable. Returns the process exit code (always `0`).
+fn dry_run_report(
+    cli: &Cli,
+    generator: &dyn crate::core::generator::Generator,
+    extension: &str,
+    lang: Language,
+) -> i32 {
+    use crate::core::generator::resolve_filename;
+    let format_name = generator.format_name();
+
+    crate::ui::warn_line(&tr!(lang, dryrun_header));
+
+    if cli.stdout {
+        eprintln!(
+            "{}",
+            tr!(lang, dryrun_plan, "count" => 1, "format" => format_name, "dir" => "stdout")
+        );
+        eprintln!("{}", tr!(lang, dryrun_done, "count" => 1));
+        return 0;
+    }
+
+    eprintln!(
+        "{}",
+        tr!(lang, dryrun_plan,
+            "count" => cli.count,
+            "format" => format_name,
+            "dir" => cli.output_dir.display())
+    );
+    eprintln!("{}", tr!(lang, dryrun_files_title));
+
+    const MAX_LISTED: usize = 20;
+    let show = cli.count.min(MAX_LISTED);
+    for i in 0..show {
+        let filename = resolve_filename(&cli.name_pattern, i, extension);
+        println!("{}", cli.output_dir.join(filename).display());
+    }
+    if cli.count > show {
+        crate::ui::hint_line(&tr!(lang, dryrun_more, "count" => cli.count - show));
+    }
+
+    eprintln!("{}", tr!(lang, dryrun_done, "count" => cli.count));
+    0
+}
+
 /// Resolves a format subcommand into its [`FormatOptions`] and registry key.
-fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static str)> {
+///
+/// Each arm is a one-liner thanks to the [`args`] helper methods, which own the
+/// field → [`FormatOptions`] mapping for their parameter group.
+fn resolve_format(
+    command: &FormatCommand,
+    lang: Language,
+) -> AppResult<(FormatOptions, &'static str)> {
+    use FormatCommand as C;
     let resolved = match command {
-        FormatCommand::Json {
-            rows,
-            schema,
-            pretty,
-        } => (
-            FormatOptions::StructuredData {
-                rows: *rows,
-                schema: schema.clone(),
-                pretty: *pretty,
-            },
-            "json",
-        ),
-        FormatCommand::Jsonl { rows, schema } => (
-            FormatOptions::StructuredData {
-                rows: *rows,
-                schema: schema.clone(),
-                pretty: false,
-            },
-            "jsonl",
-        ),
-        FormatCommand::Yaml { rows, schema } => (
-            FormatOptions::StructuredData {
-                rows: *rows,
-                schema: schema.clone(),
-                pretty: true,
-            },
-            "yaml",
-        ),
-        FormatCommand::Toml { rows, schema } => (
-            FormatOptions::StructuredData {
-                rows: *rows,
-                schema: schema.clone(),
-                pretty: true,
-            },
-            "toml",
-        ),
-        FormatCommand::Xml {
-            rows,
-            schema,
+        C::Json { data, pretty } => (data.structured(*pretty, lang)?, "json"),
+        C::Jsonl { data } => (data.structured(false, lang)?, "jsonl"),
+        C::Yaml { data } => (data.structured(true, lang)?, "yaml"),
+        C::Toml { data } => (data.structured(true, lang)?, "toml"),
+        C::Xml {
+            data,
             pretty,
             root,
             row_tag,
         } => (
-            FormatOptions::Xml {
-                rows: *rows,
-                schema: schema.clone(),
-                pretty: *pretty,
-                root: root.clone(),
-                row_tag: row_tag.clone(),
-            },
+            data.xml(*pretty, root.clone(), row_tag.clone(), lang)?,
             "xml",
         ),
-        FormatCommand::Csv {
-            rows,
-            schema,
-            delimiter,
-        } => (
-            FormatOptions::Delimited {
-                rows: *rows,
-                schema: schema.clone(),
-                delimiter: parse_delimiter(delimiter)?,
-            },
-            "csv",
-        ),
-        FormatCommand::Tsv { rows, schema } => (
-            FormatOptions::Delimited {
-                rows: *rows,
-                schema: schema.clone(),
-                delimiter: b'\t',
-            },
-            "tsv",
-        ),
-        FormatCommand::Sql {
-            rows,
-            schema,
-            table,
-        } => (
-            FormatOptions::Sql {
-                rows: *rows,
-                schema: schema.clone(),
-                table: table.clone(),
-            },
-            "sql",
-        ),
-        FormatCommand::Markdown {
-            paragraphs,
-            headings,
-        } => (
-            FormatOptions::Markdown {
-                paragraphs: *paragraphs,
-                headings: *headings,
-            },
-            "md",
-        ),
-        FormatCommand::Html {
-            paragraphs,
-            headings,
-        } => (
-            FormatOptions::Markdown {
-                paragraphs: *paragraphs,
-                headings: *headings,
-            },
-            "html",
-        ),
-        FormatCommand::Txt { paragraphs, words } => (
+        C::Csv { data, delimiter } => (data.delimited(parse_delimiter(delimiter)?, lang)?, "csv"),
+        C::Tsv { data } => (data.delimited(b'\t', lang)?, "tsv"),
+        C::Sql { data, table } => (data.sql(table.clone(), lang)?, "sql"),
+        C::Markdown { doc } => (doc.options(), "md"),
+        C::Html { doc } => (doc.options(), "html"),
+        C::Pdf { doc } => (doc.options(), "pdf"),
+        C::Txt { text } => (text.options(), "txt"),
+        C::Gzip { paragraphs, words } => (
             FormatOptions::Text {
                 paragraphs: *paragraphs,
                 words: *words,
             },
-            "txt",
+            "gz",
         ),
-        FormatCommand::Log { lines, style } => (
+        C::Log { lines, style } => (
             FormatOptions::Log {
                 lines: *lines,
                 style: style.clone(),
             },
             "log",
         ),
-        FormatCommand::Ini { sections, keys } => (
+        C::Ini { sections, keys } => (
             FormatOptions::KeyValue {
                 sections: *sections,
                 keys: *keys,
@@ -298,7 +338,7 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "ini",
         ),
-        FormatCommand::Env { keys } => (
+        C::Env { keys } => (
             FormatOptions::KeyValue {
                 sections: 1,
                 keys: *keys,
@@ -306,39 +346,35 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "env",
         ),
-        FormatCommand::Png {
-            width,
-            height,
-            pattern,
-        } => (image_options(*width, *height, pattern, 1)?, "png"),
-        FormatCommand::Jpg {
-            width,
-            height,
-            pattern,
-        } => (image_options(*width, *height, pattern, 1)?, "jpg"),
-        FormatCommand::Webp {
-            width,
-            height,
-            pattern,
-        } => (image_options(*width, *height, pattern, 1)?, "webp"),
-        FormatCommand::Bmp {
-            width,
-            height,
-            pattern,
-        } => (image_options(*width, *height, pattern, 1)?, "bmp"),
-        FormatCommand::Tiff {
-            width,
-            height,
-            pattern,
-        } => (image_options(*width, *height, pattern, 1)?, "tiff"),
-        FormatCommand::Ico { size, pattern } => (image_options(*size, *size, pattern, 1)?, "ico"),
-        FormatCommand::Gif {
+        C::Png { image } => (image.options(1, lang), "png"),
+        C::Jpg { image } => (image.options(1, lang), "jpg"),
+        C::Webp { image } => (image.options(1, lang), "webp"),
+        C::Bmp { image } => (image.options(1, lang), "bmp"),
+        C::Tiff { image } => (image.options(1, lang), "tiff"),
+        C::Ico { size, pattern } => (
+            FormatOptions::Image {
+                width: *size,
+                height: *size,
+                pattern: args::parse_pattern(pattern, lang),
+                frames: 1,
+            },
+            "ico",
+        ),
+        C::Gif {
             width,
             height,
             pattern,
             frames,
-        } => (image_options(*width, *height, pattern, *frames)?, "gif"),
-        FormatCommand::Svg {
+        } => (
+            FormatOptions::Image {
+                width: *width,
+                height: *height,
+                pattern: args::parse_pattern(pattern, lang),
+                frames: *frames,
+            },
+            "gif",
+        ),
+        C::Svg {
             width,
             height,
             shapes,
@@ -350,47 +386,13 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "svg",
         ),
-        FormatCommand::Mp3 {
-            duration,
-            sample_rate,
-            tone,
-        } => (audio_options(*duration, *sample_rate, tone)?, "mp3"),
-        FormatCommand::Wav {
-            duration,
-            sample_rate,
-            tone,
-        } => (audio_options(*duration, *sample_rate, tone)?, "wav"),
-        FormatCommand::Mp4 {
-            duration,
-            width,
-            height,
-            fps,
-        } => (
-            FormatOptions::Video {
-                duration: *duration,
-                width: *width,
-                height: *height,
-                fps: *fps,
-            },
-            "mp4",
-        ),
-        FormatCommand::Webm {
-            duration,
-            width,
-            height,
-            fps,
-        } => (
-            FormatOptions::Video {
-                duration: *duration,
-                width: *width,
-                height: *height,
-                fps: *fps,
-            },
-            "webm",
-        ),
-        FormatCommand::Exe { size } => (FormatOptions::Binary { size: *size }, "exe"),
-        FormatCommand::Dll { size } => (FormatOptions::Binary { size: *size }, "dll"),
-        FormatCommand::Zip {
+        C::Mp3 { audio } => (audio.options(lang), "mp3"),
+        C::Wav { audio } => (audio.options(lang), "wav"),
+        C::Mp4 { video } => (video.options(), "mp4"),
+        C::Webm { video } => (video.options(), "webm"),
+        C::Exe { size } => (FormatOptions::Binary { size: *size }, "exe"),
+        C::Dll { size } => (FormatOptions::Binary { size: *size }, "dll"),
+        C::Zip {
             files,
             contained_format,
             compression_level,
@@ -402,7 +404,7 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "zip",
         ),
-        FormatCommand::Tar {
+        C::Tar {
             files,
             contained_format,
         } => (
@@ -413,97 +415,12 @@ fn resolve_format(command: &FormatCommand) -> AppResult<(FormatOptions, &'static
             },
             "tar",
         ),
-        FormatCommand::Pdf {
-            paragraphs,
-            headings,
-        } => (
-            FormatOptions::Markdown {
-                paragraphs: *paragraphs,
-                headings: *headings,
-            },
-            "pdf",
-        ),
-        FormatCommand::Xlsx {
-            rows,
-            schema,
-            sheet,
-        } => (
-            FormatOptions::Sql {
-                rows: *rows,
-                schema: schema.clone(),
-                table: sheet.clone(),
-            },
-            "xlsx",
-        ),
-        FormatCommand::Gzip { paragraphs, words } => (
-            FormatOptions::Text {
-                paragraphs: *paragraphs,
-                words: *words,
-            },
-            "gz",
-        ),
-        FormatCommand::Update | FormatCommand::List | FormatCommand::Completions { .. } => {
+        C::Xlsx { data, sheet } => (data.sql(sheet.clone(), lang)?, "xlsx"),
+        C::Update { .. } | C::List | C::Presets | C::Info | C::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }
     };
     Ok(resolved)
-}
-
-/// Builds [`FormatOptions::Image`], validating the pattern string.
-fn image_options(width: u32, height: u32, pattern: &str, frames: u32) -> AppResult<FormatOptions> {
-    Ok(FormatOptions::Image {
-        width,
-        height,
-        pattern: parse_pattern(pattern),
-        frames,
-    })
-}
-
-/// Builds [`FormatOptions::Audio`], validating the tone string.
-fn audio_options(duration: f32, sample_rate: u32, tone: &str) -> AppResult<FormatOptions> {
-    Ok(FormatOptions::Audio {
-        duration,
-        sample_rate,
-        tone: parse_tone(tone),
-    })
-}
-
-/// Parses a one-character delimiter spec (`,`, `;`, `\t`, `|`, …).
-fn parse_delimiter(s: &str) -> AppResult<u8> {
-    let resolved = match s {
-        "\\t" | "tab" => '\t',
-        "" => ',',
-        other => {
-            let mut chars = other.chars();
-            let c = chars.next().unwrap();
-            if chars.next().is_some() {
-                return Err(AppError::Cli(format!(
-                    "Delimiter must be a single character, got '{other}'"
-                )));
-            }
-            c
-        }
-    };
-    if !resolved.is_ascii() {
-        return Err(AppError::Cli("Delimiter must be an ASCII character".into()));
-    }
-    Ok(resolved as u8)
-}
-
-/// Parses an image pattern string, falling back to Gradient on error.
-fn parse_pattern(s: &str) -> ImagePattern {
-    s.parse().unwrap_or_else(|e| {
-        eprintln!("Warning: {e}. Using 'gradient' as default.");
-        ImagePattern::Gradient
-    })
-}
-
-/// Parses a tone type string, falling back to Sine on error.
-fn parse_tone(s: &str) -> ToneType {
-    s.parse().unwrap_or_else(|e| {
-        eprintln!("Warning: {e}. Using 'sine' as default.");
-        ToneType::Sine
-    })
 }
 
 #[cfg(test)]
@@ -511,17 +428,44 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_delimiter_variants() {
-        assert_eq!(parse_delimiter(",").unwrap(), b',');
-        assert_eq!(parse_delimiter(";").unwrap(), b';');
-        assert_eq!(parse_delimiter("\\t").unwrap(), b'\t');
-        assert_eq!(parse_delimiter("tab").unwrap(), b'\t');
-        assert_eq!(parse_delimiter("|").unwrap(), b'|');
-        assert_eq!(parse_delimiter("").unwrap(), b',');
+    fn test_resolve_structured() {
+        let cli = Cli::parse_from(["demodatagen", "json", "--rows", "5", "--pretty"]);
+        let (opts, key) = resolve_format(&cli.command, Language::En).unwrap();
+        assert_eq!(key, "json");
+        assert!(matches!(
+            opts,
+            FormatOptions::StructuredData {
+                rows: 5,
+                pretty: true,
+                ..
+            }
+        ));
     }
 
     #[test]
-    fn test_parse_delimiter_rejects_multichar() {
-        assert!(parse_delimiter("ab").is_err());
+    fn test_resolve_csv_bad_delimiter_errors() {
+        let cli = Cli::parse_from(["demodatagen", "csv", "--delimiter", "ab"]);
+        assert!(resolve_format(&cli.command, Language::En).is_err());
+    }
+
+    #[test]
+    fn test_resolve_image_and_audio() {
+        crate::ui::set_colors(crate::ui::ColorChoice::Never);
+        let cli = Cli::parse_from(["demodatagen", "png", "--width", "32", "--height", "16"]);
+        let (opts, key) = resolve_format(&cli.command, Language::En).unwrap();
+        assert_eq!(key, "png");
+        assert!(matches!(
+            opts,
+            FormatOptions::Image {
+                width: 32,
+                height: 16,
+                ..
+            }
+        ));
+
+        let cli = Cli::parse_from(["demodatagen", "mp3", "--duration", "2"]);
+        let (opts, key) = resolve_format(&cli.command, Language::En).unwrap();
+        assert_eq!(key, "mp3");
+        assert!(matches!(opts, FormatOptions::Audio { .. }));
     }
 }

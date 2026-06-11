@@ -1,24 +1,63 @@
 //! CLI argument definitions using `clap`.
 //!
-//! Defines the top-level CLI structure with global options and format-specific
-//! subcommands, each carrying their own parameters, plus the `list` and
-//! `completions` helper subcommands.
-use clap::{CommandFactory, Parser, Subcommand};
+//! Defines the top-level [`Cli`] with global options and the per-format
+//! subcommands ([`FormatCommand`]), plus the informational `list` and
+//! `completions` subcommands. Repeated parameter sets live in
+//! [`args`] and are pulled in via `#[command(flatten)]`.
+pub mod args;
+
+use crate::i18n::{tr, Language};
+use crate::ui::{self, ColorChoice};
+use args::{AudioArgs, DataArgs, DocArgs, ImageArgs, TextArgs, VideoArgs};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
+use console::style;
 use std::path::PathBuf;
 
-/// Default schema used by structured-data subcommands.
-const DEFAULT_SCHEMA: &str = "id:sequence,name:name,email:email,created:datetime";
+/// When to colorize terminal output.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, ValueEnum)]
+pub enum ColorWhen {
+    /// Colorize when stderr is a terminal and `NO_COLOR` is unset (default).
+    #[default]
+    Auto,
+    /// Always colorize.
+    Always,
+    /// Never colorize.
+    Never,
+}
 
-/// A fast, offline CLI for generating realistic demo files in many formats.
+impl ColorWhen {
+    /// Maps to the presentation layer's [`ColorChoice`].
+    pub fn to_choice(self) -> ColorChoice {
+        match self {
+            ColorWhen::Auto => ColorChoice::Auto,
+            ColorWhen::Always => ColorChoice::Always,
+            ColorWhen::Never => ColorChoice::Never,
+        }
+    }
+}
+
+/// Parses the `--jobs` value, rejecting `0` (which would mean "no workers").
+fn parse_jobs(raw: &str) -> Result<usize, String> {
+    match raw.parse::<usize>() {
+        Ok(0) => Err("must be at least 1".to_string()),
+        Ok(n) => Ok(n),
+        Err(_) => Err(format!("`{raw}` is not a positive integer")),
+    }
+}
+
+/// A fast, offline, fully internationalized CLI for generating realistic demo
+/// files in many formats.
 ///
 /// Supports structured data (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL),
 /// text (TXT, Markdown, HTML, LOG, INI, ENV), images (PNG, JPG, WebP, BMP,
 /// TIFF, ICO, GIF, SVG), audio (MP3, WAV), video (MP4, WebM), documents
-/// (PDF, XLSX), binary stubs (EXE, DLL), and archives (ZIP, TAR, GZIP).
+/// (PDF, XLSX), binary stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across
+/// ten data locales and nine interface languages, with built-in schema presets.
 #[derive(Parser, Debug)]
 #[command(name = "demodatagen")]
 #[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
 pub struct Cli {
     /// Target output directory for generated files.
     #[arg(short = 'o', long, default_value = "./output", global = true)]
@@ -32,9 +71,18 @@ pub struct Cli {
     #[arg(short = 's', long, global = true)]
     pub seed: Option<u64>,
 
-    /// Locale for region-specific fake data (e.g. `en_us`, `de_de`).
+    /// Data locale for region-specific fake data (e.g. `en_us`, `de_de`, `fr_fr`).
     #[arg(short = 'l', long, default_value = "en_us", global = true)]
     pub locale: String,
+
+    /// Interface language for messages (`en`, `de`, `fr`, `es`, `it`, `pt`,
+    /// `nl`, `pl`, `sv`). Defaults to the system locale, then English.
+    #[arg(long, global = true)]
+    pub lang: Option<String>,
+
+    /// When to use colored output.
+    #[arg(long, value_enum, default_value_t = ColorWhen::Auto, global = true)]
+    pub color: ColorWhen,
 
     /// Write a single generated file to stdout instead of disk
     /// (forces `--count 1` and suppresses the progress bar).
@@ -50,11 +98,11 @@ pub struct Cli {
     pub overwrite: bool,
 
     /// Suppress all output except errors.
-    #[arg(long, default_value_t = false, global = true)]
+    #[arg(short = 'q', long, default_value_t = false, global = true)]
     pub quiet: bool,
 
     /// Enable verbose (debug) logging.
-    #[arg(long, default_value_t = false, global = true)]
+    #[arg(short = 'v', long, default_value_t = false, global = true)]
     pub verbose: bool,
 
     /// Skip the auto-update check on startup.
@@ -64,6 +112,14 @@ pub struct Cli {
     /// Only check for updates without running the main command.
     #[arg(long, default_value_t = false, global = true)]
     pub check_update: bool,
+
+    /// Plan the run and print what would be generated, without writing files.
+    #[arg(long, default_value_t = false, global = true)]
+    pub dry_run: bool,
+
+    /// Number of worker threads (default: all available CPU cores).
+    #[arg(short = 'j', long, global = true, value_parser = parse_jobs)]
+    pub jobs: Option<usize>,
 
     /// The command to run.
     #[command(subcommand)]
@@ -75,12 +131,8 @@ pub struct Cli {
 pub enum FormatCommand {
     /// Generate JSON files (array of objects) with structured fake data.
     Json {
-        /// Number of data rows / records.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition, e.g. `"id:sequence,name:name,age:int(18..65)"`.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
         /// Pretty-print the JSON output.
         #[arg(long, default_value_t = false)]
         pretty: bool,
@@ -88,42 +140,26 @@ pub enum FormatCommand {
 
     /// Generate newline-delimited JSON (JSONL / NDJSON).
     Jsonl {
-        /// Number of records (one JSON object per line).
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
     },
 
     /// Generate YAML files with structured fake data.
     Yaml {
-        /// Number of data rows / records.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
     },
 
     /// Generate TOML files with an array of tables.
     Toml {
-        /// Number of data rows / records.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
     },
 
     /// Generate XML files with structured fake data.
     Xml {
-        /// Number of data rows / records.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
         /// Pretty-print (indent) the XML output.
         #[arg(long, default_value_t = false)]
         pretty: bool,
@@ -137,12 +173,8 @@ pub enum FormatCommand {
 
     /// Generate CSV files with structured fake data.
     Csv {
-        /// Number of data rows.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
         /// Field delimiter (single character, or `\t`/`tab` for tab).
         #[arg(long, default_value = ",")]
         delimiter: String,
@@ -150,22 +182,14 @@ pub enum FormatCommand {
 
     /// Generate TSV (tab-separated) files.
     Tsv {
-        /// Number of data rows.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
     },
 
     /// Generate a SQL script with `CREATE TABLE` + `INSERT` statements.
     Sql {
-        /// Number of rows to insert.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
         /// Target table name.
         #[arg(long, default_value = "demo_data")]
         table: String,
@@ -173,32 +197,20 @@ pub enum FormatCommand {
 
     /// Generate Markdown files with headings and paragraphs.
     Markdown {
-        /// Number of paragraphs.
-        #[arg(long, default_value_t = 5)]
-        paragraphs: usize,
-        /// Number of section headings.
-        #[arg(long, default_value_t = 3)]
-        headings: usize,
+        #[command(flatten)]
+        doc: DocArgs,
     },
 
     /// Generate HTML documents with headings and paragraphs.
     Html {
-        /// Number of paragraphs.
-        #[arg(long, default_value_t = 5)]
-        paragraphs: usize,
-        /// Number of section headings.
-        #[arg(long, default_value_t = 3)]
-        headings: usize,
+        #[command(flatten)]
+        doc: DocArgs,
     },
 
     /// Generate plain text files.
     Txt {
-        /// Number of paragraphs.
-        #[arg(long, default_value_t = 5)]
-        paragraphs: usize,
-        /// Approximate total word count (0 = auto based on paragraphs).
-        #[arg(long, default_value_t = 0)]
-        words: usize,
+        #[command(flatten)]
+        text: TextArgs,
     },
 
     /// Generate synthetic log files.
@@ -230,67 +242,32 @@ pub enum FormatCommand {
 
     /// Generate PNG images.
     Png {
-        /// Image width in pixels.
-        #[arg(long, default_value_t = 800)]
-        width: u32,
-        /// Image height in pixels.
-        #[arg(long, default_value_t = 600)]
-        height: u32,
-        /// Pattern type: noise, gradient, shapes, checkerboard.
-        #[arg(long, default_value = "gradient")]
-        pattern: String,
+        #[command(flatten)]
+        image: ImageArgs,
     },
 
     /// Generate JPEG images.
     Jpg {
-        /// Image width in pixels.
-        #[arg(long, default_value_t = 800)]
-        width: u32,
-        /// Image height in pixels.
-        #[arg(long, default_value_t = 600)]
-        height: u32,
-        /// Pattern type: noise, gradient, shapes, checkerboard.
-        #[arg(long, default_value = "gradient")]
-        pattern: String,
+        #[command(flatten)]
+        image: ImageArgs,
     },
 
     /// Generate WebP images.
     Webp {
-        /// Image width in pixels.
-        #[arg(long, default_value_t = 800)]
-        width: u32,
-        /// Image height in pixels.
-        #[arg(long, default_value_t = 600)]
-        height: u32,
-        /// Pattern type: noise, gradient, shapes, checkerboard.
-        #[arg(long, default_value = "gradient")]
-        pattern: String,
+        #[command(flatten)]
+        image: ImageArgs,
     },
 
     /// Generate BMP images.
     Bmp {
-        /// Image width in pixels.
-        #[arg(long, default_value_t = 800)]
-        width: u32,
-        /// Image height in pixels.
-        #[arg(long, default_value_t = 600)]
-        height: u32,
-        /// Pattern type: noise, gradient, shapes, checkerboard.
-        #[arg(long, default_value = "gradient")]
-        pattern: String,
+        #[command(flatten)]
+        image: ImageArgs,
     },
 
     /// Generate TIFF images.
     Tiff {
-        /// Image width in pixels.
-        #[arg(long, default_value_t = 800)]
-        width: u32,
-        /// Image height in pixels.
-        #[arg(long, default_value_t = 600)]
-        height: u32,
-        /// Pattern type: noise, gradient, shapes, checkerboard.
-        #[arg(long, default_value = "gradient")]
-        pattern: String,
+        #[command(flatten)]
+        image: ImageArgs,
     },
 
     /// Generate ICO icon files.
@@ -334,60 +311,26 @@ pub enum FormatCommand {
 
     /// Generate MP3 audio files.
     Mp3 {
-        /// Duration in seconds.
-        #[arg(long, default_value_t = 5.0)]
-        duration: f32,
-        /// Sample rate in Hz.
-        #[arg(long, default_value_t = 44100)]
-        sample_rate: u32,
-        /// Tone type: sine, noise, sweep.
-        #[arg(long, default_value = "sine")]
-        tone: String,
+        #[command(flatten)]
+        audio: AudioArgs,
     },
 
     /// Generate WAV audio files (uncompressed PCM).
     Wav {
-        /// Duration in seconds.
-        #[arg(long, default_value_t = 5.0)]
-        duration: f32,
-        /// Sample rate in Hz.
-        #[arg(long, default_value_t = 44100)]
-        sample_rate: u32,
-        /// Tone type: sine, noise, sweep.
-        #[arg(long, default_value = "sine")]
-        tone: String,
+        #[command(flatten)]
+        audio: AudioArgs,
     },
 
     /// Generate MP4 video files.
     Mp4 {
-        /// Duration in seconds.
-        #[arg(long, default_value_t = 5.0)]
-        duration: f32,
-        /// Video width in pixels.
-        #[arg(long, default_value_t = 640)]
-        width: u32,
-        /// Video height in pixels.
-        #[arg(long, default_value_t = 480)]
-        height: u32,
-        /// Frames per second.
-        #[arg(long, default_value_t = 24)]
-        fps: u32,
+        #[command(flatten)]
+        video: VideoArgs,
     },
 
     /// Generate WebM video files.
     Webm {
-        /// Duration in seconds.
-        #[arg(long, default_value_t = 5.0)]
-        duration: f32,
-        /// Video width in pixels.
-        #[arg(long, default_value_t = 640)]
-        width: u32,
-        /// Video height in pixels.
-        #[arg(long, default_value_t = 480)]
-        height: u32,
-        /// Frames per second.
-        #[arg(long, default_value_t = 24)]
-        fps: u32,
+        #[command(flatten)]
+        video: VideoArgs,
     },
 
     /// Generate a Windows EXE stub (PE format).
@@ -429,22 +372,14 @@ pub enum FormatCommand {
 
     /// Generate PDF documents.
     Pdf {
-        /// Number of paragraphs.
-        #[arg(long, default_value_t = 5)]
-        paragraphs: usize,
-        /// Number of section headings.
-        #[arg(long, default_value_t = 3)]
-        headings: usize,
+        #[command(flatten)]
+        doc: DocArgs,
     },
 
     /// Generate XLSX (Excel) spreadsheets.
     Xlsx {
-        /// Number of data rows.
-        #[arg(long, default_value_t = 10)]
-        rows: usize,
-        /// Schema definition.
-        #[arg(long, default_value = DEFAULT_SCHEMA)]
-        schema: String,
+        #[command(flatten)]
+        data: DataArgs,
         /// Worksheet name.
         #[arg(long, default_value = "Sheet1")]
         sheet: String,
@@ -460,8 +395,14 @@ pub enum FormatCommand {
         words: usize,
     },
 
-    /// List all supported formats and schema types.
+    /// List all supported formats, schema types, locales, and languages.
     List,
+
+    /// List the built-in schema presets and the schema each expands to.
+    Presets,
+
+    /// Show environment, build, and capability information.
+    Info,
 
     /// Print shell completion script for the given shell.
     Completions {
@@ -470,8 +411,12 @@ pub enum FormatCommand {
         shell: Shell,
     },
 
-    /// Update the installed `demodatagen` binary to the latest GitHub release.
-    Update,
+    /// Update the installed `demodatagen` binary from GitHub releases.
+    Update {
+        /// Update to a specific release tag (e.g. `v0.2.0`) instead of latest.
+        #[arg(long)]
+        tag: Option<String>,
+    },
 }
 
 /// Prints shell completions for the given shell to stdout.
@@ -481,97 +426,157 @@ pub fn print_completions(shell: Shell) {
     clap_complete::generate(shell, &mut cmd, name, &mut std::io::stdout());
 }
 
-/// Prints the catalogue of supported formats and schema field types.
-pub fn print_format_list() {
-    println!("demodatagen — supported formats\n");
-    let groups: &[(&str, &[&str])] = &[
-        (
-            "Structured data",
-            &["json", "jsonl", "yaml", "toml", "xml", "csv", "tsv", "sql"],
-        ),
-        (
-            "Text & config",
-            &["txt", "markdown", "html", "log", "ini", "env"],
-        ),
-        (
-            "Images",
-            &["png", "jpg", "webp", "bmp", "tiff", "ico", "gif", "svg"],
-        ),
-        ("Audio & video", &["mp3", "wav", "mp4", "webm"]),
-        ("Documents", &["pdf", "xlsx"]),
-        ("Binary & archives", &["exe", "dll", "zip", "tar", "gzip"]),
-    ];
-    for (group, formats) in groups {
-        println!("  {group}:");
+/// Returns the localized title for a format group.
+fn group_title(group: crate::formats::FormatGroup, lang: Language) -> &'static str {
+    use crate::formats::FormatGroup;
+    match group {
+        FormatGroup::Structured => lang.catalog().group_structured,
+        FormatGroup::Text => lang.catalog().group_text,
+        FormatGroup::Images => lang.catalog().group_images,
+        FormatGroup::AudioVideo => lang.catalog().group_av,
+        FormatGroup::Documents => lang.catalog().group_docs,
+        FormatGroup::Binary => lang.catalog().group_binary,
+    }
+}
+
+/// Returns a decorative icon for a format group (ASCII fallback included).
+fn group_icon(group: crate::formats::FormatGroup) -> console::Emoji<'static, 'static> {
+    use crate::formats::FormatGroup;
+    use console::Emoji;
+    match group {
+        FormatGroup::Structured => Emoji("🗂️  ", "• "),
+        FormatGroup::Text => Emoji("📝 ", "• "),
+        FormatGroup::Images => Emoji("🖼️  ", "• "),
+        FormatGroup::AudioVideo => Emoji("🎬 ", "• "),
+        FormatGroup::Documents => Emoji("📄 ", "• "),
+        FormatGroup::Binary => Emoji("📦 ", "• "),
+    }
+}
+
+/// Prints the catalogue of formats, schema field types, presets, locales, and
+/// interface languages, localized to `lang` and styled for the terminal.
+pub fn print_format_list(lang: Language) {
+    use crate::data::schema::FIELD_TYPE_GROUPS;
+    use crate::formats::FORMAT_GROUPS;
+
+    ui::show_banner(lang);
+    println!();
+
+    println!("{}", style(tr!(lang, list_title)).bold().underlined());
+    for (group, formats) in FORMAT_GROUPS {
+        println!(
+            "  {}{}",
+            group_icon(*group),
+            style(group_title(*group, lang)).cyan().bold()
+        );
         println!("    {}", formats.join(", "));
     }
 
-    println!("\nSchema field types (use as `field:type` in --schema):");
-    let types: &[&str] = &[
-        "int(min..max)",
-        "float(min..max)",
-        "bool",
-        "price(min..max)",
-        "age",
-        "year",
-        "sequence(start)",
-        "enum(a,b,c)",
-        "const(value)",
-        "array(type,n)",
-        "type? (nullable)",
-        "name",
-        "first_name",
-        "last_name",
-        "username",
-        "email",
-        "password",
-        "phone",
-        "gender",
-        "address",
-        "street",
-        "city",
-        "state",
-        "zipcode",
-        "country",
-        "country_code",
-        "company",
-        "job",
-        "department",
-        "product",
-        "sku",
-        "currency",
-        "iban",
-        "credit_card",
-        "isbn",
-        "url",
-        "domain",
-        "slug",
-        "ipv4",
-        "ipv6",
-        "mac",
-        "uuid",
-        "user_agent",
-        "color",
-        "hex_color",
-        "language",
-        "timezone",
-        "emoji",
-        "date",
-        "time",
-        "datetime",
-        "timestamp",
-        "weekday",
-        "month",
-        "word",
-        "words(n)",
-        "sentence",
-        "paragraph",
-    ];
-    for chunk in types.chunks(4) {
-        println!("    {}", chunk.join(", "));
+    println!("\n{}", style(tr!(lang, list_schema_title)).bold());
+    for (group, types) in FIELD_TYPE_GROUPS {
+        println!("  {}", style(group).cyan());
+        println!("    {}", types.join(", "));
     }
 
-    println!("\nLocales: {}", crate::data::Locale::all().join(", "));
+    println!("\n{}", style(tr!(lang, list_presets_title)).bold());
+    println!("    {}", crate::presets::names().join(", "));
+
+    println!("\n{}", style(tr!(lang, list_locales_title)).bold());
+    for loc in crate::data::Locale::variants() {
+        println!("  {:<7} {}", style(loc.as_str()).green(), loc.label());
+    }
+
+    println!("\n{}", style(tr!(lang, list_langs_title)).bold());
+    for l in Language::variants() {
+        println!("  {:<7} {}", style(l.as_str()).green(), l.label());
+    }
+
+    println!("\n{}", style(tr!(lang, list_hint)).dim());
+}
+
+/// Prints the built-in schema presets, each with its localized description and
+/// the schema string it expands to.
+pub fn print_presets(lang: Language) {
+    ui::show_banner(lang);
+    println!();
+
+    println!("{}", style(tr!(lang, presets_title)).bold().underlined());
+    println!("{}\n", style(tr!(lang, presets_intro)).dim());
+
+    for p in crate::presets::PRESETS {
+        println!("  {}", style(p.name).green().bold());
+        println!("    {}", style(p.description(lang)).dim());
+        println!(
+            "    {} {}",
+            style(tr!(lang, preset_schema_label)).dim(),
+            style(p.schema).cyan()
+        );
+    }
+
+    println!("\n{}", style(tr!(lang, presets_hint)).dim());
+}
+
+/// Prints a boxed panel of environment, build, and capability information.
+pub fn print_info(lang: Language, jobs: Option<usize>) {
+    let version = env!("CARGO_PKG_VERSION");
+    let target = format!("{}-{}", std::env::consts::ARCH, std::env::consts::OS);
+    let profile = if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
+    };
+    let threads = jobs.unwrap_or_else(rayon::current_num_threads);
+    let update_state = if cfg!(feature = "update") {
+        tr!(lang, info_enabled)
+    } else {
+        tr!(lang, info_disabled)
+    };
+    let repo = option_env!("CARGO_PKG_REPOSITORY").unwrap_or("n/a");
+    let license = option_env!("CARGO_PKG_LICENSE").unwrap_or("n/a");
+
+    let entries: Vec<(String, String)> = vec![
+        (tr!(lang, info_version), format!("v{version}")),
+        (tr!(lang, info_build_target), target),
+        (tr!(lang, info_profile), profile.to_string()),
+        (
+            tr!(lang, info_formats),
+            crate::formats::format_count().to_string(),
+        ),
+        (
+            tr!(lang, info_locales),
+            crate::data::Locale::variants().len().to_string(),
+        ),
+        (
+            tr!(lang, info_languages),
+            Language::variants().len().to_string(),
+        ),
+        (tr!(lang, info_presets), crate::presets::count().to_string()),
+        (tr!(lang, info_threads), threads.to_string()),
+        (tr!(lang, info_update_feature), update_state),
+        (tr!(lang, info_license), license.to_string()),
+        (tr!(lang, info_repository), repo.to_string()),
+    ];
+
+    let label_w = entries
+        .iter()
+        .map(|(l, _)| console::measure_text_width(l))
+        .max()
+        .unwrap_or(0);
+    let rows: Vec<String> = entries
+        .iter()
+        .map(|(label, value)| {
+            let pad = label_w.saturating_sub(console::measure_text_width(label));
+            format!(
+                "{}{}   {}",
+                style(label).dim(),
+                " ".repeat(pad),
+                style(value).cyan().bold()
+            )
+        })
+        .collect();
+
+    println!("{}", ui::boxed(&tr!(lang, info_title), &rows));
+    println!("\n{}", style(tr!(lang, info_hint)).dim());
 }
 
 #[cfg(test)]
@@ -589,9 +594,9 @@ mod tests {
             "name:string",
         ]);
         match cli.command {
-            FormatCommand::Json { rows, schema, .. } => {
-                assert_eq!(rows, 100);
-                assert_eq!(schema, "name:string");
+            FormatCommand::Json { data, .. } => {
+                assert_eq!(data.rows, 100);
+                assert_eq!(data.schema, "name:string");
             }
             _ => panic!("Expected Json command"),
         }
@@ -601,9 +606,9 @@ mod tests {
     fn test_cli_parse_png() {
         let cli = Cli::parse_from(["demodatagen", "png", "--width", "1920", "--height", "1080"]);
         match cli.command {
-            FormatCommand::Png { width, height, .. } => {
-                assert_eq!(width, 1920);
-                assert_eq!(height, 1080);
+            FormatCommand::Png { image } => {
+                assert_eq!(image.width, 1920);
+                assert_eq!(image.height, 1080);
             }
             _ => panic!("Expected Png command"),
         }
@@ -621,6 +626,10 @@ mod tests {
             "42",
             "--locale",
             "de_de",
+            "--lang",
+            "de",
+            "--color",
+            "never",
             "--overwrite",
             "txt",
         ]);
@@ -628,6 +637,8 @@ mod tests {
         assert_eq!(cli.count, 10);
         assert_eq!(cli.seed, Some(42));
         assert_eq!(cli.locale, "de_de");
+        assert_eq!(cli.lang.as_deref(), Some("de"));
+        assert_eq!(cli.color, ColorWhen::Never);
         assert!(cli.overwrite);
     }
 
@@ -638,6 +649,8 @@ mod tests {
         assert_eq!(cli.count, 1);
         assert_eq!(cli.seed, None);
         assert_eq!(cli.locale, "en_us");
+        assert_eq!(cli.lang, None);
+        assert_eq!(cli.color, ColorWhen::Auto);
         assert!(!cli.overwrite);
         assert!(!cli.quiet);
         assert!(!cli.verbose);
@@ -647,7 +660,16 @@ mod tests {
     #[test]
     fn test_cli_parse_update() {
         let cli = Cli::parse_from(["demodatagen", "update"]);
-        assert!(matches!(cli.command, FormatCommand::Update));
+        assert!(matches!(cli.command, FormatCommand::Update { tag: None }));
+    }
+
+    #[test]
+    fn test_cli_parse_update_tag() {
+        let cli = Cli::parse_from(["demodatagen", "update", "--tag", "v0.2.0"]);
+        match cli.command {
+            FormatCommand::Update { tag } => assert_eq!(tag.as_deref(), Some("v0.2.0")),
+            _ => panic!("Expected Update command"),
+        }
     }
 
     #[test]
@@ -687,5 +709,20 @@ mod tests {
     fn test_verify_cli() {
         // Ensures the clap command tree is internally consistent.
         Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn test_parse_jobs() {
+        assert_eq!(parse_jobs("4").unwrap(), 4);
+        assert_eq!(parse_jobs("1").unwrap(), 1);
+        assert!(parse_jobs("0").is_err());
+        assert!(parse_jobs("-1").is_err());
+        assert!(parse_jobs("x").is_err());
+    }
+
+    #[test]
+    fn test_cli_rejects_zero_jobs() {
+        assert!(Cli::try_parse_from(["demodatagen", "-j", "0", "txt"]).is_err());
+        assert!(Cli::try_parse_from(["demodatagen", "-j", "2", "txt"]).is_ok());
     }
 }

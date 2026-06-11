@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use demodatagen in your work, please cite it using this metadata."
+title: demodatagen
+abstract: >-
+  A fast, offline, fully internationalized CLI and library for generating
+  realistic demo files in 33 formats, 10 data locales, and 9 interface
+  languages — deterministic, dependency-free, and built in Rust.
+type: software
+authors:
+  - name: "The demodatagen contributors"
+repository-code: "https://github.com/josunlp/demodatagen"
+url: "https://github.com/josunlp/demodatagen"
+license: MIT
+version: 0.5.0
+keywords:
+  - demo-data
+  - test-data
+  - fake-data
+  - data-generator
+  - command-line
+  - rust

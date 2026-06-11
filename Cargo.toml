@@ -1,13 +1,13 @@
 [package]
 name = "demodatagen"
-version = "0.2.0"
+version = "0.5.0"
 edition = "2021"
-rust-version = "1.86"
-description = "A fast, offline CLI and library for generating realistic demo files in 33 formats"
+rust-version = "1.88"
+description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 33 formats, 10 data locales, and 9 interface languages"
 license = "MIT"
-repository = "https://github.com/youruser/demodatagen"
+repository = "https://github.com/josunlp/demodatagen"
 readme = "README.md"
-keywords = ["demo", "generator", "cli", "test-data"]
+keywords = ["demo", "generator", "cli", "test-data", "fake-data"]
 categories = ["command-line-utilities", "development-tools::testing"]
 
 [[bin]]
@@ -34,8 +34,19 @@ rand_chacha = "0.3"
 # Parallelism
 rayon = "1"
 
-# Image generation
-image = "0.25"
+# Image generation — explicit codec features only. The crate's default feature
+# set enables `avif`, which drags in rav1e → ravif → libfuzzer-sys (NCSA license,
+# rejected by cargo-deny) and the unmaintained `paste` crate (RUSTSEC-2024-0436).
+# We never emit AVIF, so we opt into exactly the codecs we actually write.
+image = { version = "0.25", default-features = false, features = [
+    "png",
+    "jpeg",
+    "gif",
+    "bmp",
+    "ico",
+    "tiff",
+    "webp",
+] }
 
 # Audio (WAV writing)
 hound = "3"
@@ -56,11 +67,17 @@ anyhow = "1"
 env_logger = "0.11"
 log = "0.4"
 
-# Progress bars
-indicatif = { version = "0.17", features = ["rayon"] }
+# Progress bars & terminal styling / animations
+# indicatif >=0.18 drops the unmaintained `number_prefix` (RUSTSEC-2025-0119).
+indicatif = { version = "0.18", features = ["rayon"] }
+console = "0.15"
 
-# Self-update
-self_update = { version = "0.39", optional = true, features = ["archive-tar", "archive-zip", "compression-flate2"] }
+# Self-update. We use the lightweight pure-Rust `ureq` backend with rustls+ring
+# (no OpenSSL and no aws-lc-rs C build, so static musl builds stay simple) and need
+# >=0.44 to get rustls-webpki >=0.103, which patches RUSTSEC-2026-0098/0099/0104.
+# In 0.44 the `rustls` feature only *augments* the client (`ureq?/rustls`), so the
+# `ureq` backend must be enabled explicitly to get an HTTP client.
+self_update = { version = "0.44", optional = true, default-features = false, features = ["ureq", "rustls", "archive-tar", "archive-zip", "compression-flate2"] }
 
 [dev-dependencies]
 assert_cmd = "2"
