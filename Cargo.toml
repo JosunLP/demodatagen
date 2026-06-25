@@ -28,7 +28,7 @@ quick-xml = { version = "0.31", features = ["serialize"] }
 csv = "1"
 
 # Random
-rand = "0.9"
+rand = "0.10"
 rand_chacha = "0.3"
 
 # Parallelism
