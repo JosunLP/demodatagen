@@ -57,7 +57,7 @@ tar = "0.4"
 flate2 = "1.1"
 
 # Documents
-rust_xlsxwriter = "0.95"
+rust_xlsxwriter = "0.96"
 
 # Error handling
 thiserror = "1"
