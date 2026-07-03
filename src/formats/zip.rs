@@ -7,7 +7,7 @@ use crate::data::{lorem, Locale, Schema};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
 use std::io::{Cursor, Write};
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 use zip::CompressionMethod;
 
 /// Generator for ZIP archive files.
@@ -50,7 +50,7 @@ impl Generator for ZipGenerator {
         } else {
             CompressionMethod::Deflated
         };
-        let options = FileOptions::default().compression_method(compression);
+        let options = SimpleFileOptions::default().compression_method(compression);
 
         for i in 0..file_count {
             let filename = format!("file_{i}.{contained_format}");
