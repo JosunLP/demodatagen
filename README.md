@@ -88,7 +88,7 @@ Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
 
 ```bash
 demodatagen update                # update to the latest release
-demodatagen update --tag v0.5.0   # update (or downgrade) to a specific tag
+demodatagen update --tag v0.6.0   # update (or downgrade) to a specific tag
 demodatagen --check-update        # report whether an update is available
 ```
 
