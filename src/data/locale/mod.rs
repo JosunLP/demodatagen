@@ -229,4 +229,27 @@ mod tests {
     fn test_default_locale_is_en() {
         assert_eq!(Locale::default(), Locale::EnUs);
     }
+
+    #[test]
+    fn test_locale_pools_have_no_duplicates() {
+        use std::collections::HashSet;
+        let assert_unique = |loc: &Locale, field: &str, pool: &[&str]| {
+            let unique: HashSet<&&str> = pool.iter().collect();
+            assert_eq!(
+                unique.len(),
+                pool.len(),
+                "{loc} {field} contains duplicates"
+            );
+        };
+        for loc in Locale::variants() {
+            let d = loc.data();
+            assert_unique(loc, "first_names", d.first_names);
+            assert_unique(loc, "last_names", d.last_names);
+            assert_unique(loc, "streets", d.streets);
+            assert_unique(loc, "cities", d.cities);
+            assert_unique(loc, "states", d.states);
+            assert_unique(loc, "company_prefixes", d.company_prefixes);
+            assert_unique(loc, "company_suffixes", d.company_suffixes);
+        }
+    }
 }
