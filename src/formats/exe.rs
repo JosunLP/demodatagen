@@ -6,7 +6,7 @@
 /// "This program cannot be run in DOS mode").
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// Generator for Windows EXE stub files.
 pub struct ExeGenerator;
@@ -61,7 +61,7 @@ This program cannot be run in DOS mode.\r\r\n$";
     data.extend_from_slice(&[0x4C, 0x01]); // Machine: IMAGE_FILE_MACHINE_I386
     data.extend_from_slice(&[0x01, 0x00]); // NumberOfSections: 1
                                            // TimeDateStamp (random)
-    let timestamp: u32 = rng.gen();
+    let timestamp: u32 = rng.random();
     data.extend_from_slice(&timestamp.to_le_bytes());
     data.extend_from_slice(&[0x00; 4]); // PointerToSymbolTable
     data.extend_from_slice(&[0x00; 4]); // NumberOfSymbols
@@ -126,7 +126,7 @@ This program cannot be run in DOS mode.\r\r\n$";
 
     // Pad the rest with random data to reach target size
     while data.len() < size {
-        data.push(rng.gen());
+        data.push(rng.random());
     }
 
     // Truncate if somehow over

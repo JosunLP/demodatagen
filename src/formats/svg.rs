@@ -5,7 +5,7 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::RngExt;
 
 /// Generator for SVG files.
 pub struct SvgGenerator;
@@ -52,36 +52,36 @@ impl Generator for SvgGenerator {
 
         for _ in 0..shapes {
             let fill = faker::hex_color(rng);
-            let opacity = (rng.gen_range(30..=95) as f32) / 100.0;
-            match rng.gen_range(0..3) {
+            let opacity = (rng.random_range(30..=95) as f32) / 100.0;
+            match rng.random_range(0..3) {
                 0 => {
                     // `..=.max(1)` keeps the range non-empty even on tiny canvases.
-                    let w = rng.gen_range(1..=(width / 2).max(1));
-                    let h = rng.gen_range(1..=(height / 2).max(1));
+                    let w = rng.random_range(1..=(width / 2).max(1));
+                    let h = rng.random_range(1..=(height / 2).max(1));
                     // Constrain position so the shape stays within the viewBox.
-                    let x = rng.gen_range(0..=width - w);
-                    let y = rng.gen_range(0..=height - h);
+                    let x = rng.random_range(0..=width - w);
+                    let y = rng.random_range(0..=height - h);
                     svg.push_str(&format!(
                         "  <rect x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" \
                          fill=\"{fill}\" opacity=\"{opacity}\"/>\n"
                     ));
                 }
                 1 => {
-                    let r = rng.gen_range(1..=(width.min(height) / 2).max(1));
+                    let r = rng.random_range(1..=(width.min(height) / 2).max(1));
                     // Keep the whole circle inside the canvas.
-                    let cx = rng.gen_range(r..=(width - r).max(r));
-                    let cy = rng.gen_range(r..=(height - r).max(r));
+                    let cx = rng.random_range(r..=(width - r).max(r));
+                    let cy = rng.random_range(r..=(height - r).max(r));
                     svg.push_str(&format!(
                         "  <circle cx=\"{cx}\" cy=\"{cy}\" r=\"{r}\" \
                          fill=\"{fill}\" opacity=\"{opacity}\"/>\n"
                     ));
                 }
                 _ => {
-                    let x1 = rng.gen_range(0..width);
-                    let y1 = rng.gen_range(0..height);
-                    let x2 = rng.gen_range(0..width);
-                    let y2 = rng.gen_range(0..height);
-                    let sw = rng.gen_range(1..=5);
+                    let x1 = rng.random_range(0..width);
+                    let y1 = rng.random_range(0..height);
+                    let x2 = rng.random_range(0..width);
+                    let y2 = rng.random_range(0..height);
+                    let sw = rng.random_range(1..=5);
                     svg.push_str(&format!(
                         "  <line x1=\"{x1}\" y1=\"{y1}\" x2=\"{x2}\" y2=\"{y2}\" \
                          stroke=\"{fill}\" stroke-width=\"{sw}\" opacity=\"{opacity}\"/>\n"
