@@ -78,7 +78,7 @@ to `~/.local/bin`. Remove with `./uninstall.sh` (`--purge` also clears config/ca
 iwr -useb https://raw.githubusercontent.com/josunlp/demodatagen/main/install.ps1 | iex
 ```
 
-Options: `-Version v0.5.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
+Options: `-Version v0.6.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
 Remove with `.\uninstall.ps1` (`-Purge` to also clear data).
 
 Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
@@ -250,7 +250,7 @@ note:sentence?0.5        # 50% chance of null
 | **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                                    |
 | **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)                   |
 
-The catalogue above is representative; 0.5.0 also adds `http_status`,
+The catalogue above is representative;  also adds `http_status`,
 `job_level`, `company_email`, `coordinates`, `bic`, `card_network`, `ean`,
 `http_method`, `os`, `browser`, `device`, `imei`, and `file_size`. Run
 `demodatagen list` for the complete, always-current reference.
