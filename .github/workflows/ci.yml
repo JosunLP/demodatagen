@@ -46,7 +46,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.100
+      # Pin the MSRV via the `toolchain` input (which overrides the action
+      # ref) so Dependabot's action-tag bumps cannot change the tested Rust
+      # version — bumping the @tag to e.g. 1.100 broke this job once.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88"
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --all-targets
 
