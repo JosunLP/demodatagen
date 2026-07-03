@@ -5,7 +5,7 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// Generator for log files.
 pub struct LogGenerator;
@@ -74,18 +74,18 @@ impl Generator for LogGenerator {
 /// Apache/NGINX common log format.
 fn apache_line<R: Rng>(rng: &mut R) -> String {
     let ip = faker::ipv4(rng);
-    let day = rng.gen_range(1..=28);
-    let month = MONTHS[rng.gen_range(0..12)];
-    let year = rng.gen_range(2020..=2025);
+    let day = rng.random_range(1..=28);
+    let month = MONTHS[rng.random_range(0..12)];
+    let year = rng.random_range(2020..=2025);
     let (h, m, s) = (
-        rng.gen_range(0..24),
-        rng.gen_range(0..60),
-        rng.gen_range(0..60),
+        rng.random_range(0..24),
+        rng.random_range(0..60),
+        rng.random_range(0..60),
     );
-    let method = METHODS[rng.gen_range(0..METHODS.len())];
-    let path = PATHS[rng.gen_range(0..PATHS.len())];
-    let status = STATUSES[rng.gen_range(0..STATUSES.len())];
-    let size = rng.gen_range(0..1_048_576u32);
+    let method = METHODS[rng.random_range(0..METHODS.len())];
+    let path = PATHS[rng.random_range(0..PATHS.len())];
+    let status = STATUSES[rng.random_range(0..STATUSES.len())];
+    let size = rng.random_range(0..1_048_576u32);
     format!(
         "{ip} - - [{day:02}/{month}/{year}:{h:02}:{m:02}:{s:02} +0000] \"{method} {path} HTTP/1.1\" {status} {size}"
     )
@@ -93,16 +93,16 @@ fn apache_line<R: Rng>(rng: &mut R) -> String {
 
 /// BSD syslog line.
 fn syslog_line<R: Rng>(rng: &mut R) -> String {
-    let month = MONTHS[rng.gen_range(0..12)];
-    let day = rng.gen_range(1..=28);
+    let month = MONTHS[rng.random_range(0..12)];
+    let day = rng.random_range(1..=28);
     let (h, m, s) = (
-        rng.gen_range(0..24),
-        rng.gen_range(0..60),
-        rng.gen_range(0..60),
+        rng.random_range(0..24),
+        rng.random_range(0..60),
+        rng.random_range(0..60),
     );
-    let host = format!("host{:02}", rng.gen_range(1..20));
-    let process = PROCESSES[rng.gen_range(0..PROCESSES.len())];
-    let pid = rng.gen_range(100..30000);
+    let host = format!("host{:02}", rng.random_range(1..20));
+    let process = PROCESSES[rng.random_range(0..PROCESSES.len())];
+    let pid = rng.random_range(100..30000);
     let messages = [
         "connection accepted",
         "session opened for user root",
@@ -111,17 +111,17 @@ fn syslog_line<R: Rng>(rng: &mut R) -> String {
         "authentication failure",
         "request completed in 23ms",
     ];
-    let msg = messages[rng.gen_range(0..messages.len())];
+    let msg = messages[rng.random_range(0..messages.len())];
     format!("{month} {day:2} {h:02}:{m:02}:{s:02} {host} {process}[{pid}]: {msg}")
 }
 
 /// Structured JSON log line.
 fn json_line<R: Rng>(rng: &mut R) -> String {
-    let level = LEVELS[rng.gen_range(0..LEVELS.len())];
+    let level = LEVELS[rng.random_range(0..LEVELS.len())];
     let ts = faker::datetime(rng);
-    let latency = rng.gen_range(1..2000);
-    let path = PATHS[rng.gen_range(0..PATHS.len())];
-    let status = STATUSES[rng.gen_range(0..STATUSES.len())];
+    let latency = rng.random_range(1..2000);
+    let path = PATHS[rng.random_range(0..PATHS.len())];
+    let status = STATUSES[rng.random_range(0..STATUSES.len())];
     let value = serde_json::json!({
         "ts": ts,
         "level": level,

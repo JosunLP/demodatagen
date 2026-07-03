@@ -8,7 +8,7 @@
 /// We use MPEG1 Layer III at 128kbps for compatibility.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig, ToneType};
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::f32::consts::PI;
 
 /// Generator for MP3 audio files.
@@ -59,7 +59,7 @@ pub(crate) fn generate_noise_samples<R: Rng>(
 ) -> Vec<i16> {
     let sample_count = (sample_rate as f32 * duration) as usize;
     (0..sample_count)
-        .map(|_| rng.gen_range(-8000i16..8000i16))
+        .map(|_| rng.random_range(-8000i16..8000i16))
         .collect()
 }
 

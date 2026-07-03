@@ -6,7 +6,7 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::faker;
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// Generator for INI files.
 pub struct IniGenerator;
@@ -40,18 +40,18 @@ const REGIONS: &[&str] = &["us-east-1", "us-west-2", "eu-central-1", "ap-southea
 
 /// Generates one realistic `(key, value)` configuration pair.
 pub(crate) fn config_pair<R: Rng>(rng: &mut R) -> (String, String) {
-    let key = CONFIG_KEYS[rng.gen_range(0..CONFIG_KEYS.len())];
+    let key = CONFIG_KEYS[rng.random_range(0..CONFIG_KEYS.len())];
     let value = match key {
         "host" | "base_url" => faker::domain(rng),
-        "port" => rng.gen_range(1024..65535u32).to_string(),
-        "timeout" | "cache_ttl" => format!("{}", rng.gen_range(1..600u32)),
+        "port" => rng.random_range(1024..65535u32).to_string(),
+        "timeout" | "cache_ttl" => format!("{}", rng.random_range(1..600u32)),
         "max_connections" | "retries" | "workers" | "pool_size" => {
-            rng.gen_range(1..256u32).to_string()
+            rng.random_range(1..256u32).to_string()
         }
         "debug" | "enabled" => faker::boolean(rng).to_string(),
-        "log_level" => LOG_LEVELS[rng.gen_range(0..LOG_LEVELS.len())].to_string(),
+        "log_level" => LOG_LEVELS[rng.random_range(0..LOG_LEVELS.len())].to_string(),
         "username" => faker::username(rng, crate::data::Locale::EnUs),
-        "region" => REGIONS[rng.gen_range(0..REGIONS.len())].to_string(),
+        "region" => REGIONS[rng.random_range(0..REGIONS.len())].to_string(),
         "bucket" => faker::slug(rng),
         "api_key" => faker::uuid(rng).replace('-', ""),
         _ => faker::slug(rng),

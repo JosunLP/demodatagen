@@ -29,7 +29,7 @@ csv = "1"
 
 # Random
 rand = "0.10"
-rand_chacha = "0.3"
+rand_chacha = "0.10"
 
 # Parallelism
 rayon = "1"

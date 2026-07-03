@@ -5,7 +5,7 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig, ImagePattern};
 use crate::error::{GenResult, GenerationError};
 use image::{ImageBuffer, ImageFormat, Rgba};
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::io::Cursor;
 
 /// Generator for PNG image files.
@@ -23,16 +23,16 @@ pub fn generate_image_buffer<R: Rng>(
     match pattern {
         ImagePattern::Noise => {
             for pixel in img.pixels_mut() {
-                *pixel = Rgba([rng.gen(), rng.gen(), rng.gen(), 255]);
+                *pixel = Rgba([rng.random(), rng.random(), rng.random(), 255]);
             }
         }
         ImagePattern::Gradient => {
-            let r_start: u8 = rng.gen();
-            let g_start: u8 = rng.gen();
-            let b_start: u8 = rng.gen();
-            let r_end: u8 = rng.gen();
-            let g_end: u8 = rng.gen();
-            let b_end: u8 = rng.gen();
+            let r_start: u8 = rng.random();
+            let g_start: u8 = rng.random();
+            let b_start: u8 = rng.random();
+            let r_end: u8 = rng.random();
+            let g_end: u8 = rng.random();
+            let b_end: u8 = rng.random();
 
             for (x, y, pixel) in img.enumerate_pixels_mut() {
                 let t_x = x as f32 / width.max(1) as f32;
@@ -46,23 +46,23 @@ pub fn generate_image_buffer<R: Rng>(
         }
         ImagePattern::Shapes => {
             // Fill with background color
-            let bg = Rgba([rng.gen(), rng.gen(), rng.gen(), 255u8]);
+            let bg = Rgba([rng.random(), rng.random(), rng.random(), 255u8]);
             for pixel in img.pixels_mut() {
                 *pixel = bg;
             }
 
             // Draw random rectangles and circles
-            let shape_count = rng.gen_range(5..20);
+            let shape_count = rng.random_range(5..20);
             for _ in 0..shape_count {
-                let color = Rgba([rng.gen(), rng.gen(), rng.gen(), 200u8]);
-                let cx = rng.gen_range(0..width);
-                let cy = rng.gen_range(0..height);
+                let color = Rgba([rng.random(), rng.random(), rng.random(), 200u8]);
+                let cx = rng.random_range(0..width);
+                let cy = rng.random_range(0..height);
                 // Clamp the size range so small images never form an empty
                 // range (which would panic in `gen_range`).
                 let max_size = (width.min(height) / 3).max(8);
-                let size = rng.gen_range(4..=max_size);
+                let size = rng.random_range(4..=max_size);
 
-                if rng.gen_bool(0.5) {
+                if rng.random_bool(0.5) {
                     // Rectangle
                     let x1 = cx.saturating_sub(size / 2);
                     let y1 = cy.saturating_sub(size / 2);
@@ -94,9 +94,9 @@ pub fn generate_image_buffer<R: Rng>(
             }
         }
         ImagePattern::Checkerboard => {
-            let tile_size = rng.gen_range(8..64u32);
-            let color_a = Rgba([rng.gen(), rng.gen(), rng.gen(), 255u8]);
-            let color_b = Rgba([rng.gen(), rng.gen(), rng.gen(), 255u8]);
+            let tile_size = rng.random_range(8..64u32);
+            let color_a = Rgba([rng.random(), rng.random(), rng.random(), 255u8]);
+            let color_b = Rgba([rng.random(), rng.random(), rng.random(), 255u8]);
 
             for (x, y, pixel) in img.enumerate_pixels_mut() {
                 let checker = ((x / tile_size) + (y / tile_size)) % 2 == 0;

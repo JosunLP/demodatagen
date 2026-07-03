@@ -5,7 +5,7 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::lorem;
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::RngExt;
 
 /// Generator for HTML documents.
 pub struct HtmlGenerator;
@@ -62,10 +62,10 @@ impl Generator for HtmlGenerator {
             for _ in 0..per_section.max(1) {
                 body.push_str(&format!("    <p>{}</p>\n", escape(&lorem::paragraph(rng))));
             }
-            if rng.gen_bool(0.3) {
+            if rng.random_bool(0.3) {
                 body.push_str("    <ul>\n");
-                for _ in 0..rng.gen_range(3..=6) {
-                    let words = rng.gen_range(4..10);
+                for _ in 0..rng.random_range(3..=6) {
+                    let words = rng.random_range(4..10);
                     body.push_str(&format!(
                         "      <li>{}</li>\n",
                         escape(&lorem::sentence(rng, words))
