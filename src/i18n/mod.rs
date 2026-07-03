@@ -9,9 +9,9 @@
 //!
 //! Both default to English and are independent: you can generate German test
 //! data while reading Spanish progress messages, or vice versa. The interface is
-//! translated into **nine languages** — one for every language family covered by
-//! the data locales: English, German, French, Spanish, Italian, Portuguese,
-//! Dutch, Polish, and Swedish.
+//! translated into **fifteen languages**: English, German, French, Spanish,
+//! Italian, Portuguese, Dutch, Polish, Swedish, Czech, Danish, Finnish,
+//! Norwegian Bokmål, Turkish, and Japanese.
 //!
 //! # Design
 //!
@@ -48,7 +48,13 @@ macro_rules! catalog {
             pt: $pt:literal,
             nl: $nl:literal,
             pl: $pl:literal,
-            sv: $sv:literal $(,)?
+            sv: $sv:literal,
+            cs: $cs:literal,
+            da: $da:literal,
+            fi: $fi:literal,
+            nb: $nb:literal,
+            tr: $tr:literal,
+            ja: $ja:literal $(,)?
         } ),+ $(,)?
     ) => {
         /// An immutable bundle of every user-facing message template for one
@@ -78,6 +84,12 @@ macro_rules! catalog {
         const NL_CATALOG: Catalog = Catalog { $( $key: $nl, )+ };
         const PL_CATALOG: Catalog = Catalog { $( $key: $pl, )+ };
         const SV_CATALOG: Catalog = Catalog { $( $key: $sv, )+ };
+        const CS_CATALOG: Catalog = Catalog { $( $key: $cs, )+ };
+        const DA_CATALOG: Catalog = Catalog { $( $key: $da, )+ };
+        const FI_CATALOG: Catalog = Catalog { $( $key: $fi, )+ };
+        const NB_CATALOG: Catalog = Catalog { $( $key: $nb, )+ };
+        const TR_CATALOG: Catalog = Catalog { $( $key: $tr, )+ };
+        const JA_CATALOG: Catalog = Catalog { $( $key: $ja, )+ };
     };
 }
 
@@ -93,6 +105,12 @@ catalog! {
         nl: "Realistische demobestanden in {formats} formaten en {locales} taalregio's — offline, deterministisch, zonder externe diensten.",
         pl: "Realistyczne pliki demonstracyjne w {formats} formatach i {locales} regionach — offline, deterministycznie, bez zewnętrznych usług.",
         sv: "Realistiska demofiler i {formats} format och {locales} språkområden — offline, deterministiska, utan externa beroenden.",
+        cs: "Realistické ukázkové soubory v {formats} formátech a {locales} jazykových oblastech — offline, deterministické, bez externích závislostí.",
+        da: "Realistiske demofiler i {formats} formater og {locales} sprogområder — offline, deterministiske, uden eksterne afhængigheder.",
+        fi: "Realistisia demotiedostoja {formats} muodossa ja {locales} kielialueella — offline, determinististä, ilman ulkoisia riippuvuuksia.",
+        nb: "Realistiske demofiler i {formats} formater og {locales} språkområder — frakoblet, deterministisk, uten eksterne avhengigheter.",
+        tr: "{formats} biçimde ve {locales} yerel ayarda gerçekçi demo dosyaları — çevrimdışı, deterministik, harici bağımlılık yok.",
+        ja: "{formats} 種類の形式と {locales} のロケールに対応した現実的なデモファイル — オフライン、決定論的、外部依存なし。",
     },
     /// Printed when a run starts. {count} number, {format} format name, {dir} path. Keep the × and arrow.
     generating_header {
@@ -105,6 +123,12 @@ catalog! {
         nl: "Genereren van {count} × {format} → {dir}",
         pl: "Generowanie {count} × {format} → {dir}",
         sv: "Genererar {count} × {format} → {dir}",
+        cs: "Generuji {count} × {format} → {dir}",
+        da: "Genererer {count} × {format} → {dir}",
+        fi: "Luodaan {count} × {format} → {dir}",
+        nb: "Genererer {count} × {format} → {dir}",
+        tr: "{count} × {format} oluşturuluyor → {dir}",
+        ja: "{count} × {format} を生成中 → {dir}",
     },
     /// Spinner/progress-bar message while writing. {format} is the format name.
     progress_message {
@@ -117,6 +141,12 @@ catalog! {
         nl: "{format} schrijven",
         pl: "zapisywanie {format}",
         sv: "skriver {format}",
+        cs: "zapisuji {format}",
+        da: "skriver {format}",
+        fi: "kirjoitetaan {format}",
+        nb: "skriver {format}",
+        tr: "{format} yazılıyor",
+        ja: "{format} を書き込み中",
     },
     /// Single word shown when the progress bar finishes.
     progress_done {
@@ -129,6 +159,12 @@ catalog! {
         nl: "klaar",
         pl: "gotowe",
         sv: "klar",
+        cs: "hotovo",
+        da: "færdig",
+        fi: "valmis",
+        nb: "ferdig",
+        tr: "tamamlandı",
+        ja: "完了",
     },
     /// Success summary line. {count} number, {bytes} human size e.g. '1.2 MB', {elapsed} duration e.g. '3s'.
     summary_success {
@@ -141,6 +177,12 @@ catalog! {
         nl: "{count} bestand(en) gegenereerd · {bytes} · {elapsed}",
         pl: "Wygenerowano {count} plik(ów) · {bytes} · {elapsed}",
         sv: "{count} fil(er) genererade · {bytes} · {elapsed}",
+        cs: "Vygenerováno {count} souborů · {bytes} · {elapsed}",
+        da: "{count} fil(er) genereret · {bytes} · {elapsed}",
+        fi: "{count} tiedosto(a) luotu · {bytes} · {elapsed}",
+        nb: "{count} fil(er) generert · {bytes} · {elapsed}",
+        tr: "{count} dosya oluşturuldu · {bytes} · {elapsed}",
+        ja: "{count} 件のファイルを生成しました · {bytes} · {elapsed}",
     },
     /// Shows where files were written. {dir} is a path.
     summary_location {
@@ -153,6 +195,12 @@ catalog! {
         nl: "Uitvoermap: {dir}",
         pl: "Katalog wyjściowy: {dir}",
         sv: "Utdatakatalog: {dir}",
+        cs: "Výstupní adresář: {dir}",
+        da: "Outputmappe: {dir}",
+        fi: "Tuloshakemisto: {dir}",
+        nb: "Utdatakatalog: {dir}",
+        tr: "Çıktı dizini: {dir}",
+        ja: "出力ディレクトリ: {dir}",
     },
     /// Some files failed. {ok} succeeded, {total} attempted, {errors} failed.
     summary_partial {
@@ -165,6 +213,12 @@ catalog! {
         nl: "{ok}/{total} bestand(en) gegenereerd — {errors} fout(en)",
         pl: "Wygenerowano {ok}/{total} plik(ów) — {errors} błąd(ów)",
         sv: "{ok}/{total} fil(er) genererade — {errors} fel",
+        cs: "Vygenerováno {ok}/{total} souborů — {errors} chyb(y)",
+        da: "{ok}/{total} fil(er) genereret — {errors} fejl",
+        fi: "{ok}/{total} tiedostoa luotu — {errors} virhettä",
+        nb: "{ok}/{total} fil(er) generert — {errors} feil",
+        tr: "{ok}/{total} dosya oluşturuldu — {errors} hata",
+        ja: "{ok}/{total} 件のファイルを生成しました — エラー {errors} 件",
     },
     /// All files failed. {total} number, {error} the first error message.
     summary_failed {
@@ -177,6 +231,12 @@ catalog! {
         nl: "Alle {total} bestand(en) konden niet worden gegenereerd. Eerste fout: {error}",
         pl: "Nie udało się wygenerować żadnego z {total} plik(ów). Pierwszy błąd: {error}",
         sv: "Alla {total} fil(er) kunde inte genereras. Första felet: {error}",
+        cs: "Nepodařilo se vygenerovat žádný z {total} souborů. První chyba: {error}",
+        da: "Alle {total} fil(er) kunne ikke genereres. Første fejl: {error}",
+        fi: "Kaikkien {total} tiedoston luonti epäonnistui. Ensimmäinen virhe: {error}",
+        nb: "Alle {total} fil(er) kunne ikke genereres. Første feil: {error}",
+        tr: "{total} dosyanın tümü oluşturulamadı. İlk hata: {error}",
+        ja: "{total} 件のファイルすべての生成に失敗しました。最初のエラー: {error}",
     },
     /// {format} is the unknown format key the user typed.
     err_unknown_format {
@@ -189,6 +249,12 @@ catalog! {
         nl: "Onbekend formaat: {format}",
         pl: "Nieznany format: {format}",
         sv: "Okänt format: {format}",
+        cs: "Neznámý formát: {format}",
+        da: "Ukendt format: {format}",
+        fi: "Tuntematon muoto: {format}",
+        nb: "Ukjent format: {format}",
+        tr: "Bilinmeyen biçim: {format}",
+        ja: "不明な形式です: {format}",
     },
     /// {error} is an error message.
     err_generation_failed {
@@ -201,6 +267,12 @@ catalog! {
         nl: "Genereren mislukt: {error}",
         pl: "Generowanie nie powiodło się: {error}",
         sv: "Genereringen misslyckades: {error}",
+        cs: "Generování se nezdařilo: {error}",
+        da: "Generering mislykkedes: {error}",
+        fi: "Luonti epäonnistui: {error}",
+        nb: "Generering mislyktes: {error}",
+        tr: "Oluşturma başarısız oldu: {error}",
+        ja: "生成に失敗しました: {error}",
     },
     /// {preset} is the unknown preset name. Keep the backticked command verbatim.
     err_invalid_preset {
@@ -213,6 +285,12 @@ catalog! {
         nl: "Onbekende preset: {preset}. Voer `demodatagen presets` uit om de ingebouwde presets weer te geven.",
         pl: "Nieznany szablon: {preset}. Uruchom `demodatagen presets`, aby wyświetlić wbudowane szablony.",
         sv: "Okänd förinställning: {preset}. Kör `demodatagen presets` för att lista de inbyggda förinställningarna.",
+        cs: "Neznámá předvolba: {preset}. Spusťte `demodatagen presets` pro výpis vestavěných předvoleb.",
+        da: "Ukendt forudindstilling: {preset}. Kør `demodatagen presets` for at vise de indbyggede forudindstillinger.",
+        fi: "Tuntematon esiasetus: {preset}. Suorita `demodatagen presets` nähdäksesi sisäänrakennetut esiasetukset.",
+        nb: "Ukjent forhåndsinnstilling: {preset}. Kjør `demodatagen presets` for å liste de innebygde forhåndsinnstillingene.",
+        tr: "Bilinmeyen ön ayar: {preset}. Yerleşik ön ayarları listelemek için `demodatagen presets` komutunu çalıştırın.",
+        ja: "不明なプリセットです: {preset}。`demodatagen presets` を実行すると組み込みプリセットの一覧が表示されます。",
     },
     /// An invalid enum-like value was given; we use a default. {error} the parse error, {default} the value used.
     warn_fallback {
@@ -225,6 +303,12 @@ catalog! {
         nl: "{error} Standaardwaarde '{default}' wordt in plaats daarvan gebruikt.",
         pl: "{error} Używam wartości domyślnej '{default}'.",
         sv: "{error} Använder standardvärdet '{default}' istället.",
+        cs: "{error} Použije se výchozí hodnota '{default}'.",
+        da: "{error} Bruger standardværdien '{default}' i stedet.",
+        fi: "{error} Käytetään oletusarvoa '{default}'.",
+        nb: "{error} Bruker standardverdien '{default}' i stedet.",
+        tr: "{error} Bunun yerine varsayılan '{default}' kullanılıyor.",
+        ja: "{error} 既定値 '{default}' を代わりに使用します。",
     },
     /// Schema has an unknown field type but we guessed a close one. {type} typed, {suggestion} the closest known type.
     warn_unknown_type {
@@ -237,6 +321,12 @@ catalog! {
         nl: "Onbekend schematype '{type}'; bedoelde je '{suggestion}'? In plaats daarvan wordt een algemeen woord gegenereerd.",
         pl: "Nieznany typ schematu '{type}'; czy chodziło o '{suggestion}'? Generuję zamiast tego ogólne słowo.",
         sv: "Okänd schematyp '{type}'; menade du '{suggestion}'? Genererar ett generiskt ord istället.",
+        cs: "Neznámý typ schématu '{type}'; mysleli jste '{suggestion}'? Místo toho generuji obecné slovo.",
+        da: "Ukendt skematype '{type}'; mente du '{suggestion}'? Genererer et generisk ord i stedet.",
+        fi: "Tuntematon skeematyyppi '{type}'; tarkoititko '{suggestion}'? Luodaan sen sijaan yleinen sana.",
+        nb: "Ukjent skjematype '{type}'; mente du '{suggestion}'? Genererer et generisk ord i stedet.",
+        tr: "Bilinmeyen şema türü '{type}'; '{suggestion}' mı demek istediniz? Bunun yerine genel bir sözcük oluşturuluyor.",
+        ja: "不明なスキーマ型 '{type}' です。'{suggestion}' のことでしょうか？代わりに汎用的な単語を生成します。",
     },
     /// Schema has an unknown field type with no close match. {type} is what the user typed.
     warn_unknown_type_plain {
@@ -249,6 +339,12 @@ catalog! {
         nl: "Onbekend schematype '{type}'; in plaats daarvan wordt een algemeen woord gegenereerd.",
         pl: "Nieznany typ schematu '{type}'; generuję zamiast tego ogólne słowo.",
         sv: "Okänd schematyp '{type}'; genererar ett generiskt ord istället.",
+        cs: "Neznámý typ schématu '{type}'; místo toho generuji obecné slovo.",
+        da: "Ukendt skematype '{type}'; genererer et generisk ord i stedet.",
+        fi: "Tuntematon skeematyyppi '{type}'; luodaan sen sijaan yleinen sana.",
+        nb: "Ukjent skjematype '{type}'; genererer et generisk ord i stedet.",
+        tr: "Bilinmeyen şema türü '{type}'; bunun yerine genel bir sözcük oluşturuluyor.",
+        ja: "不明なスキーマ型 '{type}' です。代わりに汎用的な単語を生成します。",
     },
     /// {version} current version without leading v. Keep the ellipsis …
     update_checking {
@@ -261,6 +357,12 @@ catalog! {
         nl: "Controleren op updates (huidig: v{version})…",
         pl: "Sprawdzanie aktualizacji (bieżąca: v{version})…",
         sv: "Söker efter uppdateringar (aktuell: v{version})…",
+        cs: "Kontroluji aktualizace (aktuální: v{version})…",
+        da: "Søger efter opdateringer (nuværende: v{version})…",
+        fi: "Tarkistetaan päivityksiä (nykyinen: v{version})…",
+        nb: "Ser etter oppdateringer (nåværende: v{version})…",
+        tr: "Güncellemeler denetleniyor (geçerli: v{version})…",
+        ja: "更新を確認しています（現在: v{version}）…",
     },
     /// {current} and {latest} are versions. Keep the arrow.
     update_available {
@@ -273,6 +375,12 @@ catalog! {
         nl: "Update beschikbaar: v{current} → v{latest}",
         pl: "Dostępna aktualizacja: v{current} → v{latest}",
         sv: "Uppdatering tillgänglig: v{current} → v{latest}",
+        cs: "Je k dispozici aktualizace: v{current} → v{latest}",
+        da: "Opdatering tilgængelig: v{current} → v{latest}",
+        fi: "Päivitys saatavilla: v{current} → v{latest}",
+        nb: "Oppdatering tilgjengelig: v{current} → v{latest}",
+        tr: "Güncelleme mevcut: v{current} → v{latest}",
+        ja: "更新があります: v{current} → v{latest}",
     },
     /// {url} a URL. Keep the backticked command verbatim.
     update_hint {
@@ -285,6 +393,12 @@ catalog! {
         nl: "Voer `demodatagen update` uit om bij te werken, of download van {url}",
         pl: "Uruchom `demodatagen update`, aby zaktualizować, lub pobierz z {url}",
         sv: "Kör `demodatagen update` för att uppgradera, eller ladda ner från {url}",
+        cs: "Spusťte `demodatagen update` pro aktualizaci, nebo si ji stáhněte z {url}",
+        da: "Kør `demodatagen update` for at opgradere, eller download fra {url}",
+        fi: "Suorita `demodatagen update` päivittääksesi tai lataa osoitteesta {url}",
+        nb: "Kjør `demodatagen update` for å oppgradere, eller last ned fra {url}",
+        tr: "Yükseltmek için `demodatagen update` komutunu çalıştırın veya {url} adresinden indirin",
+        ja: "`demodatagen update` を実行して更新するか、{url} からダウンロードしてください",
     },
     /// {version} current version.
     update_up_to_date {
@@ -297,6 +411,12 @@ catalog! {
         nl: "demodatagen is up-to-date (v{version}).",
         pl: "demodatagen jest aktualny (v{version}).",
         sv: "demodatagen är uppdaterad (v{version}).",
+        cs: "demodatagen je aktuální (v{version}).",
+        da: "demodatagen er opdateret (v{version}).",
+        fi: "demodatagen on ajan tasalla (v{version}).",
+        nb: "demodatagen er oppdatert (v{version}).",
+        tr: "demodatagen güncel (v{version}).",
+        ja: "demodatagen は最新です（v{version}）。",
     },
     /// Could not query releases. {url} a URL.
     update_unknown {
@@ -309,6 +429,12 @@ catalog! {
         nl: "De nieuwste versie kon niet worden bepaald. Controleer {url} handmatig.",
         pl: "Nie udało się ustalić najnowszej wersji. Sprawdź {url} ręcznie.",
         sv: "Den senaste versionen kunde inte fastställas. Kontrollera {url} manuellt.",
+        cs: "Nepodařilo se zjistit nejnovější verzi. Zkontrolujte {url} ručně.",
+        da: "Kunne ikke bestemme den nyeste version. Tjek {url} manuelt.",
+        fi: "Uusinta versiota ei voitu selvittää. Tarkista {url} manuaalisesti.",
+        nb: "Kunne ikke fastslå den nyeste versjonen. Sjekk {url} manuelt.",
+        tr: "En son sürüm belirlenemedi. {url} adresini elle kontrol edin.",
+        ja: "最新バージョンを確認できませんでした。{url} を手動でご確認ください。",
     },
     /// {from} and {to} are versions.
     update_updated {
@@ -321,6 +447,12 @@ catalog! {
         nl: "demodatagen bijgewerkt: v{from} → v{to}.",
         pl: "Zaktualizowano demodatagen: v{from} → v{to}.",
         sv: "demodatagen uppdaterad: v{from} → v{to}.",
+        cs: "demodatagen aktualizován: v{from} → v{to}.",
+        da: "demodatagen opdateret: v{from} → v{to}.",
+        fi: "demodatagen päivitetty: v{from} → v{to}.",
+        nb: "demodatagen oppdatert: v{from} → v{to}.",
+        tr: "demodatagen güncellendi: v{from} → v{to}.",
+        ja: "demodatagen を更新しました: v{from} → v{to}。",
     },
     /// Tell the user to restart the command.
     update_restart {
@@ -333,6 +465,12 @@ catalog! {
         nl: "Start de opdracht opnieuw om de nieuwe versie te gebruiken.",
         pl: "Uruchom polecenie ponownie, aby skorzystać z nowej wersji.",
         sv: "Starta om kommandot för att använda den nya versionen.",
+        cs: "Spusťte příkaz znovu, aby se použila nová verze.",
+        da: "Genstart kommandoen for at bruge den nye version.",
+        fi: "Käynnistä komento uudelleen käyttääksesi uutta versiota.",
+        nb: "Start kommandoen på nytt for å bruke den nye versjonen.",
+        tr: "Yeni sürümü kullanmak için komutu yeniden başlatın.",
+        ja: "新しいバージョンを使用するには、コマンドを再実行してください。",
     },
     /// {version} current version.
     update_already_latest {
@@ -345,6 +483,12 @@ catalog! {
         nl: "De nieuwste versie is al actief (v{version}).",
         pl: "Najnowsza wersja jest już uruchomiona (v{version}).",
         sv: "Du kör redan den senaste versionen (v{version}).",
+        cs: "Již běží nejnovější verze (v{version}).",
+        da: "Kører allerede den nyeste version (v{version}).",
+        fi: "Uusin versio on jo käytössä (v{version}).",
+        nb: "Kjører allerede den nyeste versjonen (v{version}).",
+        tr: "Zaten en son sürüm çalışıyor (v{version}).",
+        ja: "すでに最新バージョンを実行しています（v{version}）。",
     },
     /// {error} an error message.
     update_failed {
@@ -357,6 +501,12 @@ catalog! {
         nl: "Update mislukt: {error}",
         pl: "Aktualizacja nie powiodła się: {error}",
         sv: "Uppdateringen misslyckades: {error}",
+        cs: "Aktualizace se nezdařila: {error}",
+        da: "Opdatering mislykkedes: {error}",
+        fi: "Päivitys epäonnistui: {error}",
+        nb: "Oppdatering mislyktes: {error}",
+        tr: "Güncelleme başarısız oldu: {error}",
+        ja: "更新に失敗しました: {error}",
     },
     /// {error} an error message.
     update_check_failed {
@@ -369,6 +519,12 @@ catalog! {
         nl: "Updatecontrole mislukt: {error}",
         pl: "Sprawdzanie aktualizacji nie powiodło się: {error}",
         sv: "Uppdateringskontrollen misslyckades: {error}",
+        cs: "Kontrola aktualizací se nezdařila: {error}",
+        da: "Opdateringstjek mislykkedes: {error}",
+        fi: "Päivitysten tarkistus epäonnistui: {error}",
+        nb: "Oppdateringssjekk mislyktes: {error}",
+        tr: "Güncelleme denetimi başarısız oldu: {error}",
+        ja: "更新の確認に失敗しました: {error}",
     },
     /// Self-update compiled out. Keep the backticked flag verbatim.
     update_disabled {
@@ -381,6 +537,12 @@ catalog! {
         nl: "Zelf-updateondersteuning is uitgeschakeld in deze build. Bouw opnieuw met `--features update`.",
         pl: "Funkcja samoaktualizacji jest wyłączona w tej kompilacji. Skompiluj ponownie z `--features update`.",
         sv: "Stöd för självuppdatering är inaktiverat i detta bygge. Bygg om med `--features update`.",
+        cs: "Podpora samoaktualizace je v tomto sestavení vypnutá. Sestavte znovu s `--features update`.",
+        da: "Selvopdatering er deaktiveret i dette build. Byg igen med `--features update`.",
+        fi: "Itsepäivitys on poistettu käytöstä tässä koontiversiossa. Käännä uudelleen valinnalla `--features update`.",
+        nb: "Selvoppdatering er deaktivert i dette bygget. Bygg på nytt med `--features update`.",
+        tr: "Bu derlemede kendi kendine güncelleme desteği devre dışı. `--features update` ile yeniden derleyin.",
+        ja: "このビルドでは自己更新機能が無効になっています。`--features update` を付けて再ビルドしてください。",
     },
     /// Title of the `list` command.
     list_title {
@@ -393,6 +555,12 @@ catalog! {
         nl: "Ondersteunde uitvoerformaten",
         pl: "Obsługiwane formaty wyjściowe",
         sv: "Format som stöds för utdata",
+        cs: "Podporované výstupní formáty",
+        da: "Understøttede outputformater",
+        fi: "Tuetut tulostemuodot",
+        nb: "Støttede utdataformater",
+        tr: "Desteklenen çıktı biçimleri",
+        ja: "対応している出力形式",
     },
     /// Format category heading.
     group_structured {
@@ -405,6 +573,12 @@ catalog! {
         nl: "Gestructureerde data",
         pl: "Dane strukturalne",
         sv: "Strukturerade data",
+        cs: "Strukturovaná data",
+        da: "Strukturerede data",
+        fi: "Rakenteinen data",
+        nb: "Strukturerte data",
+        tr: "Yapılandırılmış veri",
+        ja: "構造化データ",
     },
     /// Format category heading.
     group_text {
@@ -417,6 +591,12 @@ catalog! {
         nl: "Tekst & configuratie",
         pl: "Tekst i konfiguracja",
         sv: "Text & konfiguration",
+        cs: "Text a konfigurace",
+        da: "Tekst & konfiguration",
+        fi: "Teksti ja asetukset",
+        nb: "Tekst & konfigurasjon",
+        tr: "Metin ve yapılandırma",
+        ja: "テキストと設定",
     },
     /// Format category heading.
     group_images {
@@ -429,6 +609,12 @@ catalog! {
         nl: "Afbeeldingen",
         pl: "Obrazy",
         sv: "Bilder",
+        cs: "Obrázky",
+        da: "Billeder",
+        fi: "Kuvat",
+        nb: "Bilder",
+        tr: "Görseller",
+        ja: "画像",
     },
     /// Format category heading (audio & video).
     group_av {
@@ -441,6 +627,12 @@ catalog! {
         nl: "Audio & video",
         pl: "Audio i wideo",
         sv: "Ljud & video",
+        cs: "Audio a video",
+        da: "Lyd & video",
+        fi: "Ääni ja video",
+        nb: "Lyd & video",
+        tr: "Ses ve video",
+        ja: "音声と動画",
     },
     /// Format category heading.
     group_docs {
@@ -453,6 +645,12 @@ catalog! {
         nl: "Documenten",
         pl: "Dokumenty",
         sv: "Dokument",
+        cs: "Dokumenty",
+        da: "Dokumenter",
+        fi: "Asiakirjat",
+        nb: "Dokumenter",
+        tr: "Belgeler",
+        ja: "ドキュメント",
     },
     /// Format category heading.
     group_binary {
@@ -465,6 +663,12 @@ catalog! {
         nl: "Binair & archieven",
         pl: "Pliki binarne i archiwa",
         sv: "Binärt & arkiv",
+        cs: "Binární soubory a archivy",
+        da: "Binære filer & arkiver",
+        fi: "Binaarit ja arkistot",
+        nb: "Binærfiler & arkiver",
+        tr: "İkili dosyalar ve arşivler",
+        ja: "バイナリとアーカイブ",
     },
     /// Section title. Keep the backticked `field:type` and `--schema` verbatim.
     list_schema_title {
@@ -477,6 +681,12 @@ catalog! {
         nl: "Schema-veldtypen (gebruik als `field:type` in --schema)",
         pl: "Typy pól schematu (użycie jako `field:type` w --schema)",
         sv: "Schemats fälttyper (används som `field:type` i --schema)",
+        cs: "Typy polí schématu (použití jako `field:type` v --schema)",
+        da: "Skemafelttyper (brug som `field:type` i --schema)",
+        fi: "Skeeman kenttätyypit (käytä muodossa `field:type` --schema-valinnassa)",
+        nb: "Skjemafelttyper (brukes som `field:type` i --schema)",
+        tr: "Şema alan türleri (--schema içinde `field:type` olarak kullanın)",
+        ja: "スキーマのフィールド型（--schema で `field:type` として使用）",
     },
     /// Section title. Keep `--locale` verbatim.
     list_locales_title {
@@ -489,6 +699,12 @@ catalog! {
         nl: "Datataalregio's (--locale)",
         pl: "Regiony danych (--locale)",
         sv: "Dataspråkområden (--locale)",
+        cs: "Jazykové oblasti dat (--locale)",
+        da: "Datasprogområder (--locale)",
+        fi: "Datan kielialueet (--locale)",
+        nb: "Dataspråkområder (--locale)",
+        tr: "Veri yerel ayarları (--locale)",
+        ja: "データロケール (--locale)",
     },
     /// Section title. Keep `--lang` verbatim.
     list_langs_title {
@@ -501,6 +717,12 @@ catalog! {
         nl: "Interfacetalen (--lang)",
         pl: "Języki interfejsu (--lang)",
         sv: "Gränssnittsspråk (--lang)",
+        cs: "Jazyky rozhraní (--lang)",
+        da: "Grænsefladesprog (--lang)",
+        fi: "Käyttöliittymän kielet (--lang)",
+        nb: "Grensesnittspråk (--lang)",
+        tr: "Arayüz dilleri (--lang)",
+        ja: "インターフェース言語 (--lang)",
     },
     /// Section title. Keep `--preset` verbatim.
     list_presets_title {
@@ -513,6 +735,12 @@ catalog! {
         nl: "Schemapresets (--preset)",
         pl: "Szablony schematu (--preset)",
         sv: "Schemaförinställningar (--preset)",
+        cs: "Předvolby schématu (--preset)",
+        da: "Skemaforudindstillinger (--preset)",
+        fi: "Skeeman esiasetukset (--preset)",
+        nb: "Skjemaforhåndsinnstillinger (--preset)",
+        tr: "Şema ön ayarları (--preset)",
+        ja: "スキーマプリセット (--preset)",
     },
     /// Closing tip. Keep the backticked command verbatim.
     list_hint {
@@ -525,6 +753,12 @@ catalog! {
         nl: "Tip: voer een formaat uit met --help om de opties te zien, bijv. `demodatagen json --help`.",
         pl: "Wskazówka: uruchom dowolny format z --help, aby zobaczyć jego opcje, np. `demodatagen json --help`.",
         sv: "Tips: kör valfritt format med --help för att se dess alternativ, t.ex. `demodatagen json --help`.",
+        cs: "Tip: spusťte libovolný formát s --help pro zobrazení jeho možností, např. `demodatagen json --help`.",
+        da: "Tip: kør et vilkårligt format med --help for at se dets muligheder, f.eks. `demodatagen json --help`.",
+        fi: "Vinkki: suorita mikä tahansa muoto --help-valinnalla nähdäksesi sen asetukset, esim. `demodatagen json --help`.",
+        nb: "Tips: kjør et hvilket som helst format med --help for å se alternativene, f.eks. `demodatagen json --help`.",
+        tr: "İpucu: seçeneklerini görmek için herhangi bir biçimi --help ile çalıştırın, örn. `demodatagen json --help`.",
+        ja: "ヒント: 各形式を --help 付きで実行するとオプションを確認できます。例: `demodatagen json --help`。",
     },
     /// Title of the `presets` command.
     presets_title {
@@ -537,6 +771,12 @@ catalog! {
         nl: "Ingebouwde schemapresets",
         pl: "Wbudowane szablony schematu",
         sv: "Inbyggda schemaförinställningar",
+        cs: "Vestavěné předvolby schématu",
+        da: "Indbyggede skemaforudindstillinger",
+        fi: "Sisäänrakennetut skeeman esiasetukset",
+        nb: "Innebygde skjemaforhåndsinnstillinger",
+        tr: "Yerleşik şema ön ayarları",
+        ja: "組み込みのスキーマプリセット",
     },
     /// Intro line for `presets`. Keep the backticked command pattern verbatim.
     presets_intro {
@@ -549,6 +789,12 @@ catalog! {
         nl: "Gebruik een preset in plaats van een schema met de hand te schrijven: `demodatagen <format> --preset <name>`.",
         pl: "Użyj szablonu zamiast pisać schemat ręcznie: `demodatagen <format> --preset <name>`.",
         sv: "Använd en förinställning istället för att skriva ett schema för hand: `demodatagen <format> --preset <name>`.",
+        cs: "Použijte předvolbu místo ručního psaní schématu: `demodatagen <format> --preset <name>`.",
+        da: "Brug en forudindstilling i stedet for at skrive et skema i hånden: `demodatagen <format> --preset <name>`.",
+        fi: "Käytä esiasetusta sen sijaan, että kirjoittaisit skeeman käsin: `demodatagen <format> --preset <name>`.",
+        nb: "Bruk en forhåndsinnstilling i stedet for å skrive et skjema for hånd: `demodatagen <format> --preset <name>`.",
+        tr: "Elle şema yazmak yerine bir ön ayar kullanın: `demodatagen <format> --preset <name>`.",
+        ja: "スキーマを手書きする代わりにプリセットを使えます: `demodatagen <format> --preset <name>`。",
     },
     /// Closing tip for `presets`. Keep backticked flags verbatim.
     presets_hint {
@@ -561,6 +807,12 @@ catalog! {
         nl: "Werkt met elk gestructureerd formaat (json, csv, sql, yaml, …); te combineren met --rows en --locale.",
         pl: "Działa z każdym formatem strukturalnym (json, csv, sql, yaml, …); można łączyć z --rows i --locale.",
         sv: "Fungerar med alla strukturerade format (json, csv, sql, yaml, …); kombineras med --rows och --locale.",
+        cs: "Funguje s libovolným strukturovaným formátem (json, csv, sql, yaml, …); lze kombinovat s --rows a --locale.",
+        da: "Virker med ethvert struktureret format (json, csv, sql, yaml, …); kombiner med --rows og --locale.",
+        fi: "Toimii minkä tahansa rakenteisen muodon kanssa (json, csv, sql, yaml, …); yhdistä valintoihin --rows ja --locale.",
+        nb: "Fungerer med alle strukturerte formater (json, csv, sql, yaml, …); kombiner med --rows og --locale.",
+        tr: "Her yapılandırılmış biçimle çalışır (json, csv, sql, yaml, …); --rows ve --locale ile birleştirin.",
+        ja: "構造化形式（json、csv、sql、yaml、…）すべてで使用可能。--rows や --locale と組み合わせられます。",
     },
     /// Inline label preceding a preset's schema string in `presets` output.
     preset_schema_label {
@@ -573,6 +825,12 @@ catalog! {
         nl: "Schema:",
         pl: "Schemat:",
         sv: "Schema:",
+        cs: "Schéma:",
+        da: "Skema:",
+        fi: "Skeema:",
+        nb: "Skjema:",
+        tr: "Şema:",
+        ja: "スキーマ:",
     },
     /// One-line description of the 'users' preset.
     preset_desc_users {
@@ -585,6 +843,12 @@ catalog! {
         nl: "Gebruikersaccounts met namen, e-mails, gebruikersnamen en registratiedatums.",
         pl: "Konta użytkowników z nazwiskami, adresami e-mail, nazwami użytkowników i datami rejestracji.",
         sv: "Användarkonton med namn, e-postadresser, användarnamn och registreringsdatum.",
+        cs: "Uživatelské účty se jmény, e-maily, uživatelskými jmény a daty registrace.",
+        da: "Brugerkonti med navne, e-mails, brugernavne og tilmeldingsdatoer.",
+        fi: "Käyttäjätilit, joissa on nimet, sähköpostit, käyttäjätunnukset ja rekisteröitymispäivät.",
+        nb: "Brukerkontoer med navn, e-postadresser, brukernavn og registreringsdatoer.",
+        tr: "Adlar, e-postalar, kullanıcı adları ve kayıt tarihleri içeren kullanıcı hesapları.",
+        ja: "氏名、メールアドレス、ユーザー名、登録日を含むユーザーアカウント。",
     },
     /// One-line description of the 'employees' preset.
     preset_desc_employees {
@@ -597,6 +861,12 @@ catalog! {
         nl: "Personeelsgegevens: personen, afdelingen, functietitels en salarissen.",
         pl: "Dane kadrowe: osoby, działy, stanowiska i wynagrodzenia.",
         sv: "Personaldata: personer, avdelningar, jobbtitlar och löner.",
+        cs: "Personální záznamy: osoby, oddělení, pracovní pozice a platy.",
+        da: "HR-data: personer, afdelinger, jobtitler og lønninger.",
+        fi: "HR-tiedot: henkilöt, osastot, tehtävänimikkeet ja palkat.",
+        nb: "HR-data: personer, avdelinger, stillingstitler og lønninger.",
+        tr: "İK kayıtları: kişiler, departmanlar, unvanlar ve maaşlar.",
+        ja: "人事記録: 人物、部署、役職、給与。",
     },
     /// One-line description of the 'customers' preset.
     preset_desc_customers {
@@ -609,6 +879,12 @@ catalog! {
         nl: "Klanten met contactgegevens, adressen en telefoonnummers.",
         pl: "Klienci z danymi kontaktowymi, adresami i numerami telefonów.",
         sv: "Kunder med kontaktuppgifter, adresser och telefonnummer.",
+        cs: "Zákazníci s kontaktními údaji, adresami a telefonními čísly.",
+        da: "Kunder med kontaktoplysninger, adresser og telefonnumre.",
+        fi: "Asiakkaat, joissa on yhteystiedot, osoitteet ja puhelinnumerot.",
+        nb: "Kunder med kontaktinformasjon, adresser og telefonnumre.",
+        tr: "İletişim bilgileri, adresler ve telefon numaraları içeren müşteriler.",
+        ja: "連絡先、住所、電話番号を含む顧客データ。",
     },
     /// One-line description of the 'products' preset.
     preset_desc_products {
@@ -621,6 +897,12 @@ catalog! {
         nl: "Catalogusproducten met SKU, prijs, categorie en beoordeling.",
         pl: "Produkty katalogowe z SKU, ceną, kategorią i oceną.",
         sv: "Katalogprodukter med SKU, pris, kategori och betyg.",
+        cs: "Katalogové produkty s SKU, cenou, kategorií a hodnocením.",
+        da: "Katalogprodukter med SKU, pris, kategori og bedømmelse.",
+        fi: "Katalogituotteet, joissa on SKU, hinta, kategoria ja arvosana.",
+        nb: "Katalogprodukter med SKU, pris, kategori og vurdering.",
+        tr: "SKU, fiyat, kategori ve puan içeren katalog ürünleri.",
+        ja: "SKU、価格、カテゴリ、評価を含むカタログ商品。",
     },
     /// One-line description of the 'orders' preset.
     preset_desc_orders {
@@ -633,6 +915,12 @@ catalog! {
         nl: "E-commercebestellingen met klant, product, aantal en totaal.",
         pl: "Zamówienia e-commerce z klientem, produktem, ilością i sumą.",
         sv: "E-handelsbeställningar med kund, produkt, antal och summa.",
+        cs: "E-commerce objednávky se zákazníkem, produktem, množstvím a celkovou částkou.",
+        da: "E-handelsordrer med kunde, produkt, antal og total.",
+        fi: "Verkkokaupan tilaukset, joissa on asiakas, tuote, määrä ja loppusumma.",
+        nb: "E-handelsordrer med kunde, produkt, antall og totalsum.",
+        tr: "Müşteri, ürün, adet ve toplam içeren e-ticaret siparişleri.",
+        ja: "顧客、商品、数量、合計を含む EC 注文。",
     },
     /// One-line description of the 'transactions' preset.
     preset_desc_transactions {
@@ -645,6 +933,12 @@ catalog! {
         nl: "Financiële transacties met bedrag, valuta, IBAN en status.",
         pl: "Transakcje finansowe z kwotą, walutą, IBAN i statusem.",
         sv: "Finansiella transaktioner med belopp, valuta, IBAN och status.",
+        cs: "Finanční transakce s částkou, měnou, IBAN a stavem.",
+        da: "Finansielle transaktioner med beløb, valuta, IBAN og status.",
+        fi: "Rahoitustapahtumat, joissa on summa, valuutta, IBAN ja tila.",
+        nb: "Finansielle transaksjoner med beløp, valuta, IBAN og status.",
+        tr: "Tutar, para birimi, IBAN ve durum içeren finansal işlemler.",
+        ja: "金額、通貨、IBAN、ステータスを含む金融取引。",
     },
     /// One-line description of the 'events' preset.
     preset_desc_events {
@@ -657,6 +951,12 @@ catalog! {
         nl: "Analyse-gebeurtenissen met type, tijdstempel, gebruiker en sessie-ID.",
         pl: "Zdarzenia analityczne z typem, znacznikiem czasu, użytkownikiem i identyfikatorem sesji.",
         sv: "Analyshändelser med typ, tidsstämpel, användare och sessions-ID.",
+        cs: "Analytické události s typem, časovým razítkem, uživatelem a ID relace.",
+        da: "Analysehændelser med type, tidsstempel, bruger og sessions-id.",
+        fi: "Analytiikkatapahtumat, joissa on tyyppi, aikaleima, käyttäjä ja istuntotunnus.",
+        nb: "Analysehendelser med type, tidsstempel, bruker og økt-ID.",
+        tr: "Tür, zaman damgası, kullanıcı ve oturum kimliği içeren analitik olayları.",
+        ja: "種類、タイムスタンプ、ユーザー、セッション ID を含む分析イベント。",
     },
     /// One-line description of the 'servers' preset.
     preset_desc_servers {
@@ -669,6 +969,12 @@ catalog! {
         nl: "Infrastructuurhosts met hostnamen, IP's, poorten en uptime.",
         pl: "Hosty infrastruktury z nazwami hostów, adresami IP, portami i czasem działania.",
         sv: "Infrastrukturvärdar med värdnamn, IP-adresser, portar och drifttid.",
+        cs: "Infrastrukturní hostitelé s názvy hostitelů, IP adresami, porty a dobou běhu.",
+        da: "Infrastrukturværter med værtsnavne, IP'er, porte og oppetid.",
+        fi: "Infrastruktuurin isännät, joissa on isäntänimet, IP-osoitteet, portit ja käyttöaika.",
+        nb: "Infrastrukturverter med vertsnavn, IP-adresser, porter og oppetid.",
+        tr: "Ana bilgisayar adları, IP'ler, bağlantı noktaları ve çalışma süresi içeren altyapı sunucuları.",
+        ja: "ホスト名、IP、ポート、稼働時間を含むインフラホスト。",
     },
     /// One-line description of the 'geo' preset.
     preset_desc_geo {
@@ -681,6 +987,12 @@ catalog! {
         nl: "Geografische punten met breedtegraad, lengtegraad, stad en land.",
         pl: "Punkty geograficzne z szerokością i długością geograficzną, miastem i krajem.",
         sv: "Geografiska punkter med latitud, longitud, stad och land.",
+        cs: "Geografické body se zeměpisnou šířkou a délkou, městem a zemí.",
+        da: "Geografiske punkter med breddegrad, længdegrad, by og land.",
+        fi: "Maantieteelliset pisteet, joissa on leveysaste, pituusaste, kaupunki ja maa.",
+        nb: "Geografiske punkter med breddegrad, lengdegrad, by og land.",
+        tr: "Enlem, boylam, şehir ve ülke içeren coğrafi noktalar.",
+        ja: "緯度、経度、都市、国を含む地理座標。",
     },
     /// One-line description of the 'posts' preset.
     preset_desc_posts {
@@ -693,6 +1005,12 @@ catalog! {
         nl: "Blog- of socialmediaberichten met auteur, titel, tekst en tags.",
         pl: "Wpisy blogowe lub w mediach społecznościowych z autorem, tytułem, treścią i tagami.",
         sv: "Blogg- eller sociala inlägg med författare, titel, text och taggar.",
+        cs: "Blogové nebo sociální příspěvky s autorem, titulkem, textem a štítky.",
+        da: "Blog- eller sociale opslag med forfatter, titel, tekst og tags.",
+        fi: "Blogi- tai somejulkaisut, joissa on kirjoittaja, otsikko, teksti ja tunnisteet.",
+        nb: "Blogg- eller sosiale innlegg med forfatter, tittel, tekst og emneknagger.",
+        tr: "Yazar, başlık, metin ve etiket içeren blog veya sosyal medya gönderileri.",
+        ja: "著者、タイトル、本文、タグを含むブログ・SNS 投稿。",
     },
     /// One-line description of the 'payments' preset.
     preset_desc_payments {
@@ -705,6 +1023,12 @@ catalog! {
         nl: "Betalingsgegevens met methode, kaart, bedrag en valuta.",
         pl: "Rekordy płatności z metodą, kartą, kwotą i walutą.",
         sv: "Betalningsposter med metod, kort, belopp och valuta.",
+        cs: "Platební záznamy s metodou, kartou, částkou a měnou.",
+        da: "Betalingsposter med metode, kort, beløb og valuta.",
+        fi: "Maksutapahtumat, joissa on maksutapa, kortti, summa ja valuutta.",
+        nb: "Betalingsposter med metode, kort, beløp og valuta.",
+        tr: "Yöntem, kart, tutar ve para birimi içeren ödeme kayıtları.",
+        ja: "支払い方法、カード、金額、通貨を含む決済記録。",
     },
     /// One-line description of the 'sensors' preset.
     preset_desc_sensors {
@@ -717,6 +1041,12 @@ catalog! {
         nl: "IoT-sensormetingen met apparaat-ID, metriek, waarde en tijd.",
         pl: "Odczyty czujników IoT z identyfikatorem urządzenia, metryką, wartością i czasem.",
         sv: "IoT-sensormätvärden med enhets-ID, mätvärde, värde och tid.",
+        cs: "Odečty IoT senzorů s ID zařízení, metrikou, hodnotou a časem.",
+        da: "IoT-sensormålinger med enheds-id, metrik, værdi og tid.",
+        fi: "IoT-anturilukemat, joissa on laitetunnus, mittari, arvo ja aika.",
+        nb: "IoT-sensoravlesninger med enhets-ID, metrikk, verdi og tid.",
+        tr: "Cihaz kimliği, metrik, değer ve zaman içeren IoT sensör okumaları.",
+        ja: "デバイス ID、メトリクス、値、時刻を含む IoT センサー測定値。",
     },
     /// One-line description of the 'invoices' preset.
     preset_desc_invoices {
@@ -729,6 +1059,12 @@ catalog! {
         nl: "Facturen met klant, bedrag, valuta, IBAN en vervaldatum.",
         pl: "Faktury z klientem, kwotą, walutą, numerem IBAN i terminem.",
         sv: "Fakturor med kund, belopp, valuta, IBAN och förfallodatum.",
+        cs: "Faktury se zákazníkem, částkou, měnou, IBAN a datem splatnosti.",
+        da: "Fakturaer med kunde, beløb, valuta, IBAN og forfaldsdato.",
+        fi: "Laskut, joissa on asiakas, summa, valuutta, IBAN ja eräpäivä.",
+        nb: "Fakturaer med kunde, beløp, valuta, IBAN og forfallsdato.",
+        tr: "Müşteri, tutar, para birimi, IBAN ve vade tarihi içeren faturalar.",
+        ja: "顧客、金額、通貨、IBAN、支払期日を含む請求書。",
     },
     /// One-line description of the 'logins' preset.
     preset_desc_logins {
@@ -741,6 +1077,12 @@ catalog! {
         nl: "Inlogpogingen met gebruiker, IP, user-agent, MFA en resultaat.",
         pl: "Próby logowania z użytkownikiem, IP, przeglądarką, MFA i wynikiem.",
         sv: "Inloggningsförsök med användare, IP, user agent, MFA och utfall.",
+        cs: "Pokusy o přihlášení s uživatelem, IP, user agentem, MFA a výsledkem.",
+        da: "Loginforsøg med bruger, IP, user agent, MFA og resultat.",
+        fi: "Kirjautumisyritykset, joissa on käyttäjä, IP, user agent, MFA ja tulos.",
+        nb: "Påloggingsforsøk med bruker, IP, user agent, MFA og utfall.",
+        tr: "Kullanıcı, IP, kullanıcı aracısı, MFA ve sonuç içeren oturum açma denemeleri.",
+        ja: "ユーザー、IP、ユーザーエージェント、MFA、結果を含むログイン試行。",
     },
     /// One-line description of the 'vehicles' preset.
     preset_desc_vehicles {
@@ -753,6 +1095,12 @@ catalog! {
         nl: "Voertuigen met merk, bouwjaar, brandstof, kilometerstand en prijs.",
         pl: "Pojazdy z marką, rocznikiem, paliwem, przebiegiem i ceną.",
         sv: "Fordon med märke, årsmodell, bränsle, miltal och pris.",
+        cs: "Vozidla se značkou, rokem výroby, palivem, nájezdem a cenou.",
+        da: "Køretøjer med mærke, årgang, brændstof, kilometertal og pris.",
+        fi: "Ajoneuvot, joissa on merkki, vuosimalli, polttoaine, kilometrilukema ja hinta.",
+        nb: "Kjøretøy med merke, årsmodell, drivstoff, kilometerstand og pris.",
+        tr: "Marka, model yılı, yakıt, kilometre ve fiyat içeren araçlar.",
+        ja: "メーカー、年式、燃料、走行距離、価格を含む車両。",
     },
     /// One-line description of the 'books' preset.
     preset_desc_books {
@@ -765,6 +1113,12 @@ catalog! {
         nl: "Boeken met ISBN, titel, auteur, pagina's, taal en prijs.",
         pl: "Książki z ISBN, tytułem, autorem, stronami, językiem i ceną.",
         sv: "Böcker med ISBN, titel, författare, sidor, språk och pris.",
+        cs: "Knihy s ISBN, titulem, autorem, počtem stran, jazykem a cenou.",
+        da: "Bøger med ISBN, titel, forfatter, sider, sprog og pris.",
+        fi: "Kirjat, joissa on ISBN, nimi, tekijä, sivumäärä, kieli ja hinta.",
+        nb: "Bøker med ISBN, tittel, forfatter, sider, språk og pris.",
+        tr: "ISBN, başlık, yazar, sayfa sayısı, dil ve fiyat içeren kitaplar.",
+        ja: "ISBN、タイトル、著者、ページ数、言語、価格を含む書籍。",
     },
     /// Header line of the `preview` command. {rows} number, {locale} locale id.
     preview_header {
@@ -777,6 +1131,12 @@ catalog! {
         nl: "Voorbeeld van {rows} voorbeeldrecord(s) · dataregio {locale}",
         pl: "Podgląd {rows} przykładowych rekordów · region danych {locale}",
         sv: "Förhandsvisar {rows} exempelpost(er) · dataspråkområde {locale}",
+        cs: "Náhled {rows} ukázkových záznamů · jazyková oblast dat {locale}",
+        da: "Forhåndsvisning af {rows} eksempelpost(er) · datasprogområde {locale}",
+        fi: "Esikatsellaan {rows} esimerkkitietuetta · datan kielialue {locale}",
+        nb: "Forhåndsviser {rows} eksempelpost(er) · dataspråkområde {locale}",
+        tr: "{rows} örnek kayıt önizleniyor · veri yerel ayarı {locale}",
+        ja: "{rows} 件のサンプルレコードをプレビュー中 · データロケール {locale}",
     },
     /// Hint printed under the preview table. Keep the backticked flags verbatim.
     preview_hint {
@@ -789,6 +1149,12 @@ catalog! {
         nl: "Genereer echte bestanden met een formaat-subcommando, bijv. `demodatagen json --schema …`. Voeg `--seed` toe om precies dit voorbeeld te reproduceren.",
         pl: "Wygeneruj prawdziwe pliki podkomendą formatu, np. `demodatagen json --schema …`. Dodaj `--seed`, aby odtworzyć dokładnie ten podgląd.",
         sv: "Generera riktiga filer med ett formatunderkommando, t.ex. `demodatagen json --schema …`. Lägg till `--seed` för att återskapa exakt denna förhandsvisning.",
+        cs: "Skutečné soubory vygenerujete podpříkazem formátu, např. `demodatagen json --schema …`. Přidejte `--seed` pro reprodukci přesně tohoto náhledu.",
+        da: "Generér rigtige filer med en formatunderkommando, f.eks. `demodatagen json --schema …`. Tilføj `--seed` for at genskabe præcis denne forhåndsvisning.",
+        fi: "Luo oikeita tiedostoja millä tahansa muotoalikomennolla, esim. `demodatagen json --schema …`. Lisää `--seed` toistaaksesi täsmälleen tämän esikatselun.",
+        nb: "Generer ekte filer med en formatunderkommando, f.eks. `demodatagen json --schema …`. Legg til `--seed` for å gjenskape akkurat denne forhåndsvisningen.",
+        tr: "Herhangi bir biçim alt komutuyla gerçek dosyalar oluşturun, örn. `demodatagen json --schema …`. Tam olarak bu önizlemeyi yeniden üretmek için `--seed` ekleyin.",
+        ja: "各形式のサブコマンドで実際のファイルを生成できます。例: `demodatagen json --schema …`。`--seed` を追加すると、このプレビューを正確に再現できます。",
     },
     /// Title of the `info` command panel.
     info_title {
@@ -801,6 +1167,12 @@ catalog! {
         nl: "Omgevings- & build-informatie",
         pl: "Informacje o środowisku i kompilacji",
         sv: "Miljö- & bygginformation",
+        cs: "Informace o prostředí a sestavení",
+        da: "Miljø- & buildoplysninger",
+        fi: "Ympäristö- ja käännöstiedot",
+        nb: "Miljø- & bygginformasjon",
+        tr: "Ortam ve derleme bilgileri",
+        ja: "環境とビルドの情報",
     },
     /// Row label for the program version.
     info_version {
@@ -813,6 +1185,12 @@ catalog! {
         nl: "Versie",
         pl: "Wersja",
         sv: "Version",
+        cs: "Verze",
+        da: "Version",
+        fi: "Versio",
+        nb: "Versjon",
+        tr: "Sürüm",
+        ja: "バージョン",
     },
     /// Row label for the compilation target triple (e.g. x86_64-unknown-linux-gnu).
     info_build_target {
@@ -825,6 +1203,12 @@ catalog! {
         nl: "Build-doel",
         pl: "Cel kompilacji",
         sv: "Byggmål",
+        cs: "Cíl sestavení",
+        da: "Buildmål",
+        fi: "Käännöskohde",
+        nb: "Byggmål",
+        tr: "Derleme hedefi",
+        ja: "ビルドターゲット",
     },
     /// Row label for the build profile (debug/release).
     info_profile {
@@ -837,6 +1221,12 @@ catalog! {
         nl: "Build-profiel",
         pl: "Profil kompilacji",
         sv: "Byggprofil",
+        cs: "Profil sestavení",
+        da: "Buildprofil",
+        fi: "Käännösprofiili",
+        nb: "Byggprofil",
+        tr: "Derleme profili",
+        ja: "ビルドプロファイル",
     },
     /// Row label for the number of output formats.
     info_formats {
@@ -849,6 +1239,12 @@ catalog! {
         nl: "Uitvoerformaten",
         pl: "Formaty wyjściowe",
         sv: "Utdataformat",
+        cs: "Výstupní formáty",
+        da: "Outputformater",
+        fi: "Tulostemuodot",
+        nb: "Utdataformater",
+        tr: "Çıktı biçimleri",
+        ja: "出力形式",
     },
     /// Row label for the number of data locales.
     info_locales {
@@ -861,6 +1257,12 @@ catalog! {
         nl: "Datataalregio's",
         pl: "Regiony danych",
         sv: "Dataspråkområden",
+        cs: "Jazykové oblasti dat",
+        da: "Datasprogområder",
+        fi: "Datan kielialueet",
+        nb: "Dataspråkområder",
+        tr: "Veri yerel ayarları",
+        ja: "データロケール",
     },
     /// Row label for the number of interface languages.
     info_languages {
@@ -873,6 +1275,12 @@ catalog! {
         nl: "Interfacetalen",
         pl: "Języki interfejsu",
         sv: "Gränssnittsspråk",
+        cs: "Jazyky rozhraní",
+        da: "Grænsefladesprog",
+        fi: "Käyttöliittymän kielet",
+        nb: "Grensesnittspråk",
+        tr: "Arayüz dilleri",
+        ja: "インターフェース言語",
     },
     /// Row label for the number of schema presets.
     info_presets {
@@ -885,6 +1293,12 @@ catalog! {
         nl: "Schemapresets",
         pl: "Szablony schematu",
         sv: "Schemaförinställningar",
+        cs: "Předvolby schématu",
+        da: "Skemaforudindstillinger",
+        fi: "Skeeman esiasetukset",
+        nb: "Skjemaforhåndsinnstillinger",
+        tr: "Şema ön ayarları",
+        ja: "スキーマプリセット",
     },
     /// Row label for the number of worker threads.
     info_threads {
@@ -897,6 +1311,12 @@ catalog! {
         nl: "Worker-threads",
         pl: "Wątki robocze",
         sv: "Arbetstrådar",
+        cs: "Pracovní vlákna",
+        da: "Arbejdstråde",
+        fi: "Työsäikeet",
+        nb: "Arbeidstråder",
+        tr: "Çalışan iş parçacıkları",
+        ja: "ワーカースレッド",
     },
     /// Row label for whether self-update is compiled in.
     info_update_feature {
@@ -909,6 +1329,12 @@ catalog! {
         nl: "Zelf-update",
         pl: "Samoaktualizacja",
         sv: "Självuppdatering",
+        cs: "Samoaktualizace",
+        da: "Selvopdatering",
+        fi: "Itsepäivitys",
+        nb: "Selvoppdatering",
+        tr: "Kendi kendine güncelleme",
+        ja: "自己更新",
     },
     /// Row label for the source repository URL.
     info_repository {
@@ -921,6 +1347,12 @@ catalog! {
         nl: "Repository",
         pl: "Repozytorium",
         sv: "Repository",
+        cs: "Repozitář",
+        da: "Repository",
+        fi: "Repositorio",
+        nb: "Kodelager",
+        tr: "Depo",
+        ja: "リポジトリ",
     },
     /// Row label for the software license.
     info_license {
@@ -933,6 +1365,12 @@ catalog! {
         nl: "Licentie",
         pl: "Licencja",
         sv: "Licens",
+        cs: "Licence",
+        da: "Licens",
+        fi: "Lisenssi",
+        nb: "Lisens",
+        tr: "Lisans",
+        ja: "ライセンス",
     },
     /// Value meaning a feature is on.
     info_enabled {
@@ -945,6 +1383,12 @@ catalog! {
         nl: "ingeschakeld",
         pl: "włączona",
         sv: "aktiverad",
+        cs: "zapnuto",
+        da: "aktiveret",
+        fi: "käytössä",
+        nb: "aktivert",
+        tr: "etkin",
+        ja: "有効",
     },
     /// Value meaning a feature is off.
     info_disabled {
@@ -957,6 +1401,12 @@ catalog! {
         nl: "uitgeschakeld",
         pl: "wyłączona",
         sv: "inaktiverad",
+        cs: "vypnuto",
+        da: "deaktiveret",
+        fi: "pois käytöstä",
+        nb: "deaktivert",
+        tr: "devre dışı",
+        ja: "無効",
     },
     /// Closing tip for `info`. Keep the backticked command verbatim.
     info_hint {
@@ -969,6 +1419,12 @@ catalog! {
         nl: "Voer `demodatagen list` uit voor formaten, schematypen, taalregio's en talen.",
         pl: "Uruchom `demodatagen list`, aby zobaczyć formaty, typy schematu, regiony i języki.",
         sv: "Kör `demodatagen list` för format, schematyper, språkområden och språk.",
+        cs: "Spusťte `demodatagen list` pro formáty, typy schématu, jazykové oblasti a jazyky.",
+        da: "Kør `demodatagen list` for formater, skematyper, sprogområder og sprog.",
+        fi: "Suorita `demodatagen list` nähdäksesi muodot, skeematyypit, kielialueet ja kielet.",
+        nb: "Kjør `demodatagen list` for formater, skjematyper, språkområder og språk.",
+        tr: "Biçimler, şema türleri, yerel ayarlar ve diller için `demodatagen list` komutunu çalıştırın.",
+        ja: "`demodatagen list` を実行すると、形式、スキーマ型、ロケール、言語を確認できます。",
     },
     /// Header for a --dry-run. Make clear nothing is written.
     dryrun_header {
@@ -981,6 +1437,12 @@ catalog! {
         nl: "Proefrun — alleen plannen, er worden geen bestanden geschreven.",
         pl: "Próbny przebieg — tylko planowanie, żadne pliki nie zostaną zapisane.",
         sv: "Provkörning — endast planering, inga filer skrivs.",
+        cs: "Zkušební běh — pouze plánování, žádné soubory nebudou zapsány.",
+        da: "Prøvekørsel — kun planlægning, ingen filer skrives.",
+        fi: "Kuivaharjoitus — vain suunnittelu, tiedostoja ei kirjoiteta.",
+        nb: "Prøvekjøring — kun planlegging, ingen filer skrives.",
+        tr: "Deneme çalıştırması — yalnızca planlama, hiçbir dosya yazılmayacak.",
+        ja: "ドライラン — 計画のみで、ファイルは書き込まれません。",
     },
     /// {count} number, {format} format name, {dir} path. Keep × and arrow.
     dryrun_plan {
@@ -993,6 +1455,12 @@ catalog! {
         nl: "Zou genereren: {count} × {format} → {dir}",
         pl: "Zostałoby wygenerowane: {count} × {format} → {dir}",
         sv: "Skulle generera {count} × {format} → {dir}",
+        cs: "Vygenerovalo by se {count} × {format} → {dir}",
+        da: "Ville generere {count} × {format} → {dir}",
+        fi: "Luotaisiin {count} × {format} → {dir}",
+        nb: "Ville generert {count} × {format} → {dir}",
+        tr: "Oluşturulacak: {count} × {format} → {dir}",
+        ja: "生成予定: {count} × {format} → {dir}",
     },
     /// Heading above the list of planned file names.
     dryrun_files_title {
@@ -1005,6 +1473,12 @@ catalog! {
         nl: "Geplande bestanden:",
         pl: "Zaplanowane pliki:",
         sv: "Planerade filer:",
+        cs: "Plánované soubory:",
+        da: "Planlagte filer:",
+        fi: "Suunnitellut tiedostot:",
+        nb: "Planlagte filer:",
+        tr: "Planlanan dosyalar:",
+        ja: "生成予定のファイル:",
     },
     /// Shown after a truncated file list. {count} is how many more files.
     dryrun_more {
@@ -1017,6 +1491,12 @@ catalog! {
         nl: "… en nog {count} meer",
         pl: "… i {count} więcej",
         sv: "… och {count} till",
+        cs: "… a dalších {count}",
+        da: "… og {count} mere",
+        fi: "… ja {count} lisää",
+        nb: "… og {count} til",
+        tr: "… ve {count} tane daha",
+        ja: "… ほか {count} 件",
     },
     /// Closing line of a dry run. {count} number of files planned.
     dryrun_done {
@@ -1029,6 +1509,12 @@ catalog! {
         nl: "Proefrun voltooid — {count} bestand(en) gepland.",
         pl: "Próbny przebieg zakończony — zaplanowano {count} plik(ów).",
         sv: "Provkörning slutförd — {count} fil(er) planerade.",
+        cs: "Zkušební běh dokončen — naplánováno {count} souborů.",
+        da: "Prøvekørsel fuldført — {count} fil(er) planlagt.",
+        fi: "Kuivaharjoitus valmis — {count} tiedosto(a) suunniteltu.",
+        nb: "Prøvekjøring fullført — {count} fil(er) planlagt.",
+        tr: "Deneme çalıştırması tamamlandı — {count} dosya planlandı.",
+        ja: "ドライラン完了 — {count} 件のファイルが計画されました。",
     },
 }
 
@@ -1057,6 +1543,18 @@ pub enum Language {
     Pl,
     /// Swedish.
     Sv,
+    /// Czech.
+    Cs,
+    /// Danish.
+    Da,
+    /// Finnish.
+    Fi,
+    /// Norwegian Bokmål.
+    Nb,
+    /// Turkish.
+    Tr,
+    /// Japanese.
+    Ja,
 }
 
 impl Language {
@@ -1072,6 +1570,12 @@ impl Language {
             Language::Nl => &NL_CATALOG,
             Language::Pl => &PL_CATALOG,
             Language::Sv => &SV_CATALOG,
+            Language::Cs => &CS_CATALOG,
+            Language::Da => &DA_CATALOG,
+            Language::Fi => &FI_CATALOG,
+            Language::Nb => &NB_CATALOG,
+            Language::Tr => &TR_CATALOG,
+            Language::Ja => &JA_CATALOG,
         }
     }
 
@@ -1087,6 +1591,12 @@ impl Language {
             Language::Nl => "nl",
             Language::Pl => "pl",
             Language::Sv => "sv",
+            Language::Cs => "cs",
+            Language::Da => "da",
+            Language::Fi => "fi",
+            Language::Nb => "nb",
+            Language::Tr => "tr",
+            Language::Ja => "ja",
         }
     }
 
@@ -1102,6 +1612,12 @@ impl Language {
             Language::Nl => "Nederlands",
             Language::Pl => "Polski",
             Language::Sv => "Svenska",
+            Language::Cs => "Čeština",
+            Language::Da => "Dansk",
+            Language::Fi => "Suomi",
+            Language::Nb => "Norsk bokmål",
+            Language::Tr => "Türkçe",
+            Language::Ja => "日本語",
         }
     }
 
@@ -1117,12 +1633,21 @@ impl Language {
             Language::Nl,
             Language::Pl,
             Language::Sv,
+            Language::Cs,
+            Language::Da,
+            Language::Fi,
+            Language::Nb,
+            Language::Tr,
+            Language::Ja,
         ]
     }
 
     /// Returns all canonical language identifiers, for help text and `list`.
     pub fn all() -> &'static [&'static str] {
-        &["en", "de", "fr", "es", "it", "pt", "nl", "pl", "sv"]
+        &[
+            "en", "de", "fr", "es", "it", "pt", "nl", "pl", "sv", "cs", "da", "fi", "nb", "tr",
+            "ja",
+        ]
     }
 
     /// Resolves the interface language from, in order of precedence:
@@ -1185,6 +1710,14 @@ impl std::str::FromStr for Language {
             "nl" | "nl_nl" | "nl_be" | "dutch" | "nederlands" => Ok(Language::Nl),
             "pl" | "pl_pl" | "polish" | "polski" => Ok(Language::Pl),
             "sv" | "sv_se" | "swedish" | "svenska" => Ok(Language::Sv),
+            "cs" | "cs_cz" | "czech" | "cestina" | "čeština" => Ok(Language::Cs),
+            "da" | "da_dk" | "danish" | "dansk" => Ok(Language::Da),
+            "fi" | "fi_fi" | "finnish" | "suomi" => Ok(Language::Fi),
+            "nb" | "nb_no" | "no" | "no_no" | "norwegian" | "norsk" | "bokmal" | "bokmål" => {
+                Ok(Language::Nb)
+            }
+            "tr" | "tr_tr" | "turkish" | "turkce" | "türkçe" => Ok(Language::Tr),
+            "ja" | "ja_jp" | "japanese" | "日本語" => Ok(Language::Ja),
             other => Err(format!(
                 "Unknown interface language: '{other}'. Valid: {}",
                 Language::all().join(", ")
@@ -1250,6 +1783,13 @@ mod tests {
         assert_eq!("Nederlands".parse::<Language>().unwrap(), Language::Nl);
         assert_eq!("pl".parse::<Language>().unwrap(), Language::Pl);
         assert_eq!("svenska".parse::<Language>().unwrap(), Language::Sv);
+        assert_eq!("cs".parse::<Language>().unwrap(), Language::Cs);
+        assert_eq!("da_DK".parse::<Language>().unwrap(), Language::Da);
+        assert_eq!("suomi".parse::<Language>().unwrap(), Language::Fi);
+        assert_eq!("no".parse::<Language>().unwrap(), Language::Nb);
+        assert_eq!("nb_NO".parse::<Language>().unwrap(), Language::Nb);
+        assert_eq!("Turkish".parse::<Language>().unwrap(), Language::Tr);
+        assert_eq!("ja_JP".parse::<Language>().unwrap(), Language::Ja);
         assert!("xx".parse::<Language>().is_err());
     }
 
@@ -1259,7 +1799,7 @@ mod tests {
             assert_eq!(id.parse::<Language>().unwrap().as_str(), *id);
         }
         assert_eq!(Language::variants().len(), Language::all().len());
-        assert_eq!(Language::variants().len(), 9);
+        assert_eq!(Language::variants().len(), 15);
     }
 
     #[test]

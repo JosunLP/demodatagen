@@ -77,7 +77,8 @@ pub struct Cli {
     pub locale: String,
 
     /// Interface language for messages (`en`, `de`, `fr`, `es`, `it`, `pt`,
-    /// `nl`, `pl`, `sv`). Defaults to the system locale, then English.
+    /// `nl`, `pl`, `sv`, `cs`, `da`, `fi`, `nb`, `tr`, `ja`). Defaults to the
+    /// system locale, then English.
     #[arg(long, global = true)]
     pub lang: Option<String>,
 
