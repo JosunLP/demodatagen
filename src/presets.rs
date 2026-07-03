@@ -45,6 +45,10 @@ impl Preset {
             "posts" => c.preset_desc_posts,
             "payments" => c.preset_desc_payments,
             "sensors" => c.preset_desc_sensors,
+            "invoices" => c.preset_desc_invoices,
+            "logins" => c.preset_desc_logins,
+            "vehicles" => c.preset_desc_vehicles,
+            "books" => c.preset_desc_books,
             _ => Language::En.catalog().preset_desc_users,
         }
     }
@@ -103,6 +107,22 @@ pub const PRESETS: &[Preset] = &[
     Preset {
         name: "sensors",
         schema: "device_id:uuid,metric:enum(temperature,humidity,pressure,co2,motion),value:float(0..100),unit:enum(C,pct,hPa,ppm),battery:percent,recorded:datetime",
+    },
+    Preset {
+        name: "invoices",
+        schema: "id:sequence(1000),customer:company,amount:price(50..25000),currency:currency,iban:iban,issued:date,due:date,paid:bool",
+    },
+    Preset {
+        name: "logins",
+        schema: "user:username,ip:ipv4,user_agent:user_agent,mfa:enum(none,sms,totp,webauthn),success:bool,timestamp:datetime",
+    },
+    Preset {
+        name: "vehicles",
+        schema: "id:uuid,make:enum(Toyota,Volkswagen,Ford,BMW,Hyundai,Tesla,Kia,Volvo),model_year:year(1998..2026),fuel:enum(petrol,diesel,hybrid,electric),mileage_km:int(0..350000),price:price(1500..120000)",
+    },
+    Preset {
+        name: "books",
+        schema: "isbn:isbn,title:sentence(4),author:name,pages:int(80..1200),language:language,published:year(1950..2026),price:price(5..60)",
     },
 ];
 

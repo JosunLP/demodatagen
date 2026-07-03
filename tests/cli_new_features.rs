@@ -205,3 +205,81 @@ fn test_new_faker_types_generate() {
         .stdout(predicate::str::contains("\"bic\""))
         .stdout(predicate::str::contains("\"imei\""));
 }
+
+#[test]
+fn test_preview_renders_table_without_writing_files() {
+    let tmp = TempDir::new().unwrap();
+    cmd()
+        .args([
+            "-o",
+            tmp.path().to_str().unwrap(),
+            "--color",
+            "never",
+            "--skip-update",
+            "-s",
+            "42",
+            "preview",
+            "--rows",
+            "3",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("│").or(predicate::str::contains("|")))
+        .stdout(predicate::str::contains("email"));
+    assert_eq!(fs::read_dir(tmp.path()).unwrap().count(), 0);
+}
+
+#[test]
+fn test_preview_with_preset_and_locale() {
+    cmd()
+        .args([
+            "--color",
+            "never",
+            "--skip-update",
+            "-l",
+            "cs_cz",
+            "-s",
+            "1",
+            "preview",
+            "--preset",
+            "books",
+        ])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("isbn"));
+}
+
+#[test]
+fn test_preview_unknown_preset_fails() {
+    cmd()
+        .args([
+            "--color",
+            "never",
+            "--skip-update",
+            "preview",
+            "--preset",
+            "bogus",
+        ])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn test_new_presets_generate() {
+    for preset in ["invoices", "logins", "vehicles", "books"] {
+        cmd()
+            .args([
+                "--color",
+                "never",
+                "--skip-update",
+                "--stdout",
+                "-s",
+                "3",
+                "json",
+                "--preset",
+                preset,
+            ])
+            .assert()
+            .success();
+    }
+}
