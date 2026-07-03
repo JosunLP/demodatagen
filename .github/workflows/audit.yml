@@ -26,6 +26,12 @@ jobs:
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # quick-xml < 0.41 DoS advisories, reachable only through the
+          # optional self_update backend (pinned ^0.38), which parses GitHub
+          # release metadata rather than attacker-supplied XML. Mirrors the
+          # ignore list (and rationale) in deny.toml; drop both entries once
+          # self_update releases on quick-xml >= 0.41.
+          ignore: RUSTSEC-2026-0194,RUSTSEC-2026-0195
 
   cargo-deny:
     name: cargo-deny
