@@ -1,38 +1,42 @@
 # demodatagen
 
 A fast, offline, **fully internationalized** CLI **and library** for generating
-realistic demo files in **33 formats**, **10 data locales**, and **9 interface
+realistic demo files in **40 formats**, **16 data locales**, and **15 interface
 languages**.
 
 Built in Rust for maximum performance, with a typed schema engine, built-in
 schema presets, locale-aware fake data, parallel batch generation, deterministic
-seeding, an animated terminal UI, a nine-language interface, and zero external
+seeding, an animated terminal UI, a fifteen-language interface, and zero external
 service dependencies.
 
 ## Features
 
 | Category              | Formats                                     |
 | --------------------- | ------------------------------------------- |
-| **Structured data**   | JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL |
-| **Text & config**     | TXT, Markdown, HTML, LOG, INI, ENV          |
-| **Images**            | PNG, JPG, WebP, BMP, TIFF, ICO, GIF, SVG    |
-| **Audio & video**     | MP3, WAV, MP4, WebM                         |
-| **Documents**         | PDF, XLSX                                   |
-| **Binary & archives** | EXE, DLL, ZIP, TAR, GZIP                    |
+| **Structured data**   | JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, GeoJSON |
+| **Text & config**     | TXT, Markdown, HTML, LOG, INI, ENV, Properties, SRT  |
+| **Images**            | PNG, JPG, WebP, BMP, TIFF, ICO, GIF, SVG             |
+| **Audio & video**     | MP3, WAV, MP4, WebM                                  |
+| **Documents**         | PDF, XLSX, RTF, vCard, iCalendar, EML                |
+| **Binary & archives** | EXE, DLL, ZIP, TAR, GZIP                             |
 
 - **Typed schema engine** – ranges, enums, sequences, arrays, nullable fields,
   and a "did you mean …?" hint for mistyped field types
 - **70+ fake-data types** – names, emails, UUIDs, IBANs, BICs, credit cards, geo
   coordinates, SSNs, MIME types, semver, IMEIs, EAN barcodes, HTTP methods &
   statuses, and more
-- **12 built-in schema presets** – `users`, `products`, `orders`, `events`,
-  `servers`, … via `--preset`, so the common cases need no hand-written schema
-- **10 data locales** – `en_us`, `en_gb`, `de_de`, `fr_fr`, `es_es`, `it_it`,
-  `pt_br`, `nl_nl`, `pl_pl`, `sv_se` for region-appropriate names, addresses,
-  postal-code formats, and company forms
-- **9-language interface** – messages in English, German, French, Spanish,
-  Italian, Portuguese, Dutch, Polish, and Swedish (`--lang`), auto-detected from
-  your system locale, defaulting to English
+- **16 built-in schema presets** – `users`, `products`, `orders`, `invoices`,
+  `logins`, … via `--preset`, so the common cases need no hand-written schema
+- **16 data locales** – `en_us`, `en_gb`, `de_de`, `fr_fr`, `es_es`, `it_it`,
+  `pt_br`, `nl_nl`, `pl_pl`, `sv_se`, `da_dk`, `nb_no`, `fi_fi`, `cs_cz`,
+  `tr_tr`, `ja_jp` for region-appropriate names, addresses, postal-code
+  formats, and company forms
+- **15-language interface** – messages in English, German, French, Spanish,
+  Italian, Portuguese, Dutch, Polish, Swedish, Danish, Norwegian, Finnish,
+  Czech, Turkish, and Japanese (`--lang`), auto-detected from your system
+  locale, defaulting to English
+- **Instant terminal preview** – `demodatagen preview --preset users` renders
+  sample records as an animated, type-colored table without writing a file
 - **Polished, animated CLI** – a gradient banner, spinners, a live progress bar
   with throughput & ETA, colorized summaries, a boxed `info` panel, and `list` /
   `presets` overviews; honors `NO_COLOR` and non-TTY pipes
@@ -109,7 +113,10 @@ demodatagen sql --table users --rows 1000 --schema "id:sequence,name:name,age:in
 # German test data, with a German interface, streamed to stdout
 demodatagen --locale de_de --lang de --stdout csv --rows 20 --schema "name:name,city:city,iban:iban"
 
-# Preview a large run without writing anything
+# Preview sample records as a table in the terminal — no files written
+demodatagen preview --preset orders --rows 5
+
+# Plan a large run without writing anything
 demodatagen -c 1000 --dry-run json --preset orders
 
 # See everything on offer (formats, schema types, presets, locales, languages)
@@ -130,7 +137,7 @@ demodatagen [OPTIONS] <COMMAND>
 | `--count <N>`          | `-c`  | Number of files to generate                 | `1`        |
 | `--seed <N>`           | `-s`  | RNG seed for reproducibility                | random     |
 | `--locale <LOCALE>`    | `-l`  | Data locale (`en_us`, `de_de`, `fr_fr`, …)  | `en_us`    |
-| `--lang <LANG>`        |       | Interface language (9; run `list` for all)  | auto / en  |
+| `--lang <LANG>`        |       | Interface language (15; run `list` for all) | auto / en  |
 | `--color <WHEN>`       |       | Colorize output (`auto`, `always`, `never`) | `auto`     |
 | `--name-pattern <PAT>` | `-n`  | Filename pattern (`{n}` = index)            | `demo_{n}` |
 | `--dry-run`            |       | Plan the run; print what would be written   | `false`    |
@@ -151,6 +158,7 @@ demodatagen xml   --schema "user:name,score:float" --rows 50 --root users --row-
 demodatagen csv   --schema "first:first_name,last:last_name,email:email" --rows 200 --delimiter ";"
 demodatagen tsv   --schema "a:int,b:float" --rows 50
 demodatagen sql   --schema "id:sequence,name:name,price:price(1..999)" --rows 100 --table products
+demodatagen geojson --schema "name:city,population:int(1000..900000)" --rows 50 --pretty
 ```
 
 ### Text & config
@@ -162,6 +170,8 @@ demodatagen html     --headings 4 --paragraphs 3
 demodatagen log      --lines 500 --style apache    # apache | syslog | json
 demodatagen ini      --sections 3 --keys 5
 demodatagen env      --keys 10
+demodatagen properties --sections 3 --keys 5     # Java .properties
+demodatagen srt      --cues 50                   # SubRip subtitles
 ```
 
 ### Images
@@ -191,6 +201,10 @@ demodatagen webm --width 320 --height 240 --duration 2 --fps 30
 ```bash
 demodatagen pdf  --headings 4 --paragraphs 8                   # valid, multi-page PDF
 demodatagen xlsx --schema "id:sequence,name:name,total:price(1..999)" --rows 50 --sheet Sales
+demodatagen rtf  --headings 3 --paragraphs 6                   # Rich Text Format
+demodatagen vcf  --contacts 25                                 # vCard 3.0 contact cards
+demodatagen ics  --events 10                                   # iCalendar events
+demodatagen eml  --paragraphs 3                                # RFC 5322 email messages
 ```
 
 ### Binary & archives
@@ -264,7 +278,7 @@ demodatagen sql  --preset orders --table orders --rows 1000
 `--preset` and `--schema` are mutually exclusive. Run `demodatagen presets` to
 see every preset and the schema it expands to. Built in: `users`, `employees`,
 `customers`, `products`, `orders`, `transactions`, `events`, `servers`, `geo`,
-`posts`, `payments`, `sensors`.
+`posts`, `payments`, `sensors`, `invoices`, `logins`, `vehicles`, `books`.
 
 ## Discovering & planning
 
@@ -272,6 +286,7 @@ see every preset and the schema it expands to. Built in: `users`, `employees`,
 demodatagen list      # formats, schema types, presets, locales, languages
 demodatagen presets   # built-in presets and the schema each expands to
 demodatagen info      # version, build, threads, and capability counts
+demodatagen preview --preset users --rows 5          # sample records as a table
 demodatagen -c 1000 --dry-run json --preset orders   # plan without writing
 ```
 
@@ -281,13 +296,16 @@ demodatagen -c 1000 --dry-run json --preset orders   # plan without writing
 company forms to region-appropriate equivalents (emails/usernames are always
 transliterated to ASCII):
 
-| Locale  | Region                   | Locale  | Region              |
-| ------- | ------------------------ | ------- | ------------------- |
-| `en_us` | English (United States)  | `it_it` | Italian (Italy)     |
-| `en_gb` | English (United Kingdom) | `pt_br` | Portuguese (Brazil) |
-| `de_de` | German (Germany)         | `nl_nl` | Dutch (Netherlands) |
-| `fr_fr` | French (France)          | `pl_pl` | Polish (Poland)     |
-| `es_es` | Spanish (Spain)          | `sv_se` | Swedish (Sweden)    |
+| Locale  | Region                   | Locale  | Region                    |
+| ------- | ------------------------ | ------- | ------------------------- |
+| `en_us` | English (United States)  | `sv_se` | Swedish (Sweden)          |
+| `en_gb` | English (United Kingdom) | `da_dk` | Danish (Denmark)          |
+| `de_de` | German (Germany)         | `nb_no` | Norwegian Bokmål (Norway) |
+| `fr_fr` | French (France)          | `fi_fi` | Finnish (Finland)         |
+| `es_es` | Spanish (Spain)          | `cs_cz` | Czech (Czechia)           |
+| `it_it` | Italian (Italy)          | `tr_tr` | Turkish (Türkiye)         |
+| `pt_br` | Portuguese (Brazil)      | `ja_jp` | Japanese (Japan)          |
+| `nl_nl` | Dutch (Netherlands)      | `pl_pl` | Polish (Poland)           |
 
 ```bash
 demodatagen --locale pt_br json --schema "name:name,city:city,company:company" --rows 3
@@ -297,8 +315,9 @@ demodatagen --locale pt_br json --schema "name:name,city:city,company:company" -
 
 Separately from the *data* locale, `--lang` selects the language of the
 **program's own messages** (progress, summaries, errors, `list`, `presets`,
-`info`). Supported: `en`, `de`, `fr`, `es`, `it`, `pt`, `nl`, `pl`, `sv` — one
-for every language family covered by the data locales. When omitted, the
+`info`). Supported: `en`, `de`, `fr`, `es`, `it`, `pt`, `nl`, `pl`, `sv`, `da`,
+`nb`, `fi`, `cs`, `tr`, `ja` — one for every language family covered by the
+data locales. When omitted, the
 language is detected from `DEMODATAGEN_LANG` and the standard `LC_ALL` /
 `LC_MESSAGES` / `LANG` / `LANGUAGE` variables, falling back to English.
 
@@ -383,7 +402,7 @@ src/
 ├── app.rs             # CLI orchestration (parse → generate, dry-run, --jobs)
 ├── error.rs           # Error types (AppError, GenerationError)
 ├── presets.rs         # Built-in named schemas (--preset, `presets`)
-├── i18n/              # Interface translations (9 languages) + tr! macro
+├── i18n/              # Interface translations (15 languages) + tr! macro
 ├── ui/                # Gradient banner, boxed panel, spinner, animated progress
 ├── cli/
 │   ├── mod.rs         # clap definitions, `list` / `presets` / `info` / completions
@@ -394,9 +413,9 @@ src/
 ├── data/
 │   ├── schema.rs      # Typed schema engine + type catalogue + suggestions
 │   ├── faker.rs       # 70+ fake-data generators
-│   ├── locale/        # Locale registry (macro) + 10 per-locale data modules
+│   ├── locale/        # Locale registry (macro) + 16 per-locale data modules
 │   └── lorem.rs       # Lorem ipsum text
-├── formats/           # One module per format (33 generators)
+├── formats/           # One module per format (40 generators)
 └── update/            # Self-update via GitHub Releases
 ```
 

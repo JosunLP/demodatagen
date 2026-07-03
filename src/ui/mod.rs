@@ -343,6 +343,19 @@ pub fn progress(count: usize, format_name: &str, lang: Language, quiet: bool) ->
     pb
 }
 
+/// Advances a progress bar by one file and shows the file that was just
+/// written next to the localized status message.
+///
+/// The filename is dimmed so the eye stays on the counters; on hidden bars
+/// (quiet mode) this is a no-op beyond the internal position bump.
+pub fn tick_progress(pb: &ProgressBar, base_message: &str, filename: &str) {
+    pb.set_message(format!(
+        "{base_message} · {}",
+        style(filename).dim().for_stderr()
+    ));
+    pb.inc(1);
+}
+
 /// Finishes a progress bar with the localized "done" word, clearing animation.
 pub fn finish_progress(pb: &ProgressBar, lang: Language) {
     pb.set_message(tr!(lang, progress_done));
