@@ -213,7 +213,7 @@ const TABLE_CELL_MAX: usize = 28;
 /// Renders a unicode box-drawing table with a styled header row.
 ///
 /// Column widths fit the content (headers bold, borders dim) but individual
-/// cells are truncated to [`TABLE_CELL_MAX`] visible characters with an
+/// cells are truncated to `TABLE_CELL_MAX` visible characters with an
 /// ellipsis. Cell strings may carry ANSI styling; widths are measured on the
 /// visible text. Falls back to ASCII borders on terminals without Unicode.
 pub fn table(headers: &[String], rows: &[Vec<String>]) -> String {
