@@ -609,6 +609,9 @@ fn eval_scalar<R: Rng>(base: &str, args: &Args, rng: &mut R, locale: Locale) -> 
         "device" | "device_type" => V::Str(faker::device(rng).into()),
         "file_size" | "filesize" => V::Str(faker::file_size(rng)),
         "coordinates" | "coords" | "latlng" | "geo" => V::Str(faker::coordinates(rng)),
+        "airport" | "iata" => V::Str(faker::airport(rng).into()),
+        "flight" | "flight_number" => V::Str(faker::flight(rng)),
+        "vin" => V::Str(faker::vin(rng)),
 
         "word" => V::Str(lorem::word(rng).into()),
         "words" => V::Str(lorem::words(rng, count(3))),
@@ -723,6 +726,9 @@ pub const FIELD_TYPE_GROUPS: &[(&str, &[&str])] = &[
             "base64",
             "hex(n)",
             "file_size",
+            "airport",
+            "flight",
+            "vin",
         ],
     ),
     (
@@ -903,6 +909,11 @@ pub const KNOWN_TYPE_NAMES: &[&str] = &[
     "hex",
     "file_size",
     "filesize",
+    "airport",
+    "iata",
+    "flight",
+    "flight_number",
+    "vin",
     // Temporal
     "date",
     "time",
