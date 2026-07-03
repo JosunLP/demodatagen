@@ -160,7 +160,21 @@ pub fn zipcode<R: Rng>(rng: &mut R, locale: Locale) -> String {
             rng.random_range(1000..99999u32),
             rng.random_range(0..999u32)
         ),
-        // Generic five-digit (US, DE, FR, ES, IT, …)
+        // "123-4567"
+        "JP" => format!(
+            "{:03}-{:04}",
+            rng.random_range(100..999u32),
+            rng.random_range(0..9999u32)
+        ),
+        // "123 45"
+        "CZ" => format!(
+            "{:03} {:02}",
+            rng.random_range(100..999u32),
+            rng.random_range(0..99u32)
+        ),
+        // Four-digit codes.
+        "DK" | "NO" => format!("{:04}", rng.random_range(1000..9999u32)),
+        // Generic five-digit (US, DE, FR, ES, IT, FI, TR, …)
         _ => format!("{:05}", rng.random_range(1000..99999u32)),
     }
 }
