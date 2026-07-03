@@ -61,7 +61,6 @@ rust_xlsxwriter = "0.96"
 
 # Error handling
 thiserror = "2.0"
-anyhow = "1"
 
 # Logging
 env_logger = "0.11"
