@@ -153,6 +153,21 @@ pub enum FormatOptions {
         /// Target file size in bytes.
         size: usize,
     },
+    /// Options for contact-card formats (vCard).
+    Contacts {
+        /// Number of contact cards per file.
+        count: usize,
+    },
+    /// Options for calendar formats (iCalendar).
+    Calendar {
+        /// Number of events per calendar file.
+        events: usize,
+    },
+    /// Options for subtitle formats (SRT).
+    Subtitles {
+        /// Number of subtitle cues per file.
+        cues: usize,
+    },
     /// Options for ZIP archives.
     Zip {
         /// Number of files to include in the archive.
@@ -401,6 +416,18 @@ pub(crate) mod test_support {
 
     pub fn binary_config(size: usize) -> GeneratorConfig {
         config(FormatOptions::Binary { size })
+    }
+
+    pub fn contacts_config(count: usize) -> GeneratorConfig {
+        config(FormatOptions::Contacts { count })
+    }
+
+    pub fn calendar_config(events: usize) -> GeneratorConfig {
+        config(FormatOptions::Calendar { events })
+    }
+
+    pub fn subtitles_config(cues: usize) -> GeneratorConfig {
+        config(FormatOptions::Subtitles { cues })
     }
 
     pub fn zip_config(

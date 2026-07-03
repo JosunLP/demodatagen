@@ -49,11 +49,12 @@ fn parse_jobs(raw: &str) -> Result<usize, String> {
 /// A fast, offline, fully internationalized CLI for generating realistic demo
 /// files in many formats.
 ///
-/// Supports structured data (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL),
-/// text (TXT, Markdown, HTML, LOG, INI, ENV), images (PNG, JPG, WebP, BMP,
-/// TIFF, ICO, GIF, SVG), audio (MP3, WAV), video (MP4, WebM), documents
-/// (PDF, XLSX), binary stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across
-/// ten data locales and nine interface languages, with built-in schema presets.
+/// Supports structured data (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL,
+/// GeoJSON), text (TXT, Markdown, HTML, LOG, INI, ENV, Properties, SRT),
+/// images (PNG, JPG, WebP, BMP, TIFF, ICO, GIF, SVG), audio (MP3, WAV), video
+/// (MP4, WebM), documents (PDF, XLSX, RTF, vCard, iCalendar, EML), binary
+/// stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across sixteen data
+/// locales and many interface languages, with built-in schema presets.
 #[derive(Parser, Debug)]
 #[command(name = "demodatagen")]
 #[command(version, about, long_about = None)]
@@ -383,6 +384,59 @@ pub enum FormatCommand {
         /// Worksheet name.
         #[arg(long, default_value = "Sheet1")]
         sheet: String,
+    },
+
+    /// Generate RTF (Rich Text Format) documents.
+    Rtf {
+        #[command(flatten)]
+        doc: DocArgs,
+    },
+
+    /// Generate vCard (`.vcf`) contact cards with locale-aware people data.
+    Vcf {
+        /// Number of contact cards per file.
+        #[arg(long, default_value_t = 10)]
+        contacts: usize,
+    },
+
+    /// Generate iCalendar (`.ics`) files with plausible events.
+    Ics {
+        /// Number of events per calendar.
+        #[arg(long, default_value_t = 10)]
+        events: usize,
+    },
+
+    /// Generate email messages (`.eml`, RFC 5322).
+    Eml {
+        /// Number of body paragraphs.
+        #[arg(long, default_value_t = 3)]
+        paragraphs: usize,
+    },
+
+    /// Generate GeoJSON FeatureCollections of random points.
+    Geojson {
+        #[command(flatten)]
+        data: DataArgs,
+        /// Pretty-print the GeoJSON output.
+        #[arg(long, default_value_t = false)]
+        pretty: bool,
+    },
+
+    /// Generate Java properties (`.properties`) configuration files.
+    Properties {
+        /// Number of namespaces (key prefixes).
+        #[arg(long, default_value_t = 3)]
+        sections: usize,
+        /// Number of keys per namespace.
+        #[arg(long, default_value_t = 5)]
+        keys: usize,
+    },
+
+    /// Generate SubRip subtitle (`.srt`) files.
+    Srt {
+        /// Number of subtitle cues.
+        #[arg(long, default_value_t = 20)]
+        cues: usize,
     },
 
     /// Generate a gzip-compressed text file (`.gz`).

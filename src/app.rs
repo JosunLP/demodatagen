@@ -416,6 +416,26 @@ fn resolve_format(
             "tar",
         ),
         C::Xlsx { data, sheet } => (data.sql(sheet.clone(), lang)?, "xlsx"),
+        C::Rtf { doc } => (doc.options(), "rtf"),
+        C::Vcf { contacts } => (FormatOptions::Contacts { count: *contacts }, "vcf"),
+        C::Ics { events } => (FormatOptions::Calendar { events: *events }, "ics"),
+        C::Eml { paragraphs } => (
+            FormatOptions::Text {
+                paragraphs: *paragraphs,
+                words: 0,
+            },
+            "eml",
+        ),
+        C::Geojson { data, pretty } => (data.structured(*pretty, lang)?, "geojson"),
+        C::Properties { sections, keys } => (
+            FormatOptions::KeyValue {
+                sections: *sections,
+                keys: *keys,
+                env_style: false,
+            },
+            "properties",
+        ),
+        C::Srt { cues } => (FormatOptions::Subtitles { cues: *cues }, "srt"),
         C::Update { .. } | C::List | C::Presets | C::Info | C::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }

@@ -32,9 +32,9 @@ fn test_info_subcommand_reports_environment() {
         .assert()
         .success()
         .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")))
-        // 33 formats / 9 interface languages are reported in the panel.
-        .stdout(predicate::str::contains("33"))
-        .stdout(predicate::str::contains("9"));
+        // 40 formats / 16 data locales are reported in the panel.
+        .stdout(predicate::str::contains("40"))
+        .stdout(predicate::str::contains("16"));
 }
 
 #[test]
