@@ -130,6 +130,16 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
             crate::cli::print_completions(*shell);
             return Ok(0);
         }
+        FormatCommand::Preview { data } => {
+            let locale: Locale = cli.locale.parse().map_err(AppError::Cli)?;
+            if !cli.quiet {
+                if let Ok(schema) = data.resolved_schema(lang) {
+                    warn_unknown_schema_types(&schema, lang);
+                }
+            }
+            crate::cli::print_preview(lang, locale, cli.seed, data)?;
+            return Ok(0);
+        }
         _ => {}
     }
 
@@ -436,7 +446,12 @@ fn resolve_format(
             "properties",
         ),
         C::Srt { cues } => (FormatOptions::Subtitles { cues: *cues }, "srt"),
-        C::Update { .. } | C::List | C::Presets | C::Info | C::Completions { .. } => {
+        C::Update { .. }
+        | C::Preview { .. }
+        | C::List
+        | C::Presets
+        | C::Info
+        | C::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }
     };

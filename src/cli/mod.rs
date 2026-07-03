@@ -449,6 +449,12 @@ pub enum FormatCommand {
         words: usize,
     },
 
+    /// Preview sample records as a table in the terminal, without writing files.
+    Preview {
+        #[command(flatten)]
+        data: DataArgs,
+    },
+
     /// List all supported formats, schema types, locales, and languages.
     List,
 
@@ -546,6 +552,65 @@ pub fn print_format_list(lang: Language) {
     }
 
     println!("\n{}", style(tr!(lang, list_hint)).dim());
+}
+
+/// Renders `rows` sample records for a schema as a styled terminal table.
+///
+/// This is a pure preview: nothing is written to disk. Values are colored by
+/// type (numbers cyan, booleans magenta, null dim), and the table is revealed
+/// row by row on attended terminals. `seed` makes the preview reproducible.
+pub fn print_preview(
+    lang: Language,
+    locale: crate::data::Locale,
+    seed: Option<u64>,
+    data: &args::DataArgs,
+) -> crate::error::AppResult<()> {
+    use crate::data::schema::FieldValue;
+    use crate::error::AppError;
+
+    let schema_str = data.resolved_schema(lang)?;
+    let schema = crate::data::Schema::parse(&schema_str).map_err(AppError::Cli)?;
+    if schema.is_empty() {
+        return Err(AppError::Cli(
+            "Schema must contain at least one field".to_string(),
+        ));
+    }
+
+    // Cap the preview so a mistyped `--rows 100000` stays a preview.
+    const MAX_PREVIEW_ROWS: usize = 100;
+    let rows = data.rows.clamp(1, MAX_PREVIEW_ROWS);
+    let mut rng = crate::core::generator::create_rng(seed, 0);
+    let records = schema.generate_records(&mut rng, locale, rows);
+
+    let headers: Vec<String> = schema
+        .field_names()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let cells: Vec<Vec<String>> = records
+        .iter()
+        .map(|record| {
+            record
+                .iter()
+                .map(|(_, value)| match value {
+                    FieldValue::Null => style("null").dim().to_string(),
+                    FieldValue::Bool(b) => style(b).magenta().to_string(),
+                    FieldValue::Int(i) => style(i).cyan().to_string(),
+                    FieldValue::Float(f) => style(f).cyan().to_string(),
+                    FieldValue::Str(s) => s.clone(),
+                    array @ FieldValue::Array(_) => style(array.to_flat_string()).dim().to_string(),
+                })
+                .collect()
+        })
+        .collect();
+
+    println!(
+        "{}",
+        style(tr!(lang, preview_header, "rows" => rows, "locale" => locale.as_str())).bold()
+    );
+    ui::show_table(&headers, &cells);
+    println!("{}", style(tr!(lang, preview_hint)).dim());
+    Ok(())
 }
 
 /// Prints the built-in schema presets, each with its localized description and

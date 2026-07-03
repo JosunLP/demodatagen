@@ -718,6 +718,78 @@ catalog! {
         pl: "Odczyty czujników IoT z identyfikatorem urządzenia, metryką, wartością i czasem.",
         sv: "IoT-sensormätvärden med enhets-ID, mätvärde, värde och tid.",
     },
+    /// One-line description of the 'invoices' preset.
+    preset_desc_invoices {
+        en: "Invoices with customer, amount, currency, IBAN and due date.",
+        de: "Rechnungen mit Kunde, Betrag, Währung, IBAN und Fälligkeit.",
+        fr: "Factures avec client, montant, devise, IBAN et échéance.",
+        es: "Facturas con cliente, importe, moneda, IBAN y vencimiento.",
+        it: "Fatture con cliente, importo, valuta, IBAN e scadenza.",
+        pt: "Faturas com cliente, valor, moeda, IBAN e vencimento.",
+        nl: "Facturen met klant, bedrag, valuta, IBAN en vervaldatum.",
+        pl: "Faktury z klientem, kwotą, walutą, numerem IBAN i terminem.",
+        sv: "Fakturor med kund, belopp, valuta, IBAN och förfallodatum.",
+    },
+    /// One-line description of the 'logins' preset.
+    preset_desc_logins {
+        en: "Login attempts with user, IP, user agent, MFA and outcome.",
+        de: "Login-Versuche mit Benutzer, IP, User-Agent, MFA und Ergebnis.",
+        fr: "Tentatives de connexion avec utilisateur, IP, agent, MFA et résultat.",
+        es: "Intentos de inicio de sesión con usuario, IP, agente, MFA y resultado.",
+        it: "Tentativi di accesso con utente, IP, user agent, MFA ed esito.",
+        pt: "Tentativas de login com usuário, IP, user agent, MFA e resultado.",
+        nl: "Inlogpogingen met gebruiker, IP, user-agent, MFA en resultaat.",
+        pl: "Próby logowania z użytkownikiem, IP, przeglądarką, MFA i wynikiem.",
+        sv: "Inloggningsförsök med användare, IP, user agent, MFA och utfall.",
+    },
+    /// One-line description of the 'vehicles' preset.
+    preset_desc_vehicles {
+        en: "Vehicles with make, model year, fuel, mileage and price.",
+        de: "Fahrzeuge mit Marke, Baujahr, Antrieb, Laufleistung und Preis.",
+        fr: "Véhicules avec marque, année, carburant, kilométrage et prix.",
+        es: "Vehículos con marca, año, combustible, kilometraje y precio.",
+        it: "Veicoli con marca, anno, alimentazione, chilometraggio e prezzo.",
+        pt: "Veículos com marca, ano, combustível, quilometragem e preço.",
+        nl: "Voertuigen met merk, bouwjaar, brandstof, kilometerstand en prijs.",
+        pl: "Pojazdy z marką, rocznikiem, paliwem, przebiegiem i ceną.",
+        sv: "Fordon med märke, årsmodell, bränsle, miltal och pris.",
+    },
+    /// One-line description of the 'books' preset.
+    preset_desc_books {
+        en: "Books with ISBN, title, author, pages, language and price.",
+        de: "Bücher mit ISBN, Titel, Autor, Seiten, Sprache und Preis.",
+        fr: "Livres avec ISBN, titre, auteur, pages, langue et prix.",
+        es: "Libros con ISBN, título, autor, páginas, idioma y precio.",
+        it: "Libri con ISBN, titolo, autore, pagine, lingua e prezzo.",
+        pt: "Livros com ISBN, título, autor, páginas, idioma e preço.",
+        nl: "Boeken met ISBN, titel, auteur, pagina's, taal en prijs.",
+        pl: "Książki z ISBN, tytułem, autorem, stronami, językiem i ceną.",
+        sv: "Böcker med ISBN, titel, författare, sidor, språk och pris.",
+    },
+    /// Header line of the `preview` command. {rows} number, {locale} locale id.
+    preview_header {
+        en: "Previewing {rows} sample record(s) · data locale {locale}",
+        de: "Vorschau von {rows} Beispieldatensätzen · Daten-Sprachraum {locale}",
+        fr: "Aperçu de {rows} enregistrement(s) d'exemple · région {locale}",
+        es: "Vista previa de {rows} registro(s) de ejemplo · región {locale}",
+        it: "Anteprima di {rows} record di esempio · area {locale}",
+        pt: "Pré-visualização de {rows} registro(s) de exemplo · localidade {locale}",
+        nl: "Voorbeeld van {rows} voorbeeldrecord(s) · dataregio {locale}",
+        pl: "Podgląd {rows} przykładowych rekordów · region danych {locale}",
+        sv: "Förhandsvisar {rows} exempelpost(er) · dataspråkområde {locale}",
+    },
+    /// Hint printed under the preview table. Keep the backticked flags verbatim.
+    preview_hint {
+        en: "Generate real files with any format subcommand, e.g. `demodatagen json --schema …`. Add `--seed` to reproduce this exact preview.",
+        de: "Erzeuge echte Dateien mit einem Format-Subcommand, z. B. `demodatagen json --schema …`. Mit `--seed` wird genau diese Vorschau reproduzierbar.",
+        fr: "Générez de vrais fichiers avec une sous-commande de format, p. ex. `demodatagen json --schema …`. Ajoutez `--seed` pour reproduire cet aperçu.",
+        es: "Genera archivos reales con un subcomando de formato, p. ej. `demodatagen json --schema …`. Añade `--seed` para reproducir esta vista previa.",
+        it: "Genera file reali con un sottocomando di formato, ad es. `demodatagen json --schema …`. Aggiungi `--seed` per riprodurre questa anteprima.",
+        pt: "Gere arquivos reais com um subcomando de formato, p. ex. `demodatagen json --schema …`. Adicione `--seed` para reproduzir esta pré-visualização.",
+        nl: "Genereer echte bestanden met een formaat-subcommando, bijv. `demodatagen json --schema …`. Voeg `--seed` toe om precies dit voorbeeld te reproduceren.",
+        pl: "Wygeneruj prawdziwe pliki podkomendą formatu, np. `demodatagen json --schema …`. Dodaj `--seed`, aby odtworzyć dokładnie ten podgląd.",
+        sv: "Generera riktiga filer med ett formatunderkommando, t.ex. `demodatagen json --schema …`. Lägg till `--seed` för att återskapa exakt denna förhandsvisning.",
+    },
     /// Title of the `info` command panel.
     info_title {
         en: "Environment & build information",
