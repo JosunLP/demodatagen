@@ -1,7 +1,7 @@
 # Contributing to demodatagen
 
 Thanks for your interest in contributing to **demodatagen** — a fast, offline Rust CLI and library
-that generates realistic demo/test files in 33 formats across 10 data locales and 9 interface
+that generates realistic demo/test files in 40 formats across 16 data locales and 15 interface
 languages. Contributions of all kinds are welcome: bug reports, new formats, locale data,
 translations, schema presets, documentation, and performance improvements.
 
@@ -192,7 +192,7 @@ A **preset** (`--preset`) is a named, ready-made schema for a common data shape.
 
 1. Add a `Preset { name, schema }` row to `PRESETS` in `src/presets.rs`. The `schema` uses the
    normal `--schema` syntax and should reference only known field types.
-2. Add a `preset_desc_<name>` key to the `catalog!` table (all nine languages) and a match arm in
+2. Add a `preset_desc_<name>` key to the `catalog!` table (all fifteen languages) and a match arm in
    `Preset::description()`.
 3. The preset tests automatically verify that the schema parses, uses only known types, and has a
    description in every language.

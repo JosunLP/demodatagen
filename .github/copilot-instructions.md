@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`demodatagen` is a Rust **CLI and library** that generates realistic demo files in 33 formats (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, PDF, XLSX, PNG, WAV, MP4, ZIP, TAR, …) across **10 data locales**, with a **fully internationalized interface** in **9 languages** (English, German, French, Spanish, Italian, Portuguese, Dutch, Polish, Swedish), **built-in schema presets**, and an animated terminal UI. It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
+`demodatagen` is a Rust **CLI and library** that generates realistic demo files in 40 formats (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL, GeoJSON, PDF, XLSX, RTF, vCard, iCalendar, EML, PNG, WAV, MP4, ZIP, TAR, …) across **16 data locales**, with a **fully internationalized interface** in **15 languages**, **built-in schema presets**, and an animated terminal UI. It uses **no external services** — all data is generated procedurally with deterministic seeding via `ChaCha8Rng`.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ The codebase builds as both a library (`src/lib.rs`) and a thin binary (`src/mai
    - `locale/` — `Locale` enum + `LocaleData` struct, generated from a `define_locales!` table in `mod.rs`; one data module per locale (`en_us.rs`, `de_de.rs`, …, 10 total).
    - `lorem.rs` — Lorem ipsum text generation.
 5. **`src/formats/`** — One module per format, each implementing `Generator`. Registry in `mod.rs::get_generator()` maps format keys to boxed generators; `FORMAT_GROUPS` is the canonical catalogue used by `list`, the banner, and tests.
-6. **`src/i18n/`** — Interface translations. One `catalog!` table holds every user-facing string in all **9 languages** (`en`/`de`/`fr`/`es`/`it`/`pt`/`nl`/`pl`/`sv`); `Catalog::fields()` exposes every string for the completeness/placeholder tests. `Language::detect()` resolves `--lang`/env/default; `tr!(lang, key, "name" => val)` fills `{placeholder}` templates. A missing translation is a **compile error**.
+6. **`src/i18n/`** — Interface translations. One `catalog!` table holds every user-facing string in all **15 languages** (`en`/`de`/`fr`/`es`/`it`/`pt`/`nl`/`pl`/`sv`/`cs`/`da`/`fi`/`nb`/`tr`/`ja`); `Catalog::fields()` exposes every string for the completeness/placeholder tests. `Language::detect()` resolves `--lang`/env/default; `tr!(lang, key, "name" => val)` fills `{placeholder}` templates. A missing translation is a **compile error**.
 7. **`src/presets.rs`** — Built-in named schemas (`PRESETS`). Each `Preset` has a `name`, a `schema` string, and a localized `description(lang)`; surfaced via `--preset` (on any structured format) and the `presets` command.
 8. **`src/ui/`** — The only module that touches `console` styling and `indicatif` progress. Gradient banner, boxed info panel, `Spinner` helper, and animated progress (spinner for one file, bar for many) plus styled summaries. Motion is gated on `animations_enabled()` (attended TTY only). **All status output goes to stderr** so `--stdout` stays clean. Honors `NO_COLOR` / `--color`.
 9. **`src/cli/args.rs`** — Reusable argument groups (`DataArgs`, `ImageArgs`, `AudioArgs`, `VideoArgs`, `DocArgs`, `TextArgs`) pulled into subcommands via `#[command(flatten)]`; each owns its `FormatOptions` mapping. `DataArgs` also resolves `--preset`/`--schema` (mutually exclusive).
@@ -75,7 +75,7 @@ cargo fmt                          # Format (CI enforces --check)
 ## Adding a Preset
 
 1. Add a `Preset { name, schema }` row to `PRESETS` in `src/presets.rs` (schema in `--schema` syntax, using only known types).
-2. Add a `preset_desc_<name>` key to the `catalog!` in `src/i18n/mod.rs` (all nine languages) and a match arm in `Preset::description()`.
+2. Add a `preset_desc_<name>` key to the `catalog!` in `src/i18n/mod.rs` (all fifteen languages) and a match arm in `Preset::description()`.
 3. Tests in `src/presets.rs` automatically check that the schema parses, uses only known types, and has a description in every language.
 
 ## Key Dependencies
