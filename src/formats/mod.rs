@@ -6,12 +6,15 @@
 pub mod bmp;
 pub mod csv;
 pub mod dll;
+pub mod eml;
 pub mod env;
 pub mod exe;
+pub mod geojson;
 pub mod gif;
 pub mod gzip;
 pub mod html;
 pub mod ico;
+pub mod ics;
 pub mod ini;
 pub mod jpg;
 pub mod json;
@@ -22,13 +25,17 @@ pub mod mp3;
 pub mod mp4;
 pub mod pdf;
 pub mod png;
+pub mod properties;
+pub mod rtf;
 pub mod sql;
+pub mod srt;
 pub mod svg;
 pub mod tar;
 pub mod tiff;
 pub mod toml;
 pub mod tsv;
 pub mod txt;
+pub mod vcf;
 pub mod wav;
 pub mod webm;
 pub mod webp;
@@ -64,18 +71,32 @@ pub enum FormatGroup {
 pub const FORMAT_GROUPS: &[(FormatGroup, &[&str])] = &[
     (
         FormatGroup::Structured,
-        &["json", "jsonl", "yaml", "toml", "xml", "csv", "tsv", "sql"],
+        &[
+            "json", "jsonl", "yaml", "toml", "xml", "csv", "tsv", "sql", "geojson",
+        ],
     ),
     (
         FormatGroup::Text,
-        &["txt", "markdown", "html", "log", "ini", "env"],
+        &[
+            "txt",
+            "markdown",
+            "html",
+            "log",
+            "ini",
+            "env",
+            "properties",
+            "srt",
+        ],
     ),
     (
         FormatGroup::Images,
         &["png", "jpg", "webp", "bmp", "tiff", "ico", "gif", "svg"],
     ),
     (FormatGroup::AudioVideo, &["mp3", "wav", "mp4", "webm"]),
-    (FormatGroup::Documents, &["pdf", "xlsx"]),
+    (
+        FormatGroup::Documents,
+        &["pdf", "xlsx", "rtf", "vcf", "ics", "eml"],
+    ),
     (FormatGroup::Binary, &["exe", "dll", "zip", "tar", "gzip"]),
 ];
 
@@ -98,6 +119,7 @@ pub fn get_generator(format: &str) -> Option<Box<dyn Generator>> {
         "csv" => Some(Box::new(csv::CsvGenerator)),
         "tsv" => Some(Box::new(tsv::TsvGenerator)),
         "sql" => Some(Box::new(sql::SqlGenerator)),
+        "geojson" => Some(Box::new(geojson::GeoJsonGenerator)),
         // Text & config
         "markdown" | "md" => Some(Box::new(markdown::MarkdownGenerator)),
         "html" | "htm" => Some(Box::new(html::HtmlGenerator)),
@@ -105,6 +127,8 @@ pub fn get_generator(format: &str) -> Option<Box<dyn Generator>> {
         "log" => Some(Box::new(log::LogGenerator)),
         "ini" => Some(Box::new(ini::IniGenerator)),
         "env" => Some(Box::new(env::EnvGenerator)),
+        "properties" | "props" => Some(Box::new(properties::PropertiesGenerator)),
+        "srt" | "subtitles" => Some(Box::new(srt::SrtGenerator)),
         // Images
         "png" => Some(Box::new(png::PngGenerator)),
         "jpg" | "jpeg" => Some(Box::new(jpg::JpgGenerator)),
@@ -122,6 +146,10 @@ pub fn get_generator(format: &str) -> Option<Box<dyn Generator>> {
         // Documents
         "pdf" => Some(Box::new(pdf::PdfGenerator)),
         "xlsx" => Some(Box::new(xlsx::XlsxGenerator)),
+        "rtf" => Some(Box::new(rtf::RtfGenerator)),
+        "vcf" | "vcard" => Some(Box::new(vcf::VcfGenerator)),
+        "ics" | "ical" | "icalendar" => Some(Box::new(ics::IcsGenerator)),
+        "eml" | "email" => Some(Box::new(eml::EmlGenerator)),
         // Binary & archives
         "exe" => Some(Box::new(exe::ExeGenerator)),
         "dll" => Some(Box::new(dll::DllGenerator)),
@@ -139,10 +167,60 @@ mod tests {
     #[test]
     fn test_all_formats_registered() {
         let formats = [
-            "json", "jsonl", "ndjson", "yaml", "yml", "toml", "xml", "csv", "tsv", "sql",
-            "markdown", "md", "html", "htm", "txt", "text", "log", "ini", "env", "png", "jpg",
-            "jpeg", "webp", "bmp", "tiff", "tif", "ico", "gif", "svg", "mp3", "wav", "mp4", "webm",
-            "pdf", "xlsx", "exe", "dll", "zip", "tar", "gz", "gzip",
+            "json",
+            "jsonl",
+            "ndjson",
+            "yaml",
+            "yml",
+            "toml",
+            "xml",
+            "csv",
+            "tsv",
+            "sql",
+            "geojson",
+            "markdown",
+            "md",
+            "html",
+            "htm",
+            "txt",
+            "text",
+            "log",
+            "ini",
+            "env",
+            "properties",
+            "props",
+            "srt",
+            "subtitles",
+            "png",
+            "jpg",
+            "jpeg",
+            "webp",
+            "bmp",
+            "tiff",
+            "tif",
+            "ico",
+            "gif",
+            "svg",
+            "mp3",
+            "wav",
+            "mp4",
+            "webm",
+            "pdf",
+            "xlsx",
+            "rtf",
+            "vcf",
+            "vcard",
+            "ics",
+            "ical",
+            "icalendar",
+            "eml",
+            "email",
+            "exe",
+            "dll",
+            "zip",
+            "tar",
+            "gz",
+            "gzip",
         ];
         for fmt in formats {
             assert!(
@@ -170,8 +248,8 @@ mod tests {
     }
 
     #[test]
-    fn test_format_count_is_33() {
-        assert_eq!(format_count(), 33);
+    fn test_format_count_is_40() {
+        assert_eq!(format_count(), 40);
     }
 
     #[test]
