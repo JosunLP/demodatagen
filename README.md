@@ -245,7 +245,7 @@ note:sentence?0.5        # 50% chance of null
 | **Contact**   | `email`, `phone`, `address`, `street`, `city`, `state`, `zipcode`, `country`, `country_code`                   |
 | **Business**  | `company`, `job`, `department`, `product`, `sku`, `currency`, `currency_symbol`, `iban`, `credit_card`, `isbn` |
 | **Internet**  | `url`, `domain`, `slug`, `ipv4`, `ipv6`, `mac`, `uuid`, `user_agent`, `mime_type`, `filename`, `semver`        |
-| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`, `hashtag`, `base64`, `hex(n)`                           |
+| **Misc**      | `color`, `hex_color`, `language`, `timezone`, `emoji`, `hashtag`, `base64`, `hex(n)`, `airport`, `flight`, `vin` |
 | **Temporal**  | `date`, `time`, `datetime`, `weekday`, `month`                                                                 |
 | **Text**      | `word`, `words(n)`, `sentence`, `paragraph`                                                                    |
 | **Modifiers** | `enum(...)`, `const(...)`, `sequence(start)`, `array(type,n)`, `type?` / `type?p` (nullable)                   |

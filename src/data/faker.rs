@@ -682,6 +682,40 @@ pub fn coordinates<R: Rng>(rng: &mut R) -> String {
     format!("{},{}", latitude(rng), longitude(rng))
 }
 
+/// Picks a major international airport's IATA code.
+pub fn airport<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "ATL", "PEK", "LHR", "HND", "ORD", "LAX", "CDG", "DFW", "FRA", "HKG", "DXB", "AMS",
+            "MAD", "BKK", "JFK", "SIN", "CAN", "NRT", "IST", "SYD", "ICN", "DEN", "SFO", "BCN",
+            "YYZ", "MUC", "GRU", "MEX", "ZRH", "VIE", "CPH", "OSL", "HEL", "PRG", "WAW", "ARN",
+        ],
+    )
+}
+
+/// Generates a flight number: a two-letter airline designator plus 1–4 digits.
+pub fn flight<R: Rng>(rng: &mut R) -> String {
+    let airline = pick(
+        rng,
+        &[
+            "LH", "BA", "AF", "KL", "UA", "AA", "DL", "EK", "QF", "SK", "AY", "TK", "JL", "NH",
+            "LX", "OS", "IB", "AZ",
+        ],
+    );
+    format!("{airline}{}", rng.random_range(1..=4999u32))
+}
+
+/// Generates a 17-character VIN from the legal alphabet (no I, O, or Q).
+///
+/// The check digit (position 9) is not computed, so VINs are illustrative
+/// only — like the IBANs and credit-card numbers, they are shaped correctly
+/// but intentionally not valid identifiers.
+pub fn vin<R: Rng>(rng: &mut R) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
+    (0..17).map(|_| pick(rng, ALPHABET) as char).collect()
+}
+
 // ---------------------------------------------------------------------------
 // Numeric & temporal
 // ---------------------------------------------------------------------------
@@ -1296,6 +1330,27 @@ mod tests {
                 assert!(e.is_ascii(), "{locale} company_email not ASCII: {e}");
                 assert!(e.contains('@') && e.contains('.'));
             }
+        }
+    }
+    #[test]
+    fn test_airport_flight_vin_shapes() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let a = airport(&mut r);
+            assert_eq!(a.len(), 3);
+            assert!(a.chars().all(|c| c.is_ascii_uppercase()));
+
+            let f = flight(&mut r);
+            assert!(f.len() >= 3 && f.len() <= 6, "bad flight: {f}");
+            assert!(f[..2].chars().all(|c| c.is_ascii_uppercase()));
+            assert!(f[2..].chars().all(|c| c.is_ascii_digit()));
+
+            let v = vin(&mut r);
+            assert_eq!(v.len(), 17);
+            assert!(
+                !v.contains('I') && !v.contains('O') && !v.contains('Q'),
+                "VIN uses forbidden letters: {v}"
+            );
         }
     }
 }
