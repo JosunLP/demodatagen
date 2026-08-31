@@ -31,7 +31,7 @@ impl Generator for PropertiesGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "Properties generator requires KeyValue options".to_string(),
-                ))
+                ));
             }
         };
 

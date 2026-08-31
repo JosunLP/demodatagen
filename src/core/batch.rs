@@ -1,7 +1,7 @@
 /// Batch processing orchestrator for generating multiple files in parallel.
 ///
 /// Uses `rayon` for parallel execution and `indicatif` for progress reporting.
-use crate::core::generator::{create_rng, resolve_filename, Generator, GeneratorConfig};
+use crate::core::generator::{Generator, GeneratorConfig, create_rng, resolve_filename};
 use crate::error::{AppError, AppResult, GenerationError};
 use log::debug;
 use rayon::prelude::*;
@@ -66,14 +66,13 @@ fn validate_path(output_dir: &Path, filename: &str) -> AppResult<PathBuf> {
             current = parent;
         }
 
-        if let Some(parent) = existing_parent {
-            if let Ok(parent_canon) = fs::canonicalize(&parent) {
-                if !parent_canon.starts_with(&output_canon) {
-                    return Err(AppError::Generation(GenerationError::PathTraversal {
-                        path: joined,
-                    }));
-                }
-            }
+        if let Some(parent) = existing_parent
+            && let Ok(parent_canon) = fs::canonicalize(&parent)
+            && !parent_canon.starts_with(&output_canon)
+        {
+            return Err(AppError::Generation(GenerationError::PathTraversal {
+                path: joined,
+            }));
         }
     }
 
@@ -93,8 +92,8 @@ fn validate_path(output_dir: &Path, filename: &str) -> AppResult<PathBuf> {
 /// A vector of paths to successfully generated files, or an error.
 pub fn run_batch(generator: &dyn Generator, config: &BatchConfig) -> AppResult<Vec<PathBuf>> {
     use crate::i18n::tr;
-    use std::sync::atomic::{AtomicU64, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::Instant;
 
     // Create output directory if it doesn't exist.

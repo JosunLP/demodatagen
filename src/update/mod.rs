@@ -4,7 +4,7 @@
 //! atomically replaces the running binary. Networking uses rustls (no OpenSSL)
 //! so it works on static musl builds too.
 use crate::error::{AppError, AppResult};
-use crate::i18n::{tr, Language};
+use crate::i18n::{Language, tr};
 use log::{info, warn};
 
 /// GitHub repository owner for update checks.
@@ -40,8 +40,12 @@ pub fn latest_version() -> AppResult<Option<String>> {
     let updater = updater_builder()
         .build()
         .map_err(|e| AppError::Update(e.to_string()))?;
+    // self_update 1.x returns a `Releases` listing rather than a single release;
+    // `latest()` is `None` when the repo has no (target-matching) release yet.
     match updater.get_latest_release() {
-        Ok(release) => Ok(Some(release.version.trim_start_matches('v').to_string())),
+        Ok(releases) => Ok(releases
+            .latest()
+            .map(|r| r.version().trim_start_matches('v').to_string())),
         Err(e) => {
             warn!("Could not query latest release: {e}");
             Ok(None)
@@ -107,7 +111,7 @@ pub fn update_to(target_tag: Option<&str>, lang: Language) -> AppResult<()> {
     let mut builder = updater_builder();
     builder.show_download_progress(true).no_confirm(true);
     if let Some(tag) = target_tag {
-        builder.target_version_tag(tag);
+        builder.release_tag(tag);
     }
 
     let updater = builder
@@ -115,7 +119,7 @@ pub fn update_to(target_tag: Option<&str>, lang: Language) -> AppResult<()> {
         .map_err(|e| AppError::Update(format!("could not configure updater: {e}")))?;
 
     match updater.update() {
-        Ok(status) if status.updated() => {
+        Ok(status) if status.is_updated() => {
             eprintln!(
                 "{}",
                 tr!(lang, update_updated, "from" => CURRENT_VERSION, "to" => status.version())

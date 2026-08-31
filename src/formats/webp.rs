@@ -31,7 +31,7 @@ impl Generator for WebpGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "WebP generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -79,9 +79,9 @@ mod tests {
 
     #[test]
     fn test_webp_valid_header() {
-        let gen = WebpGenerator;
+        let generator = WebpGenerator;
         let mut config = make_config(32, 32);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // WebP starts with "RIFF" then 4 bytes size, then "WEBP"
         assert_eq!(&result[0..4], b"RIFF");
         assert_eq!(&result[8..12], b"WEBP");

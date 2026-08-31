@@ -3,7 +3,7 @@ message: "If you use demodatagen in your work, please cite it using this metadat
 title: demodatagen
 abstract: >-
   A fast, offline, fully internationalized CLI and library for generating
-  realistic demo files in 33 formats, 10 data locales, and 9 interface
+  realistic demo files in 40 formats, 16 data locales, and 15 interface
   languages — deterministic, dependency-free, and built in Rust.
 type: software
 authors:
@@ -11,7 +11,7 @@ authors:
 repository-code: "https://github.com/josunlp/demodatagen"
 url: "https://github.com/josunlp/demodatagen"
 license: MIT
-version: 0.6.0
+version: 0.6.1
 keywords:
   - demo-data
   - test-data

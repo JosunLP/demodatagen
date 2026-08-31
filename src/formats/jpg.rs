@@ -30,7 +30,7 @@ impl Generator for JpgGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "JPEG generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -81,18 +81,18 @@ mod tests {
 
     #[test]
     fn test_jpg_valid_header() {
-        let gen = JpgGenerator;
+        let generator = JpgGenerator;
         let mut config = make_config(64, 64);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // JPEG magic bytes: FF D8 FF
         assert_eq!(&result[0..3], &[0xFF, 0xD8, 0xFF]);
     }
 
     #[test]
     fn test_jpg_produces_content() {
-        let gen = JpgGenerator;
+        let generator = JpgGenerator;
         let mut config = make_config(100, 100);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert!(result.len() > 100);
     }
 }

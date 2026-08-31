@@ -60,7 +60,7 @@ impl Generator for EmlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "EML generator requires Text options".to_string(),
-                ))
+                ));
             }
         };
 

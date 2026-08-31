@@ -25,7 +25,7 @@ impl Generator for JsonlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "JSONL generator requires StructuredData options".to_string(),
-                ))
+                ));
             }
         };
 

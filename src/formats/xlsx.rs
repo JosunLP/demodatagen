@@ -30,7 +30,7 @@ impl Generator for XlsxGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "XLSX generator requires Sql options".to_string(),
-                ))
+                ));
             }
         };
 

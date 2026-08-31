@@ -9,11 +9,11 @@
 //! flows through [`crate::i18n`]; all status rendering through [`crate::ui`].
 use crate::cli::args::{self, parse_delimiter};
 use crate::cli::{Cli, FormatCommand};
-use crate::core::batch::{run_batch, BatchConfig};
-use crate::core::generator::{create_rng, FormatOptions, GeneratorConfig};
+use crate::core::batch::{BatchConfig, run_batch};
+use crate::core::generator::{FormatOptions, GeneratorConfig, create_rng};
 use crate::data::Locale;
 use crate::error::{AppError, AppResult};
-use crate::i18n::{tr, Language};
+use crate::i18n::{Language, tr};
 use clap::Parser;
 use log::debug;
 use std::io::Write;
@@ -132,10 +132,10 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
         }
         FormatCommand::Preview { data } => {
             let locale: Locale = cli.locale.parse().map_err(AppError::Cli)?;
-            if !cli.quiet {
-                if let Ok(schema) = data.resolved_schema(lang) {
-                    warn_unknown_schema_types(&schema, lang);
-                }
+            if !cli.quiet
+                && let Ok(schema) = data.resolved_schema(lang)
+            {
+                warn_unknown_schema_types(&schema, lang);
             }
             crate::cli::print_preview(lang, locale, cli.seed, data)?;
             return Ok(0);
@@ -159,10 +159,10 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
 
     // Surface likely schema typos as a non-fatal, localized hint. Generation
     // still proceeds (unknown types degrade to a generic word).
-    if !cli.quiet {
-        if let Some(schema) = schema_of(&format_options) {
-            warn_unknown_schema_types(schema, lang);
-        }
+    if !cli.quiet
+        && let Some(schema) = schema_of(&format_options)
+    {
+        warn_unknown_schema_types(schema, lang);
     }
 
     // Plan-only mode: report what would be generated and stop.

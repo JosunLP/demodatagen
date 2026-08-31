@@ -23,7 +23,7 @@ impl Generator for EnvGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "ENV generator requires KeyValue options".to_string(),
-                ))
+                ));
             }
         };
 

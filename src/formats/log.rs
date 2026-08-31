@@ -52,7 +52,7 @@ impl Generator for LogGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "LOG generator requires Log options".to_string(),
-                ))
+                ));
             }
         };
 

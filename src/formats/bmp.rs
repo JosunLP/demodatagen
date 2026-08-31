@@ -31,7 +31,7 @@ impl Generator for BmpGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "BMP generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
         if width == 0 || height == 0 {
@@ -52,8 +52,8 @@ impl Generator for BmpGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::test_support::image_config;
     use crate::core::generator::ImagePattern;
+    use crate::core::generator::test_support::image_config;
 
     #[test]
     fn test_bmp_valid_header() {

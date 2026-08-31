@@ -92,7 +92,7 @@ impl Generator for XmlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "XML generator requires Xml options".to_string(),
-                ))
+                ));
             }
         };
 

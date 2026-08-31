@@ -44,7 +44,7 @@ impl Generator for IcsGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "iCalendar generator requires Calendar options".to_string(),
-                ))
+                ));
             }
         };
         if events == 0 {

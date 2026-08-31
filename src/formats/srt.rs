@@ -35,7 +35,7 @@ impl Generator for SrtGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "SRT generator requires Subtitles options".to_string(),
-                ))
+                ));
             }
         };
         if cues == 0 {

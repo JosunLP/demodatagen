@@ -30,7 +30,7 @@ impl Generator for JsonGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "JSON generator requires StructuredData options".to_string(),
-                ))
+                ));
             }
         };
 

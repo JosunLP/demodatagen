@@ -23,7 +23,7 @@ impl Generator for TxtGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "TXT generator requires Text options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -62,9 +62,9 @@ mod tests {
 
     #[test]
     fn test_txt_generates_content() {
-        let gen = TxtGenerator;
+        let generator = TxtGenerator;
         let mut config = make_config(3, 0);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
         assert!(!text.is_empty());
         assert!(text.contains('.'));
@@ -72,9 +72,9 @@ mod tests {
 
     #[test]
     fn test_txt_paragraph_count() {
-        let gen = TxtGenerator;
+        let generator = TxtGenerator;
         let mut config = make_config(5, 0);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
         let paras: Vec<&str> = text.split("\n\n").collect();
         assert_eq!(paras.len(), 5);
@@ -82,9 +82,9 @@ mod tests {
 
     #[test]
     fn test_txt_word_count_mode() {
-        let gen = TxtGenerator;
+        let generator = TxtGenerator;
         let mut config = make_config(0, 200);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
         assert!(!text.is_empty());
     }

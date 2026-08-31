@@ -3,12 +3,12 @@
 //! Produces valid ZIP archives containing multiple generated files. The
 //! [`generate_contained_file`] helper is shared with the TAR generator.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
-use crate::data::{lorem, Locale, Schema};
+use crate::data::{Locale, Schema, lorem};
 use crate::error::{GenResult, GenerationError};
 use rand::Rng;
 use std::io::{Cursor, Write};
-use zip::write::SimpleFileOptions;
 use zip::CompressionMethod;
+use zip::write::SimpleFileOptions;
 
 /// Generator for ZIP archive files.
 pub struct ZipGenerator;
@@ -32,7 +32,7 @@ impl Generator for ZipGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "ZIP generator requires Zip options".to_string(),
-                ))
+                ));
             }
         };
 

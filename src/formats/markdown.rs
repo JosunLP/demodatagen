@@ -27,7 +27,7 @@ impl Generator for MarkdownGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "Markdown generator requires Markdown options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -62,27 +62,27 @@ mod tests {
 
     #[test]
     fn test_markdown_has_title() {
-        let gen = MarkdownGenerator;
+        let generator = MarkdownGenerator;
         let mut config = make_config(3, 2);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
         assert!(text.starts_with("# "));
     }
 
     #[test]
     fn test_markdown_has_headings() {
-        let gen = MarkdownGenerator;
+        let generator = MarkdownGenerator;
         let mut config = make_config(6, 3);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
         assert!(text.contains("## ") || text.contains("### "));
     }
 
     #[test]
     fn test_markdown_not_empty() {
-        let gen = MarkdownGenerator;
+        let generator = MarkdownGenerator;
         let mut config = make_config(1, 1);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert!(!result.is_empty());
     }
 }

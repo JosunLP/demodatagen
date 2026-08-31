@@ -16,8 +16,8 @@
 //! colors on. In pipes, CI, `--quiet`, `--color never`, or under tests the gate
 //! is false, so output is static and deterministic.
 
-use crate::i18n::{tr, Language};
-use console::{style, Emoji, Style};
+use crate::i18n::{Language, tr};
+use console::{Emoji, Style, style};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
 use std::path::Path;
 use std::time::Duration;

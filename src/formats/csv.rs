@@ -31,7 +31,7 @@ impl Generator for CsvGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "CSV generator requires Delimited options".to_string(),
-                ))
+                ));
             }
         };
 

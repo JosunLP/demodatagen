@@ -50,7 +50,7 @@ impl Generator for PdfGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "PDF generator requires Markdown options".to_string(),
-                ))
+                ));
             }
         };
 

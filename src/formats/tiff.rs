@@ -31,7 +31,7 @@ impl Generator for TiffGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "TIFF generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
         if width == 0 || height == 0 {
@@ -51,8 +51,8 @@ impl Generator for TiffGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::test_support::image_config;
     use crate::core::generator::ImagePattern;
+    use crate::core::generator::test_support::image_config;
 
     #[test]
     fn test_tiff_valid_header() {

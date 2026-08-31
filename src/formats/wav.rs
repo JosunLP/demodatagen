@@ -30,7 +30,7 @@ impl Generator for WavGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "WAV generator requires Audio options".to_string(),
-                ))
+                ));
             }
         };
         if duration <= 0.0 {

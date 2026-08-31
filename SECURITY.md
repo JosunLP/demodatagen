@@ -13,7 +13,7 @@ Security updates are provided for the following release series:
 | 0.6.x   | :white_check_mark: |
 | < 0.6   | :x:                |
 
-Older release series no longer receive security updates. Please upgrade to the latest `0.5.x`
+Older release series no longer receive security updates. Please upgrade to the latest `0.6.x`
 release to stay supported.
 
 ## Reporting a Vulnerability

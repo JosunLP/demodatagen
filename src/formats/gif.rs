@@ -32,7 +32,7 @@ impl Generator for GifGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "GIF generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -95,9 +95,9 @@ mod tests {
 
     #[test]
     fn test_gif_valid_header() {
-        let gen = GifGenerator;
+        let generator = GifGenerator;
         let mut config = make_config(32, 32, 1);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // GIF87a or GIF89a header
         let header = &result[0..3];
         assert_eq!(header, b"GIF");
@@ -105,18 +105,18 @@ mod tests {
 
     #[test]
     fn test_gif_animated() {
-        let gen = GifGenerator;
+        let generator = GifGenerator;
         let mut config = make_config(16, 16, 3);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert!(result.len() > 100);
         assert_eq!(&result[0..3], b"GIF");
     }
 
     #[test]
     fn test_gif_zero_frames_defaults_to_one() {
-        let gen = GifGenerator;
+        let generator = GifGenerator;
         let mut config = make_config(16, 16, 0);
-        let result = gen.generate(&mut config);
+        let result = generator.generate(&mut config);
         assert!(result.is_ok());
     }
 }
