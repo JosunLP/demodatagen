@@ -128,7 +128,7 @@ impl Generator for PngGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "PNG generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -176,16 +176,16 @@ mod tests {
 
     #[test]
     fn test_png_valid_header() {
-        let gen = PngGenerator;
+        let generator = PngGenerator;
         let mut config = make_config(64, 64, ImagePattern::Gradient);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // PNG magic bytes
         assert_eq!(&result[0..4], &[0x89, 0x50, 0x4E, 0x47]);
     }
 
     #[test]
     fn test_png_all_patterns() {
-        let gen = PngGenerator;
+        let generator = PngGenerator;
         for pattern in [
             ImagePattern::Noise,
             ImagePattern::Gradient,
@@ -193,15 +193,15 @@ mod tests {
             ImagePattern::Checkerboard,
         ] {
             let mut config = make_config(32, 32, pattern);
-            let result = gen.generate(&mut config);
+            let result = generator.generate(&mut config);
             assert!(result.is_ok(), "Failed for pattern: {pattern}");
         }
     }
 
     #[test]
     fn test_png_zero_dimension_error() {
-        let gen = PngGenerator;
+        let generator = PngGenerator;
         let mut config = make_config(0, 100, ImagePattern::Noise);
-        assert!(gen.generate(&mut config).is_err());
+        assert!(generator.generate(&mut config).is_err());
     }
 }

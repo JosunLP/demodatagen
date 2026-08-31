@@ -60,7 +60,7 @@ This program cannot be run in DOS mode.\r\r\n$";
     // === COFF Header (20 bytes) ===
     data.extend_from_slice(&[0x4C, 0x01]); // Machine: IMAGE_FILE_MACHINE_I386
     data.extend_from_slice(&[0x01, 0x00]); // NumberOfSections: 1
-                                           // TimeDateStamp (random)
+    // TimeDateStamp (random)
     let timestamp: u32 = rng.random();
     data.extend_from_slice(&timestamp.to_le_bytes());
     data.extend_from_slice(&[0x00; 4]); // PointerToSymbolTable
@@ -150,7 +150,7 @@ impl Generator for ExeGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "EXE generator requires Binary options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -171,34 +171,34 @@ mod tests {
 
     #[test]
     fn test_exe_mz_header() {
-        let gen = ExeGenerator;
+        let generator = ExeGenerator;
         let mut config = make_config(4096);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert_eq!(&result[0..2], b"MZ");
     }
 
     #[test]
     fn test_exe_pe_signature() {
-        let gen = ExeGenerator;
+        let generator = ExeGenerator;
         let mut config = make_config(4096);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // PE signature at offset 0x80
         assert_eq!(&result[0x80..0x84], &[0x50, 0x45, 0x00, 0x00]);
     }
 
     #[test]
     fn test_exe_correct_size() {
-        let gen = ExeGenerator;
+        let generator = ExeGenerator;
         let mut config = make_config(8192);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert_eq!(result.len(), 8192);
     }
 
     #[test]
     fn test_exe_not_dll() {
-        let gen = ExeGenerator;
+        let generator = ExeGenerator;
         let mut config = make_config(4096);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // Characteristics at offset 0x80 + 4 (PE sig) + 18 = 0x96
         let characteristics = u16::from_le_bytes([result[0x96], result[0x97]]);
         assert_eq!(characteristics & 0x2000, 0, "EXE should not have DLL flag");
@@ -206,8 +206,8 @@ mod tests {
 
     #[test]
     fn test_exe_too_small_error() {
-        let gen = ExeGenerator;
+        let generator = ExeGenerator;
         let mut config = make_config(100);
-        assert!(gen.generate(&mut config).is_err());
+        assert!(generator.generate(&mut config).is_err());
     }
 }

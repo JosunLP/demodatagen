@@ -39,7 +39,7 @@ Please report unacceptable behavior to <support@josunlp.de>.
 
 ## Development environment
 
-demodatagen targets **Rust edition 2021** with a **minimum supported Rust version (MSRV) of 1.88**.
+demodatagen targets **Rust edition 2024** with a **minimum supported Rust version (MSRV) of 1.88**.
 
 1. Install Rust via [rustup](https://rustup.rs/):
 

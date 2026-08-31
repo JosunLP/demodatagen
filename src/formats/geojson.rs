@@ -5,9 +5,9 @@
 //! typed schema engine used by the other structured formats, so
 //! `--schema`/`--preset` work here unchanged.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
-use crate::data::{faker, Schema};
+use crate::data::{Schema, faker};
 use crate::error::{GenResult, GenerationError};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 /// Generator for GeoJSON files.
 pub struct GeoJsonGenerator;
@@ -31,7 +31,7 @@ impl Generator for GeoJsonGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "GeoJSON generator requires StructuredData options".to_string(),
-                ))
+                ));
             }
         };
 

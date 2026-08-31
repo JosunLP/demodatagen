@@ -74,7 +74,7 @@ impl Generator for IniGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "INI generator requires KeyValue options".to_string(),
-                ))
+                ));
             }
         };
 

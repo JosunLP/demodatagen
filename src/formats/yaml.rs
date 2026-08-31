@@ -25,7 +25,7 @@ impl Generator for YamlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "YAML generator requires StructuredData options".to_string(),
-                ))
+                ));
             }
         };
 

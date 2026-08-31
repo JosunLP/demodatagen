@@ -88,8 +88,8 @@ cargo fmt                          # Format (CI enforces --check)
 | `rand` + `rand_chacha` | Deterministic RNG |
 | `image` | PNG/JPG/WebP/BMP/TIFF/ICO/GIF generation |
 | `hound` | Real WAV audio writing |
-| `serde_json`, `serde_yaml_ng`, `toml`, `quick-xml`, `csv` | Structured data |
+| `serde_json`, `serde_yaml_ng`, `toml`, `csv` | Structured data |
 | `rust_xlsxwriter` | XLSX (Excel) workbooks |
 | `zip`, `tar`, `flate2` | Archives & compression |
-| `thiserror` + `anyhow` | Error handling |
+| `thiserror` | Error handling |
 | `self_update` | GitHub Releases self-update |

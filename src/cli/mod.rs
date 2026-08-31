@@ -6,7 +6,7 @@
 //! [`args`] and are pulled in via `#[command(flatten)]`.
 pub mod args;
 
-use crate::i18n::{tr, Language};
+use crate::i18n::{Language, tr};
 use crate::ui::{self, ColorChoice};
 use args::{AudioArgs, DataArgs, DocArgs, ImageArgs, TextArgs, VideoArgs};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};

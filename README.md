@@ -78,7 +78,7 @@ to `~/.local/bin`. Remove with `./uninstall.sh` (`--purge` also clears config/ca
 iwr -useb https://raw.githubusercontent.com/josunlp/demodatagen/main/install.ps1 | iex
 ```
 
-Options: `-Version v0.6.0`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
+Options: `-Version v0.6.1`, `-InstallDir DIR`, `-NoModifyPath`, `-Force`, `-Quiet`.
 Remove with `.\uninstall.ps1` (`-Purge` to also clear data).
 
 Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
@@ -88,7 +88,7 @@ Prebuilt binaries are published for Linux (x86_64/aarch64, gnu + musl), macOS
 
 ```bash
 demodatagen update                # update to the latest release
-demodatagen update --tag v0.6.0   # update (or downgrade) to a specific tag
+demodatagen update --tag v0.6.1   # update (or downgrade) to a specific tag
 demodatagen --check-update        # report whether an update is available
 ```
 

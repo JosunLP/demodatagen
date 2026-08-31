@@ -107,7 +107,7 @@ impl Generator for WebmGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "WebM generator requires Video options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -227,9 +227,9 @@ mod tests {
 
     #[test]
     fn test_webm_valid_ebml_header() {
-        let gen = WebmGenerator;
+        let generator = WebmGenerator;
         let mut config = make_config(0.5, 160, 120, 10);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // EBML header starts with 0x1A45DFA3
         assert_eq!(result[0], 0x1A);
         assert_eq!(result[1], 0x45);
@@ -239,9 +239,9 @@ mod tests {
 
     #[test]
     fn test_webm_contains_webm_doctype() {
-        let gen = WebmGenerator;
+        let generator = WebmGenerator;
         let mut config = make_config(0.5, 160, 120, 10);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // Should contain "webm" string
         let has_webm = result.windows(4).any(|w| w == b"webm");
         assert!(has_webm, "WebM file must contain 'webm' doctype");
@@ -249,8 +249,8 @@ mod tests {
 
     #[test]
     fn test_webm_zero_params_error() {
-        let gen = WebmGenerator;
+        let generator = WebmGenerator;
         let mut config = make_config(0.0, 160, 120, 10);
-        assert!(gen.generate(&mut config).is_err());
+        assert!(generator.generate(&mut config).is_err());
     }
 }

@@ -15,15 +15,11 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # Fail on any unmaintained or yanked crates as well as vulnerabilities.
 unmaintained = "all"
 yanked = "warn"
-ignore = [
-    # quick-xml < 0.41 DoS advisories (quadratic attribute checks / unbounded
-    # namespace allocations on attacker-controlled XML). Reachable only through
-    # the optional `self_update` backend, which pins quick-xml ^0.38 and only
-    # ever parses GitHub release metadata — not attacker-supplied XML. Remove
-    # once self_update ships a release on quick-xml >= 0.41.
-    "RUSTSEC-2026-0194",
-    "RUSTSEC-2026-0195",
-]
+# No advisories are currently ignored. `quick-xml` left the graph entirely in
+# 0.6.1: the direct dependency was unused (XML output is hand-rolled) and
+# self_update 1.x gates its own copy behind the `s3` feature, which we do not
+# enable — so RUSTSEC-2026-0194/0195 no longer apply.
+ignore = []
 
 [licenses]
 # SPDX identifiers for licenses considered acceptable for this project.

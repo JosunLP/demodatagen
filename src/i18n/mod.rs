@@ -1660,10 +1660,10 @@ impl Language {
     /// Unparseable values are skipped rather than fatal, so a typo never aborts
     /// a run — at worst the program speaks English.
     pub fn detect(explicit: Option<&str>) -> Language {
-        if let Some(code) = explicit {
-            if let Ok(lang) = code.parse() {
-                return lang;
-            }
+        if let Some(code) = explicit
+            && let Ok(lang) = code.parse()
+        {
+            return lang;
         }
         for var in [
             "DEMODATAGEN_LANG",
@@ -1875,12 +1875,12 @@ mod tests {
             let bytes = s.as_bytes();
             let mut i = 0;
             while i < bytes.len() {
-                if bytes[i] == b'{' {
-                    if let Some(end) = s[i..].find('}') {
-                        out.insert(s[i..i + end + 1].to_string());
-                        i += end + 1;
-                        continue;
-                    }
+                if bytes[i] == b'{'
+                    && let Some(end) = s[i..].find('}')
+                {
+                    out.insert(s[i..i + end + 1].to_string());
+                    i += end + 1;
+                    continue;
                 }
                 i += 1;
             }

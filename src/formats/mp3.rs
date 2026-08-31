@@ -97,7 +97,7 @@ impl Generator for Mp3Generator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "MP3 generator requires Audio options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -209,17 +209,17 @@ mod tests {
 
     #[test]
     fn test_mp3_has_id3_header() {
-        let gen = Mp3Generator;
+        let generator = Mp3Generator;
         let mut config = make_config(1.0, ToneType::Sine);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         assert_eq!(&result[0..3], b"ID3");
     }
 
     #[test]
     fn test_mp3_has_frame_sync() {
-        let gen = Mp3Generator;
+        let generator = Mp3Generator;
         let mut config = make_config(0.5, ToneType::Sine);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // After ID3 header (10 bytes), first frame should start with sync
         assert_eq!(result[10], 0xFF);
         assert_eq!(result[11] & 0xE0, 0xE0); // sync bits
@@ -227,29 +227,29 @@ mod tests {
 
     #[test]
     fn test_mp3_all_tones() {
-        let gen = Mp3Generator;
+        let generator = Mp3Generator;
         for tone in [ToneType::Sine, ToneType::Noise, ToneType::Sweep] {
             let mut config = make_config(0.5, tone);
-            let result = gen.generate(&mut config);
+            let result = generator.generate(&mut config);
             assert!(result.is_ok(), "Failed for tone: {tone}");
         }
     }
 
     #[test]
     fn test_mp3_duration_affects_size() {
-        let gen = Mp3Generator;
+        let generator = Mp3Generator;
         let mut c1 = make_config(1.0, ToneType::Sine);
         let mut c2 = make_config(3.0, ToneType::Sine);
-        let r1 = gen.generate(&mut c1).unwrap();
-        let r2 = gen.generate(&mut c2).unwrap();
+        let r1 = generator.generate(&mut c1).unwrap();
+        let r2 = generator.generate(&mut c2).unwrap();
         assert!(r2.len() > r1.len());
     }
 
     #[test]
     fn test_mp3_zero_duration_error() {
-        let gen = Mp3Generator;
+        let generator = Mp3Generator;
         let mut config = make_config(0.0, ToneType::Sine);
-        assert!(gen.generate(&mut config).is_err());
+        assert!(generator.generate(&mut config).is_err());
     }
 
     #[test]

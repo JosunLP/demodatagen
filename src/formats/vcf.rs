@@ -36,7 +36,7 @@ impl Generator for VcfGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "vCard generator requires Contacts options".to_string(),
-                ))
+                ));
             }
         };
         if count == 0 {

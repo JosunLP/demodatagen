@@ -24,7 +24,7 @@
 //!
 //! Unknown base types fall back to a generic word string so a typo never
 //! aborts generation.
-use crate::data::{faker, lorem, Locale};
+use crate::data::{Locale, faker, lorem};
 use rand::{Rng, RngExt};
 
 /// A single generated, typed value.

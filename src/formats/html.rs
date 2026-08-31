@@ -37,7 +37,7 @@ impl Generator for HtmlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "HTML generator requires Markdown options".to_string(),
-                ))
+                ));
             }
         };
 

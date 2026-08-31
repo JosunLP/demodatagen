@@ -29,7 +29,7 @@ impl Generator for SqlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "SQL generator requires Sql options".to_string(),
-                ))
+                ));
             }
         };
 

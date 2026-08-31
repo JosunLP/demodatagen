@@ -28,7 +28,7 @@ impl Generator for TarGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "TAR generator requires Zip options".to_string(),
-                ))
+                ));
             }
         };
         if file_count == 0 {

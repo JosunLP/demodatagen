@@ -43,7 +43,7 @@ impl Generator for RtfGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "RTF generator requires Markdown options".to_string(),
-                ))
+                ));
             }
         };
 

@@ -31,7 +31,7 @@ impl Generator for IcoGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "ICO generator requires Image options".to_string(),
-                ))
+                ));
             }
         };
         if width == 0 || height == 0 {
@@ -56,8 +56,8 @@ impl Generator for IcoGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::generator::test_support::image_config;
     use crate::core::generator::ImagePattern;
+    use crate::core::generator::test_support::image_config;
 
     #[test]
     fn test_ico_valid_header() {

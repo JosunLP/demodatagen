@@ -29,7 +29,7 @@ impl Generator for SvgGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "SVG generator requires Svg options".to_string(),
-                ))
+                ));
             }
         };
 

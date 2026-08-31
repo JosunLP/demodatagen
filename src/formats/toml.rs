@@ -25,7 +25,7 @@ impl Generator for TomlGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "TOML generator requires StructuredData options".to_string(),
-                ))
+                ));
             }
         };
 

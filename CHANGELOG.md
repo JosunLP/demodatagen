@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-08-31
+
+A maintenance and security release: every open RustSec advisory against the
+dependency graph is cleared, the crate moves to Rust edition 2024,
+`self_update` moves to its 1.x line, and the advisory ignore list is now empty.
+
+### Security
+
+- **RUSTSEC-2026-0258** (#32) — `h2` accepted and queued empty DATA frames
+  without limit (unbounded memory / length-overflow panic). Bumped to
+  `h2` 0.4.19 (patched in 0.4.16).
+- **RUSTSEC-2026-0204** (#26) — `crossbeam-epoch`'s `fmt::Pointer` impl for
+  `Atomic`/`Shared` dereferenced the underlying pointer, which is invalid for
+  null pointers. Bumped to `crossbeam-epoch` 0.9.20 (with `crossbeam-deque`
+  0.8.7), reached through `rayon`.
+- **RUSTSEC-2026-0173** (#25) — the unmaintained `proc-macro-error2` (via
+  `defmt-macros`) left the graph entirely with `defmt` 1.1.1.
+- **RUSTSEC-2026-0194 / RUSTSEC-2026-0195** — the two `quick-xml` DoS
+  advisories no longer apply (see below), so `deny.toml` and the
+  `rustsec/audit-check` step in `audit.yml` now ignore nothing at all.
+
+### Changed
+
+- **Rust edition 2021 → 2024** (MSRV stays at 1.88). Migrated with
+  `cargo fix --edition`; the mechanical `gen` → `r#gen` rewrites in the format
+  tests were replaced by the readable name `generator`, and the five
+  now-collapsible nested `if let`s in `app.rs`, `core/batch.rs`, and
+  `i18n/mod.rs` were rewritten as let-chains. `rustfmt`'s 2024 style edition
+  accounts for the remaining formatting churn.
+- **`self_update` 0.44 → 1.2.** The archive codecs moved behind per-container
+  features, so the `compression-flate2` feature is replaced by
+  `compression-tar-gz` + `compression-zip-deflate`, and `github` and
+  `progress-bar` are now requested explicitly — 0.44 depended on `indicatif`
+  unconditionally, so without the latter `show_download_progress(true)` would
+  have become a silent no-op. API changes ported in `src/update`:
+  `get_latest_release()` returns a `Releases` listing (`latest()` +
+  `Release::version()`), `target_version_tag()` became `release_tag()`, and
+  `VersionStatus::updated()` became `is_updated()`.
+- **`rust_xlsxwriter` 0.96 → 0.99.**
+- Refreshed the whole lockfile to the latest compatible versions; this also
+  dropped the duplicate `zip` 6.x/7.x copies pulled in by the old
+  `self_update`. `generic-array` stays at 0.14.7 because `crypto-common` pins
+  it exactly (`=0.14.7`).
+
+### Removed
+
+- **The unused `quick-xml` dependency.** XML output has been hand-rolled in
+  `src/formats/xml.rs` for some time, and `self_update` 1.x gates its own copy
+  behind the `s3` feature we do not enable — so the crate is gone from the
+  graph rather than merely updated.
+
+### Fixed
+
+- Documentation drift: `CITATION.cff` still advertised 33 formats / 10 locales
+  / 9 languages (now 40 / 16 / 15), `SECURITY.md` pointed upgraders at the
+  unsupported `0.5.x` series, and the dependency table in
+  `.github/copilot-instructions.md` still listed `quick-xml` and the
+  long-removed `anyhow`.
+
 ## [0.6.0] - 2026-07-03
 
 A breadth release: seven new output formats (40 total), six new data locales

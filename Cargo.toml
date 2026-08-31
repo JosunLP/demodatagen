@@ -1,7 +1,7 @@
 [package]
 name = "demodatagen"
-version = "0.6.0"
-edition = "2021"
+version = "0.6.1"
+edition = "2024"
 rust-version = "1.88"
 description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 40 formats, 16 data locales, and 15 interface languages"
 license = "MIT"
@@ -24,7 +24,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml_ng = "0.10"
 toml = "1.1"
-quick-xml = { version = "0.41", features = ["serialize"] }
 csv = "1"
 
 # Random
@@ -57,7 +56,7 @@ tar = "0.4"
 flate2 = "1.1"
 
 # Documents
-rust_xlsxwriter = "0.96"
+rust_xlsxwriter = "0.99"
 
 # Error handling
 thiserror = "2.0"
@@ -74,9 +73,14 @@ console = "0.16"
 # Self-update. We use the lightweight pure-Rust `ureq` backend with rustls+ring
 # (no OpenSSL and no aws-lc-rs C build, so static musl builds stay simple) and need
 # >=0.44 to get rustls-webpki >=0.103, which patches RUSTSEC-2026-0098/0099/0104.
-# In 0.44 the `rustls` feature only *augments* the client (`ureq?/rustls`), so the
-# `ureq` backend must be enabled explicitly to get an HTTP client.
-self_update = { version = "0.44", optional = true, default-features = false, features = ["ureq", "rustls", "archive-tar", "archive-zip", "compression-flate2"] }
+# The `rustls` feature only *augments* the client (`ureq?/rustls`), so the `ureq`
+# backend must be enabled explicitly to get an HTTP client. In 1.x the archive
+# codecs moved behind per-container features (`compression-tar-gz` /
+# `compression-zip-deflate`) and `quick-xml` is now gated behind the unused `s3`
+# feature, which keeps it out of our graph entirely. `progress-bar` is also new:
+# 0.44 depended on indicatif unconditionally, so it must be requested explicitly
+# or `show_download_progress(true)` in `src/update` is a silent no-op.
+self_update = { version = "1.2", optional = true, default-features = false, features = ["ureq", "rustls", "github", "progress-bar", "archive-tar", "archive-zip", "compression-tar-gz", "compression-zip-deflate"] }
 
 [dev-dependencies]
 assert_cmd = "2"

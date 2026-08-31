@@ -11,7 +11,7 @@
 //! instead of in one sprawling match.
 use crate::core::generator::{FormatOptions, ImagePattern, ToneType};
 use crate::error::{AppError, AppResult};
-use crate::i18n::{tr, Language};
+use crate::i18n::{Language, tr};
 use clap::Args;
 
 /// Default schema used by structured-data subcommands.

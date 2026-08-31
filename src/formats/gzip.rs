@@ -5,8 +5,8 @@
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::data::lorem;
 use crate::error::{GenResult, GenerationError};
-use flate2::write::GzEncoder;
 use flate2::Compression;
+use flate2::write::GzEncoder;
 use std::io::Write;
 
 /// Generator for gzip-compressed text files.
@@ -27,7 +27,7 @@ impl Generator for GzipGenerator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "GZIP generator requires Text options".to_string(),
-                ))
+                ));
             }
         };
 

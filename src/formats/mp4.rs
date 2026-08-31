@@ -63,7 +63,7 @@ impl Generator for Mp4Generator {
             _ => {
                 return Err(GenerationError::InvalidConfig(
                     "MP4 generator requires Video options".to_string(),
-                ))
+                ));
             }
         };
 
@@ -221,7 +221,7 @@ fn build_trak(
     write_u16(&mut tkhd, 0); // alternate group
     write_u16(&mut tkhd, 0); // volume (0 for video)
     write_u16(&mut tkhd, 0); // reserved
-                             // Matrix (identity)
+    // Matrix (identity)
     let identity_matrix: [u8; 36] = [
         0x00, 0x01, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x01, 0x00, 0x00, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x40, 0x00, 0x00, 0x00,
@@ -347,7 +347,7 @@ fn build_stbl(
     // stsd (sample description)
     let mut stsd = Vec::new();
     write_u32(&mut stsd, 1); // entry count
-                             // Visual sample entry (using 'raw ' codec for uncompressed)
+    // Visual sample entry (using 'raw ' codec for uncompressed)
     let mut visual_entry = Vec::new();
     visual_entry.extend_from_slice(&[0u8; 6]); // reserved
     write_u16(&mut visual_entry, 1); // data reference index
@@ -407,9 +407,9 @@ mod tests {
 
     #[test]
     fn test_mp4_valid_ftyp() {
-        let gen = Mp4Generator;
+        let generator = Mp4Generator;
         let mut config = make_config(1.0, 320, 240, 24);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         // Check ftyp box
         assert_eq!(&result[4..8], b"ftyp");
         assert_eq!(&result[8..12], b"isom");
@@ -417,9 +417,9 @@ mod tests {
 
     #[test]
     fn test_mp4_contains_moov() {
-        let gen = Mp4Generator;
+        let generator = Mp4Generator;
         let mut config = make_config(0.5, 160, 120, 10);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let data = &result;
         // Search for 'moov' box type
         let has_moov = data.windows(4).any(|w| w == b"moov");
@@ -428,27 +428,27 @@ mod tests {
 
     #[test]
     fn test_mp4_contains_mdat() {
-        let gen = Mp4Generator;
+        let generator = Mp4Generator;
         let mut config = make_config(0.5, 160, 120, 10);
-        let result = gen.generate(&mut config).unwrap();
+        let result = generator.generate(&mut config).unwrap();
         let has_mdat = result.windows(4).any(|w| w == b"mdat");
         assert!(has_mdat, "MP4 must contain mdat box");
     }
 
     #[test]
     fn test_mp4_zero_dimension_error() {
-        let gen = Mp4Generator;
+        let generator = Mp4Generator;
         let mut config = make_config(1.0, 0, 240, 24);
-        assert!(gen.generate(&mut config).is_err());
+        assert!(generator.generate(&mut config).is_err());
     }
 
     #[test]
     fn test_mp4_duration_affects_size() {
-        let gen = Mp4Generator;
+        let generator = Mp4Generator;
         let mut c1 = make_config(0.5, 160, 120, 10);
         let mut c2 = make_config(2.0, 160, 120, 10);
-        let r1 = gen.generate(&mut c1).unwrap();
-        let r2 = gen.generate(&mut c2).unwrap();
+        let r1 = generator.generate(&mut c1).unwrap();
+        let r2 = generator.generate(&mut c2).unwrap();
         assert!(r2.len() > r1.len());
     }
 }
