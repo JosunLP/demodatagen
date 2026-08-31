@@ -77,8 +77,10 @@ console = "0.16"
 # backend must be enabled explicitly to get an HTTP client. In 1.x the archive
 # codecs moved behind per-container features (`compression-tar-gz` /
 # `compression-zip-deflate`) and `quick-xml` is now gated behind the unused `s3`
-# feature, which keeps it out of our graph entirely.
-self_update = { version = "1.2", optional = true, default-features = false, features = ["ureq", "rustls", "github", "archive-tar", "archive-zip", "compression-tar-gz", "compression-zip-deflate"] }
+# feature, which keeps it out of our graph entirely. `progress-bar` is also new:
+# 0.44 depended on indicatif unconditionally, so it must be requested explicitly
+# or `show_download_progress(true)` in `src/update` is a silent no-op.
+self_update = { version = "1.2", optional = true, default-features = false, features = ["ureq", "rustls", "github", "progress-bar", "archive-tar", "archive-zip", "compression-tar-gz", "compression-zip-deflate"] }
 
 [dev-dependencies]
 assert_cmd = "2"

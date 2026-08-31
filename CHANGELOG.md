@@ -36,8 +36,10 @@ dependency graph is cleared, the crate moves to Rust edition 2024,
   accounts for the remaining formatting churn.
 - **`self_update` 0.44 → 1.2.** The archive codecs moved behind per-container
   features, so the `compression-flate2` feature is replaced by
-  `compression-tar-gz` + `compression-zip-deflate`, and `github` is now
-  requested explicitly. API changes ported in `src/update`:
+  `compression-tar-gz` + `compression-zip-deflate`, and `github` and
+  `progress-bar` are now requested explicitly — 0.44 depended on `indicatif`
+  unconditionally, so without the latter `show_download_progress(true)` would
+  have become a silent no-op. API changes ported in `src/update`:
   `get_latest_release()` returns a `Releases` listing (`latest()` +
   `Release::version()`), `target_version_tag()` became `release_tag()`, and
   `VersionStatus::updated()` became `is_updated()`.
