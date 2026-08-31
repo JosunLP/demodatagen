@@ -326,3 +326,80 @@ fn test_invalid_locale_fails() {
         .assert()
         .failure();
 }
+
+// ---- Formats added in 0.6.0 -------------------------------------------------
+
+#[test]
+fn test_vcf() {
+    let bytes = generate(&["vcf", "--contacts", "3"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert_eq!(text.matches("BEGIN:VCARD").count(), 3);
+    assert_eq!(text.matches("END:VCARD").count(), 3);
+}
+
+#[test]
+fn test_vcf_locale_aware() {
+    let bytes = generate(&["-l", "ja_jp", "vcf", "--contacts", "2"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.contains("Japan"));
+}
+
+#[test]
+fn test_ics() {
+    let bytes = generate(&["ics", "--events", "4"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.starts_with("BEGIN:VCALENDAR"));
+    assert_eq!(text.matches("BEGIN:VEVENT").count(), 4);
+}
+
+#[test]
+fn test_eml() {
+    let bytes = generate(&["eml", "--paragraphs", "2"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.starts_with("From: "));
+    assert!(text.contains("\r\n\r\n"));
+}
+
+#[test]
+fn test_rtf() {
+    let bytes = generate(&["rtf", "--paragraphs", "3", "--headings", "2"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.starts_with("{\\rtf1"));
+    assert!(text.ends_with('}'));
+}
+
+#[test]
+fn test_geojson() {
+    let bytes = generate(&["geojson", "--rows", "3"]);
+    let parsed: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(parsed["type"], "FeatureCollection");
+    assert_eq!(parsed["features"].as_array().unwrap().len(), 3);
+}
+
+#[test]
+fn test_properties() {
+    let bytes = generate(&["properties", "--sections", "2", "--keys", "3"]);
+    let text = String::from_utf8(bytes).unwrap();
+    let pairs = text
+        .lines()
+        .filter(|l| l.contains('=') && !l.starts_with('#'))
+        .count();
+    assert_eq!(pairs, 6);
+}
+
+#[test]
+fn test_srt() {
+    let bytes = generate(&["srt", "--cues", "5"]);
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.starts_with("1\n"));
+    assert_eq!(text.matches(" --> ").count(), 5);
+}
+
+#[test]
+fn test_new_locales_generate_csv() {
+    for locale in ["da_dk", "nb_no", "fi_fi", "cs_cz", "tr_tr", "ja_jp"] {
+        let bytes = generate(&["-l", locale, "csv", "--rows", "5"]);
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.lines().count() > 1, "{locale} produced no rows");
+    }
+}

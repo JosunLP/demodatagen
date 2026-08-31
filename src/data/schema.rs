@@ -25,7 +25,7 @@
 //! Unknown base types fall back to a generic word string so a typo never
 //! aborts generation.
 use crate::data::{faker, lorem, Locale};
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// A single generated, typed value.
 #[derive(Debug, Clone, PartialEq)]
@@ -212,7 +212,7 @@ impl Schema {
         self.fields
             .iter()
             .map(|f| {
-                let value = if f.null_prob > 0.0 && rng.gen_bool(f.null_prob.clamp(0.0, 1.0)) {
+                let value = if f.null_prob > 0.0 && rng.random_bool(f.null_prob.clamp(0.0, 1.0)) {
                     FieldValue::Null
                 } else {
                     eval_kind(&f.kind, rng, locale, index)
@@ -482,10 +482,10 @@ fn parse_args(argstr: Option<&str>) -> Result<Args, String> {
 fn eval_kind<R: Rng>(kind: &FieldKind, rng: &mut R, locale: Locale, index: usize) -> FieldValue {
     match kind {
         FieldKind::Const(v) => FieldValue::Str(v.clone()),
-        FieldKind::Enum(opts) => FieldValue::Str(opts[rng.gen_range(0..opts.len())].clone()),
+        FieldKind::Enum(opts) => FieldValue::Str(opts[rng.random_range(0..opts.len())].clone()),
         FieldKind::Sequence(start) => FieldValue::Int(start.wrapping_add(index as i64)),
         FieldKind::Array { elem, count } => {
-            let n = count.unwrap_or_else(|| rng.gen_range(1..=5));
+            let n = count.unwrap_or_else(|| rng.random_range(1..=5));
             FieldValue::Array((0..n).map(|i| eval_kind(elem, rng, locale, i)).collect())
         }
         FieldKind::Scalar { base, args } => eval_scalar(base, args, rng, locale),
@@ -609,6 +609,9 @@ fn eval_scalar<R: Rng>(base: &str, args: &Args, rng: &mut R, locale: Locale) -> 
         "device" | "device_type" => V::Str(faker::device(rng).into()),
         "file_size" | "filesize" => V::Str(faker::file_size(rng)),
         "coordinates" | "coords" | "latlng" | "geo" => V::Str(faker::coordinates(rng)),
+        "airport" | "iata" => V::Str(faker::airport(rng).into()),
+        "flight" | "flight_number" => V::Str(faker::flight(rng)),
+        "vin" => V::Str(faker::vin(rng)),
 
         "word" => V::Str(lorem::word(rng).into()),
         "words" => V::Str(lorem::words(rng, count(3))),
@@ -723,6 +726,9 @@ pub const FIELD_TYPE_GROUPS: &[(&str, &[&str])] = &[
             "base64",
             "hex(n)",
             "file_size",
+            "airport",
+            "flight",
+            "vin",
         ],
     ),
     (
@@ -903,6 +909,11 @@ pub const KNOWN_TYPE_NAMES: &[&str] = &[
     "hex",
     "file_size",
     "filesize",
+    "airport",
+    "iata",
+    "flight",
+    "flight_number",
+    "vin",
     // Temporal
     "date",
     "time",

@@ -112,6 +112,7 @@ pub fn run_batch(generator: &dyn Generator, config: &BatchConfig) -> AppResult<V
     }
 
     let progress = crate::ui::progress(config.count, format_name, config.lang, config.quiet);
+    let progress_message = tr!(config.lang, progress_message, "format" => format_name);
     let bytes_written = Arc::new(AtomicU64::new(0));
 
     // Generate files in parallel.
@@ -146,7 +147,7 @@ pub fn run_batch(generator: &dyn Generator, config: &BatchConfig) -> AppResult<V
             fs::write(&file_path, &content)?;
             bytes_written.fetch_add(content.len() as u64, Ordering::Relaxed);
 
-            progress.inc(1);
+            crate::ui::tick_progress(&progress, &progress_message, &filename);
             Ok(file_path)
         })
         .collect();

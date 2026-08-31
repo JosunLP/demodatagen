@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-03
+
+A breadth release: seven new output formats (40 total), six new data locales
+(16 total), six new interface languages (15 total), four new schema presets
+(16 total), and a new animated `preview` subcommand — plus a repaired build
+and modernized dependencies.
+
+### Added
+
+- **Seven new output formats (40 total):**
+  - `vcf` — RFC 6350 vCard 3.0 contact cards with locale-aware names, emails,
+    phones, addresses, and employers (CRLF, correctly escaped).
+  - `ics` — RFC 5545 iCalendar files with well-formed UTC event times, UIDs,
+    organizers, and statuses.
+  - `eml` — RFC 5322 email messages whose `Date` header weekday actually
+    matches the date (Zeller's congruence).
+  - `rtf` — valid RTF 1.5 documents with a title, bold headings, and unicode
+    escapes for non-ASCII text.
+  - `geojson` — RFC 7946 `FeatureCollection`s of `Point` features whose
+    `properties` are driven by the same schema engine (`--schema`/`--preset`
+    work unchanged).
+  - `properties` — dot-namespaced Java `.properties` config files sharing the
+    realistic key/value pool of the INI and `.env` generators.
+  - `srt` — SubRip subtitles with strictly increasing, non-overlapping cue
+    timings.
+- **Six new data locales (16 total):** `da_dk`, `nb_no`, `fi_fi`, `cs_cz`,
+  `tr_tr`, and `ja_jp` (Hepburn-romanized so emails/usernames stay ASCII),
+  each with ~50 first/last names, streets, cities, first-level regions, and
+  real company legal forms. Postal codes gain country-specific shapes for JP,
+  CZ, DK, and NO.
+- **Six new interface languages (15 total):** Czech, Danish, Finnish,
+  Norwegian Bokmål, Turkish, and Japanese — every message, preset description,
+  and hint, compile-checked for completeness.
+- **`preview` subcommand** — render sample records for any `--schema` or
+  `--preset` as a unicode table right in the terminal: type-colored cells,
+  row-by-row reveal on attended terminals, truncation-safe columns, fully
+  localized, and guaranteed to write nothing.
+- **Four new schema presets (16 total):** `invoices`, `logins`, `vehicles`,
+  and `books`, each described in all fifteen interface languages.
+
+### Fixed
+
+- **The build.** A dependency bump to `rand` 0.10 (#18) had left `main`
+  uncompilable (mismatched `rand_chacha` 0.3 and the removed rand-0.8 API).
+  The whole codebase now targets rand 0.10 (`RngExt`, `random_range`,
+  `from_rng`) with `rand_chacha` 0.10.
+
+### Changed
+
+- Modernized dependencies: `quick-xml` 0.41, `zip` 8.6 (new
+  `SimpleFileOptions` API), `thiserror` 2, `console` 0.16.
+
 ## [0.5.0] - 2026-06-11
 
 A major usability-and-reach release: the interface is now translated into nine

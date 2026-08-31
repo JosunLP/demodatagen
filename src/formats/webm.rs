@@ -5,7 +5,7 @@
 /// proper format compliance.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::RngExt;
 
 /// Generator for WebM video files.
 pub struct WebmGenerator;
@@ -196,9 +196,9 @@ impl Generator for WebmGenerator {
             frame_data.extend_from_slice(&(height as u16).to_le_bytes()); // height
 
             // Add some random payload
-            let payload_size = config.rng.gen_range(4..16);
+            let payload_size = config.rng.random_range(4..16);
             for _ in 0..payload_size {
-                frame_data.push(config.rng.gen());
+                frame_data.push(config.rng.random());
             }
 
             // SimpleBlock

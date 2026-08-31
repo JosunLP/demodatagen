@@ -49,11 +49,12 @@ fn parse_jobs(raw: &str) -> Result<usize, String> {
 /// A fast, offline, fully internationalized CLI for generating realistic demo
 /// files in many formats.
 ///
-/// Supports structured data (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL),
-/// text (TXT, Markdown, HTML, LOG, INI, ENV), images (PNG, JPG, WebP, BMP,
-/// TIFF, ICO, GIF, SVG), audio (MP3, WAV), video (MP4, WebM), documents
-/// (PDF, XLSX), binary stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across
-/// ten data locales and nine interface languages, with built-in schema presets.
+/// Supports structured data (JSON, JSONL, YAML, TOML, XML, CSV, TSV, SQL,
+/// GeoJSON), text (TXT, Markdown, HTML, LOG, INI, ENV, Properties, SRT),
+/// images (PNG, JPG, WebP, BMP, TIFF, ICO, GIF, SVG), audio (MP3, WAV), video
+/// (MP4, WebM), documents (PDF, XLSX, RTF, vCard, iCalendar, EML), binary
+/// stubs (EXE, DLL), and archives (ZIP, TAR, GZIP) — across sixteen data
+/// locales and many interface languages, with built-in schema presets.
 #[derive(Parser, Debug)]
 #[command(name = "demodatagen")]
 #[command(version, about, long_about = None)]
@@ -76,7 +77,8 @@ pub struct Cli {
     pub locale: String,
 
     /// Interface language for messages (`en`, `de`, `fr`, `es`, `it`, `pt`,
-    /// `nl`, `pl`, `sv`). Defaults to the system locale, then English.
+    /// `nl`, `pl`, `sv`, `cs`, `da`, `fi`, `nb`, `tr`, `ja`). Defaults to the
+    /// system locale, then English.
     #[arg(long, global = true)]
     pub lang: Option<String>,
 
@@ -385,6 +387,59 @@ pub enum FormatCommand {
         sheet: String,
     },
 
+    /// Generate RTF (Rich Text Format) documents.
+    Rtf {
+        #[command(flatten)]
+        doc: DocArgs,
+    },
+
+    /// Generate vCard (`.vcf`) contact cards with locale-aware people data.
+    Vcf {
+        /// Number of contact cards per file.
+        #[arg(long, default_value_t = 10)]
+        contacts: usize,
+    },
+
+    /// Generate iCalendar (`.ics`) files with plausible events.
+    Ics {
+        /// Number of events per calendar.
+        #[arg(long, default_value_t = 10)]
+        events: usize,
+    },
+
+    /// Generate email messages (`.eml`, RFC 5322).
+    Eml {
+        /// Number of body paragraphs.
+        #[arg(long, default_value_t = 3)]
+        paragraphs: usize,
+    },
+
+    /// Generate GeoJSON FeatureCollections of random points.
+    Geojson {
+        #[command(flatten)]
+        data: DataArgs,
+        /// Pretty-print the GeoJSON output.
+        #[arg(long, default_value_t = false)]
+        pretty: bool,
+    },
+
+    /// Generate Java properties (`.properties`) configuration files.
+    Properties {
+        /// Number of namespaces (key prefixes).
+        #[arg(long, default_value_t = 3)]
+        sections: usize,
+        /// Number of keys per namespace.
+        #[arg(long, default_value_t = 5)]
+        keys: usize,
+    },
+
+    /// Generate SubRip subtitle (`.srt`) files.
+    Srt {
+        /// Number of subtitle cues.
+        #[arg(long, default_value_t = 20)]
+        cues: usize,
+    },
+
     /// Generate a gzip-compressed text file (`.gz`).
     Gzip {
         /// Number of paragraphs of text to compress.
@@ -393,6 +448,12 @@ pub enum FormatCommand {
         /// Approximate total word count (0 = auto based on paragraphs).
         #[arg(long, default_value_t = 0)]
         words: usize,
+    },
+
+    /// Preview sample records as a table in the terminal, without writing files.
+    Preview {
+        #[command(flatten)]
+        data: DataArgs,
     },
 
     /// List all supported formats, schema types, locales, and languages.
@@ -492,6 +553,65 @@ pub fn print_format_list(lang: Language) {
     }
 
     println!("\n{}", style(tr!(lang, list_hint)).dim());
+}
+
+/// Renders `rows` sample records for a schema as a styled terminal table.
+///
+/// This is a pure preview: nothing is written to disk. Values are colored by
+/// type (numbers cyan, booleans magenta, null dim), and the table is revealed
+/// row by row on attended terminals. `seed` makes the preview reproducible.
+pub fn print_preview(
+    lang: Language,
+    locale: crate::data::Locale,
+    seed: Option<u64>,
+    data: &args::DataArgs,
+) -> crate::error::AppResult<()> {
+    use crate::data::schema::FieldValue;
+    use crate::error::AppError;
+
+    let schema_str = data.resolved_schema(lang)?;
+    let schema = crate::data::Schema::parse(&schema_str).map_err(AppError::Cli)?;
+    if schema.is_empty() {
+        return Err(AppError::Cli(
+            "Schema must contain at least one field".to_string(),
+        ));
+    }
+
+    // Cap the preview so a mistyped `--rows 100000` stays a preview.
+    const MAX_PREVIEW_ROWS: usize = 100;
+    let rows = data.rows.clamp(1, MAX_PREVIEW_ROWS);
+    let mut rng = crate::core::generator::create_rng(seed, 0);
+    let records = schema.generate_records(&mut rng, locale, rows);
+
+    let headers: Vec<String> = schema
+        .field_names()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let cells: Vec<Vec<String>> = records
+        .iter()
+        .map(|record| {
+            record
+                .iter()
+                .map(|(_, value)| match value {
+                    FieldValue::Null => style("null").dim().to_string(),
+                    FieldValue::Bool(b) => style(b).magenta().to_string(),
+                    FieldValue::Int(i) => style(i).cyan().to_string(),
+                    FieldValue::Float(f) => style(f).cyan().to_string(),
+                    FieldValue::Str(s) => s.clone(),
+                    array @ FieldValue::Array(_) => style(array.to_flat_string()).dim().to_string(),
+                })
+                .collect()
+        })
+        .collect();
+
+    println!(
+        "{}",
+        style(tr!(lang, preview_header, "rows" => rows, "locale" => locale.as_str())).bold()
+    );
+    ui::show_table(&headers, &cells);
+    println!("{}", style(tr!(lang, preview_hint)).dim());
+    Ok(())
 }
 
 /// Prints the built-in schema presets, each with its localized description and

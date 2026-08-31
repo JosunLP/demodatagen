@@ -15,16 +15,22 @@
 //! lookup, and the `all()` catalogue from that single source of truth, so the
 //! three steps above are all that is ever required.
 
+mod cs_cz;
+mod da_dk;
 mod de_de;
 mod en_gb;
 mod en_us;
 mod es_es;
+mod fi_fi;
 mod fr_fr;
 mod it_it;
+mod ja_jp;
+mod nb_no;
 mod nl_nl;
 mod pl_pl;
 mod pt_br;
 mod sv_se;
+mod tr_tr;
 
 /// A bundle of static data pools backing a single locale.
 ///
@@ -137,6 +143,12 @@ define_locales! {
     NlNl { id: "nl_nl", aliases: ["nl", "dutch"],          label: "Dutch (Netherlands)",      data: nl_nl::NL_NL },
     PlPl { id: "pl_pl", aliases: ["pl", "polish"],         label: "Polish (Poland)",          data: pl_pl::PL_PL },
     SvSe { id: "sv_se", aliases: ["sv", "se", "swedish"],  label: "Swedish (Sweden)",         data: sv_se::SV_SE },
+    DaDk { id: "da_dk", aliases: ["da", "dk", "danish"],   label: "Danish (Denmark)",         data: da_dk::DA_DK },
+    NbNo { id: "nb_no", aliases: ["nb", "no", "norwegian"], label: "Norwegian Bokmål (Norway)", data: nb_no::NB_NO },
+    FiFi { id: "fi_fi", aliases: ["fi", "finnish"],        label: "Finnish (Finland)",        data: fi_fi::FI_FI },
+    CsCz { id: "cs_cz", aliases: ["cs", "cz", "czech"],    label: "Czech (Czechia)",          data: cs_cz::CS_CZ },
+    TrTr { id: "tr_tr", aliases: ["tr", "turkish"],        label: "Turkish (Türkiye)",        data: tr_tr::TR_TR },
+    JaJp { id: "ja_jp", aliases: ["ja", "jp", "japanese"], label: "Japanese (Japan)",         data: ja_jp::JA_JP },
 }
 
 impl Default for Locale {
@@ -216,5 +228,28 @@ mod tests {
     #[test]
     fn test_default_locale_is_en() {
         assert_eq!(Locale::default(), Locale::EnUs);
+    }
+
+    #[test]
+    fn test_locale_pools_have_no_duplicates() {
+        use std::collections::HashSet;
+        let assert_unique = |loc: &Locale, field: &str, pool: &[&str]| {
+            let unique: HashSet<&&str> = pool.iter().collect();
+            assert_eq!(
+                unique.len(),
+                pool.len(),
+                "{loc} {field} contains duplicates"
+            );
+        };
+        for loc in Locale::variants() {
+            let d = loc.data();
+            assert_unique(loc, "first_names", d.first_names);
+            assert_unique(loc, "last_names", d.last_names);
+            assert_unique(loc, "streets", d.streets);
+            assert_unique(loc, "cities", d.cities);
+            assert_unique(loc, "states", d.states);
+            assert_unique(loc, "company_prefixes", d.company_prefixes);
+            assert_unique(loc, "company_suffixes", d.company_suffixes);
+        }
     }
 }

@@ -1,9 +1,9 @@
 [package]
 name = "demodatagen"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 rust-version = "1.88"
-description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 33 formats, 10 data locales, and 9 interface languages"
+description = "A fast, offline, fully internationalized CLI and library for generating realistic demo files in 40 formats, 16 data locales, and 15 interface languages"
 license = "MIT"
 repository = "https://github.com/josunlp/demodatagen"
 readme = "README.md"
@@ -24,12 +24,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml_ng = "0.10"
 toml = "1.1"
-quick-xml = { version = "0.31", features = ["serialize"] }
+quick-xml = { version = "0.41", features = ["serialize"] }
 csv = "1"
 
 # Random
-rand = "0.8"
-rand_chacha = "0.3"
+rand = "0.10"
+rand_chacha = "0.10"
 
 # Parallelism
 rayon = "1"
@@ -52,16 +52,15 @@ image = { version = "0.25", default-features = false, features = [
 hound = "3"
 
 # Archives & compression
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "8.6", default-features = false, features = ["deflate"] }
 tar = "0.4"
 flate2 = "1.1"
 
 # Documents
-rust_xlsxwriter = "0.95"
+rust_xlsxwriter = "0.96"
 
 # Error handling
-thiserror = "1"
-anyhow = "1"
+thiserror = "2.0"
 
 # Logging
 env_logger = "0.11"
@@ -70,7 +69,7 @@ log = "0.4"
 # Progress bars & terminal styling / animations
 # indicatif >=0.18 drops the unmaintained `number_prefix` (RUSTSEC-2025-0119).
 indicatif = { version = "0.18", features = ["rayon"] }
-console = "0.15"
+console = "0.16"
 
 # Self-update. We use the lightweight pure-Rust `ureq` backend with rustls+ring
 # (no OpenSSL and no aws-lc-rs C build, so static musl builds stay simple) and need

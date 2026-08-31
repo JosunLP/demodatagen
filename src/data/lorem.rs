@@ -2,7 +2,7 @@
 ///
 /// Provides functions for generating paragraphs, sentences, and words
 /// of placeholder text using a procedural algorithm with a seeded RNG.
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 /// Common lorem ipsum words used as building blocks for text generation.
 const LOREM_WORDS: &[&str] = &[
@@ -195,7 +195,7 @@ const HEADING_WORDS: &[&str] = &[
 
 /// Generates a single random word.
 pub fn word<R: Rng>(rng: &mut R) -> &'static str {
-    LOREM_WORDS[rng.gen_range(0..LOREM_WORDS.len())]
+    LOREM_WORDS[rng.random_range(0..LOREM_WORDS.len())]
 }
 
 /// Generates a sequence of random words joined by spaces.
@@ -208,7 +208,7 @@ pub fn words<R: Rng>(rng: &mut R, count: usize) -> String {
 /// The first word is capitalized and the sentence ends with a period.
 pub fn sentence<R: Rng>(rng: &mut R, word_count: usize) -> String {
     let count = if word_count == 0 {
-        rng.gen_range(5..15)
+        rng.random_range(5..15)
     } else {
         word_count
     };
@@ -226,10 +226,10 @@ pub fn sentence<R: Rng>(rng: &mut R, word_count: usize) -> String {
 ///
 /// Each paragraph has between 3 and 8 sentences with varying lengths.
 pub fn paragraph<R: Rng>(rng: &mut R) -> String {
-    let sentence_count = rng.gen_range(3..=8);
+    let sentence_count = rng.random_range(3..=8);
     (0..sentence_count)
         .map(|_| {
-            let word_count = rng.gen_range(5..20);
+            let word_count = rng.random_range(5..20);
             sentence(rng, word_count)
         })
         .collect::<Vec<_>>()
@@ -248,9 +248,9 @@ pub fn paragraphs<R: Rng>(rng: &mut R, count: usize) -> String {
 ///
 /// Returns 2-4 words that look like a section heading.
 pub fn heading<R: Rng>(rng: &mut R) -> String {
-    let word_count = rng.gen_range(2..=4);
+    let word_count = rng.random_range(2..=4);
     (0..word_count)
-        .map(|_| HEADING_WORDS[rng.gen_range(0..HEADING_WORDS.len())])
+        .map(|_| HEADING_WORDS[rng.random_range(0..HEADING_WORDS.len())])
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -298,17 +298,17 @@ pub fn markdown_document<R: Rng>(
         }
 
         // Occasionally add a bullet list
-        if rng.gen_bool(0.3) {
-            let list_items = rng.gen_range(3..=6);
+        if rng.random_bool(0.3) {
+            let list_items = rng.random_range(3..=6);
             for _ in 0..list_items {
-                let word_count = rng.gen_range(4..10);
+                let word_count = rng.random_range(4..10);
                 doc.push_str(&format!("- {}\n", sentence(rng, word_count)));
             }
             doc.push('\n');
         }
 
         // Occasionally add a code block
-        if rng.gen_bool(0.2) {
+        if rng.random_bool(0.2) {
             doc.push_str("```\n");
             doc.push_str(&format!("let data = {};\n", words(rng, 3)));
             doc.push_str(&format!("println!(\"{{}}\", {});\n", word(rng)));

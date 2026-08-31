@@ -1,7 +1,3 @@
-/// The core `Generator` trait and shared configuration types.
-///
-/// Every format-specific generator implements the `Generator` trait,
-/// ensuring a uniform interface for file generation across all formats.
 use crate::data::Locale;
 use crate::error::GenResult;
 use rand::SeedableRng;
@@ -157,6 +153,21 @@ pub enum FormatOptions {
         /// Target file size in bytes.
         size: usize,
     },
+    /// Options for contact-card formats (vCard).
+    Contacts {
+        /// Number of contact cards per file.
+        count: usize,
+    },
+    /// Options for calendar formats (iCalendar).
+    Calendar {
+        /// Number of events per calendar file.
+        events: usize,
+    },
+    /// Options for subtitle formats (SRT).
+    Subtitles {
+        /// Number of subtitle cues per file.
+        cues: usize,
+    },
     /// Options for ZIP archives.
     Zip {
         /// Number of files to include in the archive.
@@ -274,7 +285,7 @@ pub fn resolve_filename(pattern: &str, index: usize, extension: &str) -> String 
 pub fn create_rng(seed: Option<u64>, index: usize) -> ChaCha8Rng {
     match seed {
         Some(s) => ChaCha8Rng::seed_from_u64(s.wrapping_add(index as u64)),
-        None => ChaCha8Rng::from_entropy(),
+        None => ChaCha8Rng::from_rng(&mut rand::rng()),
     }
 }
 
@@ -407,6 +418,18 @@ pub(crate) mod test_support {
         config(FormatOptions::Binary { size })
     }
 
+    pub fn contacts_config(count: usize) -> GeneratorConfig {
+        config(FormatOptions::Contacts { count })
+    }
+
+    pub fn calendar_config(events: usize) -> GeneratorConfig {
+        config(FormatOptions::Calendar { events })
+    }
+
+    pub fn subtitles_config(cues: usize) -> GeneratorConfig {
+        config(FormatOptions::Subtitles { cues })
+    }
+
     pub fn zip_config(
         file_count: usize,
         contained_format: &str,
@@ -443,8 +466,8 @@ mod tests {
         // Both should produce same sequence
         let mut r1 = rng1;
         let mut r2 = rng2;
-        use rand::Rng;
-        assert_eq!(r1.gen::<u64>(), r2.gen::<u64>());
+        use rand::RngExt;
+        assert_eq!(r1.random::<u64>(), r2.random::<u64>());
     }
 
     #[test]

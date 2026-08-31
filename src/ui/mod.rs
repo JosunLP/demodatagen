@@ -126,25 +126,32 @@ pub fn banner(lang: Language) -> String {
     format!("{title}\n{}\n{}", style(tagline).italic(), rule())
 }
 
+/// Prints multi-line `text` to stdout with a gentle line-by-line cascade when
+/// the terminal is attended, or at once otherwise.
+///
+/// This is the shared reveal primitive behind [`show_banner`] and
+/// [`show_table`]; `delay` is the per-line pause while animating.
+pub fn reveal_stdout(text: &str, delay: Duration) {
+    if !animations_enabled() {
+        println!("{text}");
+        return;
+    }
+    use std::io::Write;
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+    for line in text.lines() {
+        let _ = writeln!(handle, "{line}");
+        let _ = handle.flush();
+        std::thread::sleep(delay);
+    }
+}
+
 /// Prints the banner to stdout, revealing it with a brief animation when the
 /// terminal is attended (otherwise printing it at once).
 ///
 /// Used by the informational subcommands (`list`, `presets`, `info`).
 pub fn show_banner(lang: Language) {
-    let banner = banner(lang);
-    if !animations_enabled() {
-        println!("{banner}");
-        return;
-    }
-    // Gentle line-by-line cascade for a polished reveal.
-    use std::io::Write;
-    let stdout = std::io::stdout();
-    let mut handle = stdout.lock();
-    for line in banner.lines() {
-        let _ = writeln!(handle, "{line}");
-        let _ = handle.flush();
-        std::thread::sleep(Duration::from_millis(45));
-    }
+    reveal_stdout(&banner(lang), Duration::from_millis(45));
 }
 
 /// Returns a full-width horizontal rule sized to the terminal (capped at 72).
@@ -198,6 +205,84 @@ pub fn boxed(title: &str, rows: &[String]) -> String {
             .to_string(),
     );
     out
+}
+
+/// Maximum rendered width of a single table cell, in visible characters.
+const TABLE_CELL_MAX: usize = 28;
+
+/// Renders a unicode box-drawing table with a styled header row.
+///
+/// Column widths fit the content (headers bold, borders dim) but individual
+/// cells are truncated to `TABLE_CELL_MAX` visible characters with an
+/// ellipsis. Cell strings may carry ANSI styling; widths are measured on the
+/// visible text. Falls back to ASCII borders on terminals without Unicode.
+pub fn table(headers: &[String], rows: &[Vec<String>]) -> String {
+    let unicode = console::Term::stdout().features().wants_emoji() || cfg!(not(windows));
+    let (tl, tc, tr_c, ml, mc, mr, bl, bc, br, h, v) = if unicode {
+        ("╭", "┬", "╮", "├", "┼", "┤", "╰", "┴", "╯", "─", "│")
+    } else {
+        ("+", "+", "+", "+", "+", "+", "+", "+", "+", "-", "|")
+    };
+    let clip = |s: &str| console::truncate_str(s, TABLE_CELL_MAX, "…").into_owned();
+    let width = |s: &str| console::measure_text_width(s);
+
+    let headers: Vec<String> = headers.iter().map(|s| clip(s)).collect();
+    let rows: Vec<Vec<String>> = rows
+        .iter()
+        .map(|r| r.iter().map(|s| clip(s)).collect())
+        .collect();
+
+    // Column widths: max of header and all cells in that column.
+    let cols = headers.len();
+    let mut widths: Vec<usize> = headers.iter().map(|hd| width(hd)).collect();
+    for row in &rows {
+        for (i, cell) in row.iter().enumerate().take(cols) {
+            widths[i] = widths[i].max(width(cell));
+        }
+    }
+
+    let border = |left: &str, mid: &str, right: &str| -> String {
+        let inner = widths
+            .iter()
+            .map(|w| h.repeat(w + 2))
+            .collect::<Vec<_>>()
+            .join(mid);
+        style(format!("{left}{inner}{right}")).dim().to_string()
+    };
+    let render_row = |cells: &[String], bold: bool| -> String {
+        let sep = style(v).dim().to_string();
+        let mut out = sep.clone();
+        for (i, w) in widths.iter().enumerate() {
+            let cell = cells.get(i).map(String::as_str).unwrap_or("");
+            let pad = w.saturating_sub(width(cell));
+            let text = if bold {
+                style(cell).cyan().bold().to_string()
+            } else {
+                cell.to_string()
+            };
+            out.push_str(&format!(" {text}{} {sep}", " ".repeat(pad)));
+        }
+        out
+    };
+
+    let mut out = String::new();
+    out.push_str(&border(tl, tc, tr_c));
+    out.push('\n');
+    out.push_str(&render_row(&headers, true));
+    out.push('\n');
+    out.push_str(&border(ml, mc, mr));
+    out.push('\n');
+    for row in &rows {
+        out.push_str(&render_row(row, false));
+        out.push('\n');
+    }
+    out.push_str(&border(bl, bc, br));
+    out
+}
+
+/// Prints a table with a quick row-by-row reveal on attended terminals.
+pub fn show_table(headers: &[String], rows: &[Vec<String>]) {
+    reveal_stdout(&table(headers, rows), Duration::from_millis(25));
 }
 
 /// Prints the one-line header shown at the start of a generation run (stderr).
@@ -256,6 +341,19 @@ pub fn progress(count: usize, format_name: &str, lang: Language, quiet: bool) ->
         pb.enable_steady_tick(Duration::from_millis(80));
     }
     pb
+}
+
+/// Advances a progress bar by one file and shows the file that was just
+/// written next to the localized status message.
+///
+/// The filename is dimmed so the eye stays on the counters; on hidden bars
+/// (quiet mode) this is a no-op beyond the internal position bump.
+pub fn tick_progress(pb: &ProgressBar, base_message: &str, filename: &str) {
+    pb.set_message(format!(
+        "{base_message} · {}",
+        style(filename).dim().for_stderr()
+    ));
+    pb.inc(1);
 }
 
 /// Finishes a progress bar with the localized "done" word, clearing animation.

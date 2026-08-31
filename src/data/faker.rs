@@ -8,7 +8,7 @@
 //! The higher-level schema engine in [`crate::data::schema`] builds on these
 //! primitives to produce typed records.
 use crate::data::Locale;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 // ---------------------------------------------------------------------------
 // Locale-aware people & places
@@ -16,7 +16,7 @@ use rand::Rng;
 
 /// Picks a random (copied) element from a non-empty slice.
 fn pick<R: Rng, T: Copy>(rng: &mut R, items: &[T]) -> T {
-    items[rng.gen_range(0..items.len())]
+    items[rng.random_range(0..items.len())]
 }
 
 /// Generates a random first name for the locale.
@@ -43,9 +43,9 @@ pub fn gender<R: Rng>(rng: &mut R) -> &'static str {
 pub fn username<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let first = ascii_slug(first_name(rng, locale));
     let last = ascii_slug(last_name(rng, locale));
-    match rng.gen_range(0..4) {
+    match rng.random_range(0..4) {
         0 => format!("{first}.{last}"),
-        1 => format!("{first}{last}{}", rng.gen_range(1..99u32)),
+        1 => format!("{first}{last}{}", rng.random_range(1..99u32)),
         2 => format!("{}{last}", first.chars().next().unwrap_or('x')),
         _ => format!("{first}_{last}"),
     }
@@ -56,13 +56,13 @@ pub fn email<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let first = ascii_slug(first_name(rng, locale));
     let last = ascii_slug(last_name(rng, locale));
     let domain = pick(rng, EMAIL_DOMAINS);
-    let separator = if rng.gen_bool(0.5) { "." } else { "_" };
-    if rng.gen_bool(0.6) {
+    let separator = if rng.random_bool(0.5) { "." } else { "_" };
+    if rng.random_bool(0.6) {
         format!("{first}{separator}{last}@{domain}")
     } else {
         format!(
             "{first}{separator}{last}{}@{domain}",
-            rng.gen_range(1..999u32)
+            rng.random_range(1..999u32)
         )
     }
 }
@@ -70,16 +70,16 @@ pub fn email<R: Rng>(rng: &mut R, locale: Locale) -> String {
 /// Generates a random password-like string.
 pub fn password<R: Rng>(rng: &mut R) -> String {
     const CHARS: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
-    let len = rng.gen_range(10..=16);
+    let len = rng.random_range(10..=16);
     (0..len).map(|_| pick(rng, CHARS) as char).collect()
 }
 
 /// Generates a phone number with the locale's dialing prefix.
 pub fn phone<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let prefix = locale.data().phone_prefix;
-    let area: u32 = rng.gen_range(100..999);
-    let mid: u32 = rng.gen_range(100..999);
-    let line: u32 = rng.gen_range(1000..9999);
+    let area: u32 = rng.random_range(100..999);
+    let mid: u32 = rng.random_range(100..999);
+    let line: u32 = rng.random_range(1000..9999);
     format!("{prefix} {area} {mid} {line}")
 }
 
@@ -89,7 +89,7 @@ pub fn phone<R: Rng>(rng: &mut R, locale: Locale) -> String {
 /// [`street_number_first`](crate::data::locale::LocaleData::street_number_first)
 /// convention (e.g. "12 Main St" vs "Hauptstraße 12").
 pub fn street<R: Rng>(rng: &mut R, locale: Locale) -> String {
-    let number: u32 = rng.gen_range(1..9999);
+    let number: u32 = rng.random_range(1..9999);
     let street = pick(rng, locale.data().streets);
     if locale.data().street_number_first {
         format!("{number} {street}")
@@ -123,45 +123,59 @@ pub fn country_code(locale: Locale) -> &'static str {
 /// Falls back to a generic five-digit code for countries without a special
 /// case. Codes are illustrative only — they are not guaranteed to be assigned.
 pub fn zipcode<R: Rng>(rng: &mut R, locale: Locale) -> String {
-    let upper = |rng: &mut R| (b'A' + rng.gen_range(0..26u8)) as char;
+    let upper = |rng: &mut R| (b'A' + rng.random_range(0..26u8)) as char;
     match locale.data().country_code {
         // "1234 AB"
         "NL" => format!(
             "{:04} {}{}",
-            rng.gen_range(1000..9999u32),
+            rng.random_range(1000..9999u32),
             upper(rng),
             upper(rng)
         ),
         // "123 45"
         "SE" => format!(
             "{:03} {:02}",
-            rng.gen_range(100..999u32),
-            rng.gen_range(0..99u32)
+            rng.random_range(100..999u32),
+            rng.random_range(0..99u32)
         ),
         // "12-345"
         "PL" => format!(
             "{:02}-{:03}",
-            rng.gen_range(0..99u32),
-            rng.gen_range(0..999u32)
+            rng.random_range(0..99u32),
+            rng.random_range(0..999u32)
         ),
         // "SW1 9AA"
         "GB" => format!(
             "{}{}{} {}{}{}",
             upper(rng),
             upper(rng),
-            rng.gen_range(1..99u32),
-            rng.gen_range(1..9u32),
+            rng.random_range(1..99u32),
+            rng.random_range(1..9u32),
             upper(rng),
             upper(rng)
         ),
         // "12345-678"
         "BR" => format!(
             "{:05}-{:03}",
-            rng.gen_range(1000..99999u32),
-            rng.gen_range(0..999u32)
+            rng.random_range(1000..99999u32),
+            rng.random_range(0..999u32)
         ),
-        // Generic five-digit (US, DE, FR, ES, IT, …)
-        _ => format!("{:05}", rng.gen_range(1000..99999u32)),
+        // "123-4567"
+        "JP" => format!(
+            "{:03}-{:04}",
+            rng.random_range(100..999u32),
+            rng.random_range(0..9999u32)
+        ),
+        // "123 45"
+        "CZ" => format!(
+            "{:03} {:02}",
+            rng.random_range(100..999u32),
+            rng.random_range(0..99u32)
+        ),
+        // Four-digit codes.
+        "DK" | "NO" => format!("{:04}", rng.random_range(1000..9999u32)),
+        // Generic five-digit (US, DE, FR, ES, IT, FI, TR, …)
+        _ => format!("{:05}", rng.random_range(1000..99999u32)),
     }
 }
 
@@ -218,9 +232,9 @@ pub fn product<R: Rng>(rng: &mut R) -> String {
 /// Generates a stock-keeping unit code.
 pub fn sku<R: Rng>(rng: &mut R) -> String {
     let letters: String = (0..3)
-        .map(|_| (b'A' + rng.gen_range(0..26u8)) as char)
+        .map(|_| (b'A' + rng.random_range(0..26u8)) as char)
         .collect();
-    format!("{letters}-{:05}", rng.gen_range(0..99999u32))
+    format!("{letters}-{:05}", rng.random_range(0..99999u32))
 }
 
 /// Generates a price within `[min, max]`, rounded to 2 decimals.
@@ -241,9 +255,9 @@ pub fn currency_code<R: Rng>(rng: &mut R) -> &'static str {
 /// Generates an IBAN-like string (not check-digit valid, demo only).
 pub fn iban<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let cc = locale.data().country_code;
-    let check: u32 = rng.gen_range(10..99);
+    let check: u32 = rng.random_range(10..99);
     let bban: String = (0..18)
-        .map(|_| (b'0' + rng.gen_range(0..10u8)) as char)
+        .map(|_| (b'0' + rng.random_range(0..10u8)) as char)
         .collect();
     format!("{cc}{check}{bban}")
 }
@@ -271,7 +285,7 @@ fn luhn_check_digit(payload: &[u8]) -> u8 {
 
 /// Generates a credit-card-like number (Luhn-valid 16 digits).
 pub fn credit_card<R: Rng>(rng: &mut R) -> String {
-    let mut digits: Vec<u8> = (0..15).map(|_| rng.gen_range(0..10u8)).collect();
+    let mut digits: Vec<u8> = (0..15).map(|_| rng.random_range(0..10u8)).collect();
     digits.push(luhn_check_digit(&digits));
     digits
         .chunks(4)
@@ -303,18 +317,18 @@ pub fn card_network<R: Rng>(rng: &mut R) -> &'static str {
 /// location code, and — 50% of the time — a 3-char branch code.
 pub fn bic<R: Rng>(rng: &mut R, locale: Locale) -> String {
     let alnum = |rng: &mut R| {
-        let n = rng.gen_range(0..36u8);
+        let n = rng.random_range(0..36u8);
         if n < 26 {
             (b'A' + n) as char
         } else {
             (b'0' + (n - 26)) as char
         }
     };
-    let upper = |rng: &mut R| (b'A' + rng.gen_range(0..26u8)) as char;
+    let upper = |rng: &mut R| (b'A' + rng.random_range(0..26u8)) as char;
     let bank: String = (0..4).map(|_| upper(rng)).collect();
     let cc = locale.data().country_code;
     let location: String = (0..2).map(|_| alnum(rng)).collect();
-    if rng.gen_bool(0.5) {
+    if rng.random_bool(0.5) {
         let branch: String = (0..3).map(|_| alnum(rng)).collect();
         format!("{bank}{cc}{location}{branch}")
     } else {
@@ -324,7 +338,7 @@ pub fn bic<R: Rng>(rng: &mut R, locale: Locale) -> String {
 
 /// Generates an EAN-13 barcode number with a valid check digit (demo only).
 pub fn ean13<R: Rng>(rng: &mut R) -> String {
-    let data: Vec<u8> = (0..12).map(|_| rng.gen_range(0..10u8)).collect();
+    let data: Vec<u8> = (0..12).map(|_| rng.random_range(0..10u8)).collect();
     // EAN-13: odd 1-indexed positions weight 1, even positions weight 3.
     let sum: u32 = data
         .iter()
@@ -340,7 +354,7 @@ pub fn ean13<R: Rng>(rng: &mut R) -> String {
 
 /// Generates a 15-digit IMEI device identifier (Luhn-valid, demo only).
 pub fn imei<R: Rng>(rng: &mut R) -> String {
-    let mut digits: Vec<u8> = (0..14).map(|_| rng.gen_range(0..10u8)).collect();
+    let mut digits: Vec<u8> = (0..14).map(|_| rng.random_range(0..10u8)).collect();
     digits.push(luhn_check_digit(&digits));
     digits.iter().map(|d| (b'0' + d) as char).collect()
 }
@@ -348,7 +362,7 @@ pub fn imei<R: Rng>(rng: &mut R) -> String {
 /// Generates an ISBN-13 string (demo, valid prefix/format).
 pub fn isbn<R: Rng>(rng: &mut R) -> String {
     let body: String = (0..9)
-        .map(|_| (b'0' + rng.gen_range(0..10u8)) as char)
+        .map(|_| (b'0' + rng.random_range(0..10u8)) as char)
         .collect();
     format!("978-{}-{}-{}", &body[0..1], &body[1..5], &body[5..9])
 }
@@ -365,8 +379,12 @@ pub fn domain<R: Rng>(rng: &mut R) -> String {
 
 /// Generates a URL.
 pub fn url<R: Rng>(rng: &mut R, _locale: Locale) -> String {
-    let protocol = if rng.gen_bool(0.85) { "https" } else { "http" };
-    let path = if rng.gen_bool(0.5) {
+    let protocol = if rng.random_bool(0.85) {
+        "https"
+    } else {
+        "http"
+    };
+    let path = if rng.random_bool(0.5) {
         format!("/{}", slug(rng))
     } else {
         String::new()
@@ -376,7 +394,7 @@ pub fn url<R: Rng>(rng: &mut R, _locale: Locale) -> String {
 
 /// Generates a hyphenated lowercase slug of 2-4 words.
 pub fn slug<R: Rng>(rng: &mut R) -> String {
-    let n = rng.gen_range(2..=4);
+    let n = rng.random_range(2..=4);
     (0..n)
         .map(|_| crate::data::lorem::word(rng))
         .collect::<Vec<_>>()
@@ -387,17 +405,17 @@ pub fn slug<R: Rng>(rng: &mut R) -> String {
 pub fn ipv4<R: Rng>(rng: &mut R) -> String {
     format!(
         "{}.{}.{}.{}",
-        rng.gen_range(1..255u8),
-        rng.gen_range(0..255u8),
-        rng.gen_range(0..255u8),
-        rng.gen_range(1..255u8)
+        rng.random_range(1..255u8),
+        rng.random_range(0..255u8),
+        rng.random_range(0..255u8),
+        rng.random_range(1..255u8)
     )
 }
 
 /// Generates a random IPv6 address.
 pub fn ipv6<R: Rng>(rng: &mut R) -> String {
     (0..8)
-        .map(|_| format!("{:04x}", rng.gen_range(0..=0xffffu16)))
+        .map(|_| format!("{:04x}", rng.random_range(0..=0xffffu16)))
         .collect::<Vec<_>>()
         .join(":")
 }
@@ -405,14 +423,14 @@ pub fn ipv6<R: Rng>(rng: &mut R) -> String {
 /// Generates a random MAC address.
 pub fn mac_address<R: Rng>(rng: &mut R) -> String {
     (0..6)
-        .map(|_| format!("{:02x}", rng.gen_range(0..=0xffu8)))
+        .map(|_| format!("{:02x}", rng.random_range(0..=0xffu8)))
         .collect::<Vec<_>>()
         .join(":")
 }
 
 /// Generates a random UUID v4 string.
 pub fn uuid<R: Rng>(rng: &mut R) -> String {
-    let bytes: [u8; 16] = rng.gen();
+    let bytes: [u8; 16] = rng.random();
     format!(
         "{:08x}-{:04x}-4{:03x}-{:04x}-{:012x}",
         u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
@@ -441,7 +459,7 @@ pub fn mime_type<R: Rng>(rng: &mut R) -> &'static str {
 
 /// Generates a filename with a plausible extension (e.g. `lorem_ipsum.pdf`).
 pub fn filename<R: Rng>(rng: &mut R) -> String {
-    let stem = (0..rng.gen_range(1..=3))
+    let stem = (0..rng.random_range(1..=3))
         .map(|_| crate::data::lorem::word(rng))
         .collect::<Vec<_>>()
         .join("_");
@@ -452,16 +470,16 @@ pub fn filename<R: Rng>(rng: &mut R) -> String {
 pub fn semver<R: Rng>(rng: &mut R) -> String {
     format!(
         "{}.{}.{}",
-        rng.gen_range(0..10u32),
-        rng.gen_range(0..30u32),
-        rng.gen_range(0..50u32)
+        rng.random_range(0..10u32),
+        rng.random_range(0..30u32),
+        rng.random_range(0..50u32)
     )
 }
 
 /// Generates a social-media style hashtag (e.g. `#LoremIpsum`).
 pub fn hashtag<R: Rng>(rng: &mut R) -> String {
     let mut tag = String::from("#");
-    for _ in 0..rng.gen_range(1..=2) {
+    for _ in 0..rng.random_range(1..=2) {
         let word = crate::data::lorem::word(rng);
         let mut chars = word.chars();
         if let Some(first) = chars.next() {
@@ -481,7 +499,7 @@ pub fn base64_token<R: Rng>(rng: &mut R) -> String {
 /// Generates a lowercase hexadecimal token of `len` (at least 1) characters.
 pub fn hex_token<R: Rng>(rng: &mut R, len: usize) -> String {
     (0..len.max(1))
-        .map(|_| char::from_digit(rng.gen_range(0..16u32), 16).unwrap())
+        .map(|_| char::from_digit(rng.random_range(0..16u32), 16).unwrap())
         .collect()
 }
 
@@ -489,9 +507,9 @@ pub fn hex_token<R: Rng>(rng: &mut R, len: usize) -> String {
 pub fn ssn<R: Rng>(rng: &mut R) -> String {
     format!(
         "{:03}-{:02}-{:04}",
-        rng.gen_range(100..900u32),
-        rng.gen_range(10..99u32),
-        rng.gen_range(1..9999u32)
+        rng.random_range(100..900u32),
+        rng.random_range(10..99u32),
+        rng.random_range(1..9999u32)
     )
 }
 
@@ -502,17 +520,17 @@ pub fn currency_symbol<R: Rng>(rng: &mut R) -> &'static str {
 
 /// Generates a percentage value in `[0, 100]`, rounded to one decimal.
 pub fn percent<R: Rng>(rng: &mut R) -> f64 {
-    (rng.gen_range(0.0..=100.0f64) * 10.0).round() / 10.0
+    (rng.random_range(0.0..=100.0f64) * 10.0).round() / 10.0
 }
 
 /// Generates a 1.0–5.0 star rating, rounded to one decimal.
 pub fn rating<R: Rng>(rng: &mut R) -> f64 {
-    (rng.gen_range(1.0..=5.0f64) * 10.0).round() / 10.0
+    (rng.random_range(1.0..=5.0f64) * 10.0).round() / 10.0
 }
 
 /// Generates a TCP/UDP port in the registered/dynamic range (1024–65535).
 pub fn port<R: Rng>(rng: &mut R) -> i64 {
-    rng.gen_range(1024..=65535) as i64
+    rng.random_range(1024..=65535) as i64
 }
 
 // ---------------------------------------------------------------------------
@@ -526,7 +544,7 @@ pub fn color_name<R: Rng>(rng: &mut R) -> &'static str {
 
 /// Generates a random `#RRGGBB` hex color.
 pub fn hex_color<R: Rng>(rng: &mut R) -> String {
-    format!("#{:06X}", rng.gen_range(0..=0xFFFFFFu32))
+    format!("#{:06X}", rng.random_range(0..=0xFFFFFFu32))
 }
 
 /// Returns a random IETF language tag.
@@ -653,8 +671,8 @@ pub fn job_level<R: Rng>(rng: &mut R) -> &'static str {
 pub fn file_size<R: Rng>(rng: &mut R) -> String {
     let unit = pick(rng, &["B", "KB", "MB", "GB"]);
     let value: f64 = match unit {
-        "B" => rng.gen_range(1.0..1024.0),
-        _ => rng.gen_range(1.0..1000.0),
+        "B" => rng.random_range(1.0..1024.0),
+        _ => rng.random_range(1.0..1000.0),
     };
     format!("{value:.2} {unit}")
 }
@@ -662,6 +680,40 @@ pub fn file_size<R: Rng>(rng: &mut R) -> String {
 /// Generates a `"latitude,longitude"` coordinate pair.
 pub fn coordinates<R: Rng>(rng: &mut R) -> String {
     format!("{},{}", latitude(rng), longitude(rng))
+}
+
+/// Picks a major international airport's IATA code.
+pub fn airport<R: Rng>(rng: &mut R) -> &'static str {
+    pick(
+        rng,
+        &[
+            "ATL", "PEK", "LHR", "HND", "ORD", "LAX", "CDG", "DFW", "FRA", "HKG", "DXB", "AMS",
+            "MAD", "BKK", "JFK", "SIN", "CAN", "NRT", "IST", "SYD", "ICN", "DEN", "SFO", "BCN",
+            "YYZ", "MUC", "GRU", "MEX", "ZRH", "VIE", "CPH", "OSL", "HEL", "PRG", "WAW", "ARN",
+        ],
+    )
+}
+
+/// Generates a flight number: a two-letter airline designator plus 1–4 digits.
+pub fn flight<R: Rng>(rng: &mut R) -> String {
+    let airline = pick(
+        rng,
+        &[
+            "LH", "BA", "AF", "KL", "UA", "AA", "DL", "EK", "QF", "SK", "AY", "TK", "JL", "NH",
+            "LX", "OS", "IB", "AZ",
+        ],
+    );
+    format!("{airline}{}", rng.random_range(1..=4999u32))
+}
+
+/// Generates a 17-character VIN from the legal alphabet (no I, O, or Q).
+///
+/// The check digit (position 9) is not computed, so VINs are illustrative
+/// only — like the IBANs and credit-card numbers, they are shaped correctly
+/// but intentionally not valid identifiers.
+pub fn vin<R: Rng>(rng: &mut R) -> String {
+    const ALPHABET: &[u8] = b"ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
+    (0..17).map(|_| pick(rng, ALPHABET) as char).collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -673,7 +725,7 @@ pub fn integer<R: Rng>(rng: &mut R, min: i64, max: i64) -> i64 {
     if min >= max {
         return min;
     }
-    rng.gen_range(min..=max)
+    rng.random_range(min..=max)
 }
 
 /// Generates a float in `[min, max)` rounded to 2 decimals.
@@ -681,33 +733,33 @@ pub fn float<R: Rng>(rng: &mut R, min: f64, max: f64) -> f64 {
     if min >= max {
         return (min * 100.0).round() / 100.0;
     }
-    let val: f64 = rng.gen_range(min..max);
+    let val: f64 = rng.random_range(min..max);
     (val * 100.0).round() / 100.0
 }
 
 /// Generates a latitude in `[-90, 90]`.
 pub fn latitude<R: Rng>(rng: &mut R) -> f64 {
-    let v: f64 = rng.gen_range(-90.0..=90.0);
+    let v: f64 = rng.random_range(-90.0..=90.0);
     (v * 1e6).round() / 1e6
 }
 
 /// Generates a longitude in `[-180, 180]`.
 pub fn longitude<R: Rng>(rng: &mut R) -> f64 {
-    let v: f64 = rng.gen_range(-180.0..=180.0);
+    let v: f64 = rng.random_range(-180.0..=180.0);
     (v * 1e6).round() / 1e6
 }
 
 /// Generates a boolean value.
 pub fn boolean<R: Rng>(rng: &mut R) -> bool {
-    rng.gen_bool(0.5)
+    rng.random_bool(0.5)
 }
 
 /// Generates a random date string in `YYYY-MM-DD` format (years 1970-2025).
 pub fn date<R: Rng>(rng: &mut R) -> String {
-    let year = rng.gen_range(1970..=2025);
-    let month = rng.gen_range(1..=12u32);
+    let year = rng.random_range(1970..=2025);
+    let month = rng.random_range(1..=12u32);
     let max_day = days_in_month(year, month);
-    let day = rng.gen_range(1..=max_day);
+    let day = rng.random_range(1..=max_day);
     format!("{year:04}-{month:02}-{day:02}")
 }
 
@@ -725,9 +777,9 @@ fn days_in_month(year: i64, month: u32) -> u32 {
 pub fn time<R: Rng>(rng: &mut R) -> String {
     format!(
         "{:02}:{:02}:{:02}",
-        rng.gen_range(0..24u32),
-        rng.gen_range(0..60u32),
-        rng.gen_range(0..60u32)
+        rng.random_range(0..24u32),
+        rng.random_range(0..60u32),
+        rng.random_range(0..60u32)
     )
 }
 
@@ -738,7 +790,7 @@ pub fn datetime<R: Rng>(rng: &mut R) -> String {
 
 /// Generates a plausible Unix timestamp (seconds).
 pub fn unix_timestamp<R: Rng>(rng: &mut R) -> i64 {
-    rng.gen_range(0..1_900_000_000i64)
+    rng.random_range(0..1_900_000_000i64)
 }
 
 /// Returns a random weekday name.
@@ -1278,6 +1330,27 @@ mod tests {
                 assert!(e.is_ascii(), "{locale} company_email not ASCII: {e}");
                 assert!(e.contains('@') && e.contains('.'));
             }
+        }
+    }
+    #[test]
+    fn test_airport_flight_vin_shapes() {
+        let mut r = rng();
+        for _ in 0..50 {
+            let a = airport(&mut r);
+            assert_eq!(a.len(), 3);
+            assert!(a.chars().all(|c| c.is_ascii_uppercase()));
+
+            let f = flight(&mut r);
+            assert!(f.len() >= 3 && f.len() <= 6, "bad flight: {f}");
+            assert!(f[..2].chars().all(|c| c.is_ascii_uppercase()));
+            assert!(f[2..].chars().all(|c| c.is_ascii_digit()));
+
+            let v = vin(&mut r);
+            assert_eq!(v.len(), 17);
+            assert!(
+                !v.contains('I') && !v.contains('O') && !v.contains('Q'),
+                "VIN uses forbidden letters: {v}"
+            );
         }
     }
 }

@@ -8,7 +8,7 @@
 /// though the video content is simple colored frames.
 use crate::core::generator::{FormatOptions, Generator, GeneratorConfig};
 use crate::error::{GenResult, GenerationError};
-use rand::Rng;
+use rand::RngExt;
 
 /// Generator for MP4 video files.
 pub struct Mp4Generator;
@@ -90,9 +90,9 @@ impl Generator for Mp4Generator {
             // Y plane: frame_w * frame_h bytes
             // U plane: (frame_w/2) * (frame_h/2) bytes
             // V plane: (frame_w/2) * (frame_h/2) bytes
-            let y_val: u8 = config.rng.gen_range(16..235);
-            let u_val: u8 = config.rng.gen_range(16..240);
-            let v_val: u8 = config.rng.gen_range(16..240);
+            let y_val: u8 = config.rng.random_range(16..235);
+            let u_val: u8 = config.rng.random_range(16..240);
+            let v_val: u8 = config.rng.random_range(16..240);
 
             let y_size = (frame_w * frame_h) as usize;
             let uv_size = ((frame_w / 2) * (frame_h / 2)) as usize;

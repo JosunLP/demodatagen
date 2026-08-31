@@ -130,6 +130,16 @@ fn dispatch(cli: Cli, lang: Language) -> AppResult<i32> {
             crate::cli::print_completions(*shell);
             return Ok(0);
         }
+        FormatCommand::Preview { data } => {
+            let locale: Locale = cli.locale.parse().map_err(AppError::Cli)?;
+            if !cli.quiet {
+                if let Ok(schema) = data.resolved_schema(lang) {
+                    warn_unknown_schema_types(&schema, lang);
+                }
+            }
+            crate::cli::print_preview(lang, locale, cli.seed, data)?;
+            return Ok(0);
+        }
         _ => {}
     }
 
@@ -416,7 +426,32 @@ fn resolve_format(
             "tar",
         ),
         C::Xlsx { data, sheet } => (data.sql(sheet.clone(), lang)?, "xlsx"),
-        C::Update { .. } | C::List | C::Presets | C::Info | C::Completions { .. } => {
+        C::Rtf { doc } => (doc.options(), "rtf"),
+        C::Vcf { contacts } => (FormatOptions::Contacts { count: *contacts }, "vcf"),
+        C::Ics { events } => (FormatOptions::Calendar { events: *events }, "ics"),
+        C::Eml { paragraphs } => (
+            FormatOptions::Text {
+                paragraphs: *paragraphs,
+                words: 0,
+            },
+            "eml",
+        ),
+        C::Geojson { data, pretty } => (data.structured(*pretty, lang)?, "geojson"),
+        C::Properties { sections, keys } => (
+            FormatOptions::KeyValue {
+                sections: *sections,
+                keys: *keys,
+                env_style: false,
+            },
+            "properties",
+        ),
+        C::Srt { cues } => (FormatOptions::Subtitles { cues: *cues }, "srt"),
+        C::Update { .. }
+        | C::Preview { .. }
+        | C::List
+        | C::Presets
+        | C::Info
+        | C::Completions { .. } => {
             unreachable!("non-generating subcommands are handled before resolve_format")
         }
     };
