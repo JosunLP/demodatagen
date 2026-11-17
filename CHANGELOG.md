@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-11-17
+
+A maintenance release: every dependency is on its latest version, the release
+pipeline gains a native Windows on ARM build, and the Docker image moves to a
+current toolchain and Debian 13.
+
+### Added
+
+- **Native `aarch64-pc-windows-msvc` release binary**, built on the
+  `windows-11-arm` runner. `install.ps1` now installs it on ARM64 machines and
+  falls back to the x86_64 build (via emulation) for releases that predate it.
+  `demodatagen update` on an ARM64 build picks the matching asset by itself.
+
+### Changed
+
+- **`zip` 8.6 → 9.6.** `ZipFile::name()` now returns a `Result`; the archive
+  round-trip test in `src/formats/zip.rs` was adjusted (no change to generated
+  archives). `self_update` uses the same `zip` 9.x, so there is still exactly
+  one copy in the graph.
+- **`rust_xlsxwriter` 0.99 → 0.102**, **`self_update` 1.2 → 1.3**, **`toml`
+  1.1 → 1.2**.
+- Refreshed the whole lockfile (`clap` 4.6.8, `clap_complete` 4.6.12,
+  `serde_json` 1.0.154, `flate2` 1.1.11, `console` 0.16.6, `proptest` 1.12,
+  …). The duplicate `rand`/`rand_chacha` 0.9 copies and the `winapi` and
+  `defmt` crates dropped out of the graph. MSRV stays at 1.88.
+- **Docker image:** the builder moves from `rust:1.88-slim` (bookworm) to
+  `rust:1.97-slim-trixie`, the runtime from `debian:bookworm-slim` to
+  `debian:trixie-slim`. The unneeded `pkg-config`/`libssl-dev` install was
+  dropped (TLS is rustls + ring), `ca-certificates` is installed without
+  recommends, and the build uses `--locked`.
+- **CI** (`ci.yml`, `coverage.yml`) now also runs on pushes and pull
+  requests to `dev`, so integration-branch breakage is caught before a
+  release PR to `main`. All GitHub Actions were already on their latest major
+  versions.
+
 ## [0.6.1] - 2026-08-31
 
 A maintenance and security release: every open RustSec advisory against the

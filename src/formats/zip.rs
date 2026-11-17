@@ -167,7 +167,7 @@ mod tests {
         let result = ZipGenerator.generate(&mut config).unwrap();
         let mut archive = zip::ZipArchive::new(Cursor::new(result)).unwrap();
         let mut file = archive.by_index(0).unwrap();
-        assert!(file.name().ends_with(".csv"));
+        assert!(file.name().unwrap().ends_with(".csv"));
         let mut content = String::new();
         file.read_to_string(&mut content).unwrap();
         assert!(content.contains("id,name,email,date"));
