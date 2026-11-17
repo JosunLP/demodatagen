@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.2] - 2026-11-17
 
-A maintenance release: every dependency is on its latest version, the release
-pipeline gains a native Windows on ARM build, and the Docker image moves to a
-current toolchain and Debian 13.
+A maintenance release: every dependency is on its latest version, the
+unmaintained `unsafe-libyaml` leaves the graph, the release pipeline gains a
+native Windows on ARM build, and the Docker image moves to a current toolchain
+and Debian 13.
+
+### Security
+
+- **RUSTSEC-2024-0449** — `unsafe-libyaml` (a c2rust translation of libyaml,
+  archived upstream) is unmaintained. It was pulled in by `serde_yaml_ng`,
+  which is replaced by **`serde-saphyr` 2.1**, a YAML implementation in safe
+  Rust. The advisory ignore list stays empty.
 
 ### Added
 
@@ -24,12 +32,18 @@ current toolchain and Debian 13.
   round-trip test in `src/formats/zip.rs` was adjusted (no change to generated
   archives). `self_update` uses the same `zip` 9.x, so there is still exactly
   one copy in the graph.
+- **YAML output now comes from `serde-saphyr`.** The records and the seeded
+  determinism are unchanged; the one visible difference is that string values
+  which look like YAML timestamps (e.g. the `created` field) are now quoted,
+  so YAML 1.1 parsers read them back as strings instead of dates.
+- **MSRV 1.88 → 1.89**, required by `serde-saphyr`. Updated in `Cargo.toml`,
+  the CI MSRV job, and `CONTRIBUTING.md`.
 - **`rust_xlsxwriter` 0.99 → 0.102**, **`self_update` 1.2 → 1.3**, **`toml`
   1.1 → 1.2**.
 - Refreshed the whole lockfile (`clap` 4.6.8, `clap_complete` 4.6.12,
   `serde_json` 1.0.154, `flate2` 1.1.11, `console` 0.16.6, `proptest` 1.12,
   …). The duplicate `rand`/`rand_chacha` 0.9 copies and the `winapi` and
-  `defmt` crates dropped out of the graph. MSRV stays at 1.88.
+  `defmt` crates dropped out of the graph.
 - **Docker image:** the builder moves from `rust:1.88-slim` (bookworm) to
   `rust:1.97-slim-trixie`, the runtime from `debian:bookworm-slim` to
   `debian:trixie-slim`. The unneeded `pkg-config`/`libssl-dev` install was

@@ -48,7 +48,7 @@ impl Generator for YamlGenerator {
             })
             .collect();
 
-        let yaml = serde_yaml_ng::to_string(&Value::Array(array))
+        let yaml = serde_saphyr::to_string(&Value::Array(array))
             .map_err(|e| GenerationError::Serialization(e.to_string()))?;
         Ok(yaml.into_bytes())
     }
@@ -64,9 +64,9 @@ mod tests {
         let mut config = structured_config(3, "id:sequence,name:name,age:int(1..9)", false);
         let result = YamlGenerator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
-        let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text).unwrap();
-        assert!(parsed.is_sequence());
-        assert_eq!(parsed.as_sequence().unwrap().len(), 3);
+        let parsed: Value = serde_saphyr::from_str(&text).unwrap();
+        assert!(parsed.is_array());
+        assert_eq!(parsed.as_array().unwrap().len(), 3);
     }
 
     #[test]
