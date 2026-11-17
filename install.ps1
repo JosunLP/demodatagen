@@ -33,12 +33,16 @@ function Write-Warn($msg) { Write-Warning $msg }
 function Die($msg) { Write-Error $msg; exit 1 }
 
 # ── Detect architecture ──────────────────────────────────────────────
+# Native ARM64 builds are published from v0.6.2 on. For older releases the
+# ARM64 asset does not exist, so we fall back to the x86_64 build, which runs
+# on Windows on ARM via emulation.
 $arch = $env:PROCESSOR_ARCHITECTURE
 if ($arch -eq "ARM64") {
-    Write-Note "Detected ARM64; installing the x86_64 build (runs via emulation)."
+    $Target = "aarch64-pc-windows-msvc"
+} else {
+    $Target = "x86_64-pc-windows-msvc"
 }
-# Only an x86_64 Windows asset is published; it runs on ARM64 via emulation.
-$Target = "x86_64-pc-windows-msvc"
+$FallbackTarget = "x86_64-pc-windows-msvc"
 $BinName = "demodatagen.exe"
 
 # ── Resolve version ──────────────────────────────────────────────────
@@ -65,8 +69,19 @@ New-Item -ItemType Directory -Path $TmpDir -Force | Out-Null
 try {
     $ZipPath = Join-Path $TmpDir $Archive
     Write-Note "downloading $Archive"
-    Invoke-WebRequest -Uri "$BaseUrl/$Archive" -OutFile $ZipPath -UseBasicParsing `
-        -Headers @{ "User-Agent" = "demodatagen-install" }
+    try {
+        Invoke-WebRequest -Uri "$BaseUrl/$Archive" -OutFile $ZipPath -UseBasicParsing `
+            -Headers @{ "User-Agent" = "demodatagen-install" }
+    } catch {
+        if ($Target -eq $FallbackTarget) { throw }
+        Write-Note "no native $Target build in $Version; using $FallbackTarget (runs via emulation)."
+        $Target  = $FallbackTarget
+        $Archive = "demodatagen-$Version-$Target.zip"
+        $ZipPath = Join-Path $TmpDir $Archive
+        Write-Note "downloading $Archive"
+        Invoke-WebRequest -Uri "$BaseUrl/$Archive" -OutFile $ZipPath -UseBasicParsing `
+            -Headers @{ "User-Agent" = "demodatagen-install" }
+    }
 
     # ── Verify checksum ──────────────────────────────────────────────
     $SumsPath = Join-Path $TmpDir "SHA256SUMS"

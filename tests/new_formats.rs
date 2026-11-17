@@ -50,7 +50,7 @@ fn generate_text(args: &[&str]) -> String {
 #[test]
 fn test_yaml() {
     let text = generate_text(&["yaml", "--rows", "3"]);
-    let parsed: serde_json::Value = serde_yaml_ng::from_str(&text).unwrap();
+    let parsed: serde_json::Value = serde_saphyr::from_str(&text).unwrap();
     assert_eq!(parsed.as_array().unwrap().len(), 3);
 }
 

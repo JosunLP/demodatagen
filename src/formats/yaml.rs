@@ -48,7 +48,7 @@ impl Generator for YamlGenerator {
             })
             .collect();
 
-        let yaml = serde_yaml_ng::to_string(&Value::Array(array))
+        let yaml = serde_saphyr::to_string(&Value::Array(array))
             .map_err(|e| GenerationError::Serialization(e.to_string()))?;
         Ok(yaml.into_bytes())
     }
@@ -64,9 +64,55 @@ mod tests {
         let mut config = structured_config(3, "id:sequence,name:name,age:int(1..9)", false);
         let result = YamlGenerator.generate(&mut config).unwrap();
         let text = String::from_utf8(result).unwrap();
-        let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text).unwrap();
-        assert!(parsed.is_sequence());
-        assert_eq!(parsed.as_sequence().unwrap().len(), 3);
+        let parsed: Value = serde_saphyr::from_str(&text).unwrap();
+        assert!(parsed.is_array());
+        assert_eq!(parsed.as_array().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_yaml_round_trips_generated_values() {
+        // Ints, floats, bools, timestamp strings, nested arrays, and nulls.
+        const SCHEMA: &str = "id:sequence,name:name,price:float(0..100),active:bool,\
+                              created:datetime,tags:array(int,3),note:word?0.5";
+        let mut config = structured_config(25, SCHEMA, false);
+        let text = String::from_utf8(YamlGenerator.generate(&mut config).unwrap()).unwrap();
+        let parsed: Value = serde_saphyr::from_str(&text).unwrap();
+
+        // Rebuild the exact source records from an identically seeded config.
+        let mut replay = structured_config(25, SCHEMA, false);
+        let expected: Vec<Value> = Schema::parse(SCHEMA)
+            .unwrap()
+            .generate_records(&mut replay.rng, replay.locale, 25)
+            .into_iter()
+            .map(|record| {
+                Value::Object(record.into_iter().map(|(k, v)| (k, v.to_json())).collect())
+            })
+            .collect();
+        assert!(expected.iter().any(|r| r["note"].is_null()));
+        assert_eq!(parsed, Value::Array(expected));
+    }
+
+    #[test]
+    fn test_yaml_quotes_ambiguous_strings() {
+        // Strings that look like other YAML scalars must come back as strings.
+        let tricky = [
+            "2015-05-08T01:15:50Z",
+            "true",
+            "null",
+            "~",
+            "42",
+            "3.14",
+            "yes",
+            "",
+        ];
+        let source = Value::Array(tricky.iter().map(|s| Value::String((*s).into())).collect());
+        let text = serde_saphyr::to_string(&source).unwrap();
+        let parsed: Value = serde_saphyr::from_str(&text).unwrap();
+        assert_eq!(parsed, source);
+
+        let nested = serde_json::json!([{ "a": null, "b": [1, 2.5, [true]], "c": "1e3" }]);
+        let text = serde_saphyr::to_string(&nested).unwrap();
+        assert_eq!(serde_saphyr::from_str::<Value>(&text).unwrap(), nested);
     }
 
     #[test]
