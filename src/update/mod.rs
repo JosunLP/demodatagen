@@ -108,17 +108,20 @@ pub fn check_for_update(lang: Language) -> AppResult<bool> {
 pub fn update_to(target_tag: Option<&str>, lang: Language) -> AppResult<()> {
     info!("Starting self-update (current: v{CURRENT_VERSION})…");
 
-    let mut builder = updater_builder();
-    builder.show_download_progress(true).no_confirm(true);
-    if let Some(tag) = target_tag {
-        builder.release_tag(tag);
+    let mut result = run_update(target_tag, None);
+
+    // Native Windows ARM64 binaries are published from v0.6.2 on. When a pinned
+    // (older) tag has no ARM64 asset, fall back to the x86_64 build, which runs
+    // via emulation — mirroring `install.ps1`. Only the missing-asset case
+    // retries; every other error is reported as-is.
+    if is_missing_asset(&result)
+        && let (Some(_), Some(fallback)) = (target_tag, FALLBACK_TARGET)
+    {
+        warn!("No native asset for this target in the requested release; using {fallback}");
+        result = run_update(target_tag, Some(fallback));
     }
 
-    let updater = builder
-        .build()
-        .map_err(|e| AppError::Update(format!("could not configure updater: {e}")))?;
-
-    match updater.update() {
+    match result? {
         Ok(status) if status.is_updated() => {
             eprintln!(
                 "{}",
@@ -142,6 +145,48 @@ pub fn update_to(target_tag: Option<&str>, lang: Language) -> AppResult<()> {
             )))
         }
     }
+}
+
+/// Target to retry with when a pinned release has no asset for this build's
+/// target. Only native Windows ARM64 builds have one: older releases shipped
+/// just the x86_64 Windows archive.
+const FALLBACK_TARGET: Option<&str> = if cfg!(all(windows, target_arch = "aarch64")) {
+    Some("x86_64-pc-windows-msvc")
+} else {
+    None
+};
+
+/// Outcome of one `self_update` attempt, kept unwrapped so the caller can
+/// inspect the error before reporting it.
+type UpdateAttempt = self_update::Result<self_update::VersionStatus>;
+
+/// Configures and runs one non-interactive update attempt, optionally pinned
+/// to `target_tag` and overriding the asset `target` triple.
+fn run_update(target_tag: Option<&str>, target: Option<&str>) -> AppResult<UpdateAttempt> {
+    let mut builder = updater_builder();
+    builder.show_download_progress(true).no_confirm(true);
+    if let Some(tag) = target_tag {
+        builder.release_tag(tag);
+    }
+    if let Some(target) = target {
+        builder.target(target);
+    }
+    let updater = builder
+        .build()
+        .map_err(|e| AppError::Update(format!("could not configure updater: {e}")))?;
+    Ok(updater.update())
+}
+
+/// Returns `true` if an update attempt failed only because the resolved
+/// release has no asset for the requested target triple.
+fn is_missing_asset(result: &AppResult<UpdateAttempt>) -> bool {
+    matches!(
+        result,
+        Ok(Err(self_update::Error::NoReleaseFound {
+            target: Some(_),
+            ..
+        }))
+    )
 }
 
 /// Returns `true` if `candidate` is a strictly newer semver than `current`.
@@ -182,6 +227,30 @@ mod tests {
     #[test]
     fn test_current_version_semver() {
         assert!(parse_semver(CURRENT_VERSION).is_some());
+    }
+
+    #[test]
+    fn test_is_missing_asset_only_matches_target_lookups() {
+        let missing: AppResult<UpdateAttempt> = Ok(Err(
+            self_update::Error::no_release_found_for_target("aarch64-pc-windows-msvc"),
+        ));
+        assert!(is_missing_asset(&missing));
+
+        // No release at all (e.g. a mistyped tag) must not trigger the fallback.
+        let no_release: AppResult<UpdateAttempt> = Ok(Err(self_update::Error::no_release_found()));
+        assert!(!is_missing_asset(&no_release));
+
+        let config_err: AppResult<UpdateAttempt> = Err(AppError::Update("boom".into()));
+        assert!(!is_missing_asset(&config_err));
+    }
+
+    #[test]
+    fn test_fallback_target_only_on_windows_arm64() {
+        if cfg!(all(windows, target_arch = "aarch64")) {
+            assert_eq!(FALLBACK_TARGET, Some("x86_64-pc-windows-msvc"));
+        } else {
+            assert_eq!(FALLBACK_TARGET, None);
+        }
     }
 
     #[test]

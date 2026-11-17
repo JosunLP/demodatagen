@@ -24,7 +24,9 @@ and Debian 13.
 - **Native `aarch64-pc-windows-msvc` release binary**, built on the
   `windows-11-arm` runner. `install.ps1` now installs it on ARM64 machines and
   falls back to the x86_64 build (via emulation) for releases that predate it.
-  `demodatagen update` on an ARM64 build picks the matching asset by itself.
+  `demodatagen update` on an ARM64 build picks the matching asset by itself;
+  pinning an older release with `--tag` that has no ARM64 asset falls back to
+  the x86_64 build the same way (only for the missing-asset case).
 
 ### Changed
 
@@ -51,7 +53,8 @@ and Debian 13.
   recommends, and the build uses `--locked`.
 - **CI** (`ci.yml`, `coverage.yml`) now also runs on pushes and pull
   requests to `dev`, so integration-branch breakage is caught before a
-  release PR to `main`. All GitHub Actions were already on their latest major
+  release PR to `main`. `ci.yml` now restricts the `GITHUB_TOKEN` to
+  `contents: read`, like the other read-only workflows. All GitHub Actions were already on their latest major
   versions.
 
 ## [0.6.1] - 2026-08-31
